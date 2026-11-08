@@ -1,0 +1,3608 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEIVA — Apresentação Interativa</title>
+<link rel="icon" href="public/seiva-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/feather-icons"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+/*============================================================
+   MYSQL WORKBENCH STYLE - ER DIAGRAM
+============================================================*/
+
+/* ── Entidade: Caixa principal da tabela ── */
+#db-canvas svg .entityBox,
+#db-modal-canvas svg .entityBox {
+    fill: #ffffff !important;
+    stroke: #7f8c8d !important;
+    stroke-width: 1.2px;
+    filter: drop-shadow(0 3px 8px rgba(0,0,0,0.12));
+    rx: 4;
+    ry: 4;
+}
+
+/* ── Cabeçalho: Nome da tabela ── */
+#db-canvas svg .entityLabel text,
+#db-modal-canvas svg .entityLabel text {
+    font-family: 'Segoe UI', Tahoma, Geneva, sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    fill: #1a1a2e !important;
+}
+
+/* ── Linhas de atributos: Alternância par/ímpar ── */
+#db-canvas svg .attributeBoxOdd,
+#db-modal-canvas svg .attributeBoxOdd {
+    fill: #f8f9fa !important;
+    stroke: #dee2e6 !important;
+    stroke-width: 0.5px;
+}
+#db-canvas svg .attributeBoxEven,
+#db-modal-canvas svg .attributeBoxEven {
+    fill: #ffffff !important;
+    stroke: #dee2e6 !important;
+    stroke-width: 0.5px;
+}
+
+/* ── Texto dos atributos ── */
+#db-canvas svg text.er.entityLabel,
+#db-modal-canvas svg text.er.entityLabel {
+    font-family: 'Segoe UI', Tahoma, sans-serif !important;
+}
+#db-canvas svg text.er,
+#db-modal-canvas svg text.er {
+    font-family: 'Segoe UI', Tahoma, sans-serif !important;
+    font-size: 12px !important;
+}
+
+/* ── Nomes das colunas (lado esquerdo) ── */
+#db-canvas svg .er.attributeBoxOdd + text,
+#db-modal-canvas svg .er.attributeBoxOdd + text,
+#db-canvas svg .er.attributeBoxEven + text,
+#db-modal-canvas svg .er.attributeBoxEven + text {
+    fill: #2c3e50 !important;
+}
+
+/* ── Linhas de relacionamento ── */
+#db-canvas svg .er.relationshipLine,
+#db-modal-canvas svg .er.relationshipLine {
+    stroke: #7f8c8d !important;
+    stroke-width: 1.5px;
+}
+
+/* ── Labels dos relacionamentos ── */
+#db-canvas svg .er.relationshipLabel text,
+#db-modal-canvas svg .er.relationshipLabel text {
+    font-size: 10px !important;
+    fill: #555 !important;
+    font-family: 'Segoe UI', sans-serif !important;
+}
+
+/* ── Marcadores de cardinalidade (bolinhas/riscos) ── */
+#db-canvas svg marker#ZERO_OR_MORE_START path,
+#db-canvas svg marker#ZERO_OR_MORE_END path,
+#db-canvas svg marker#ONE_OR_MORE_START path,
+#db-canvas svg marker#ONE_OR_MORE_END path,
+#db-modal-canvas svg marker path {
+    fill: #7f8c8d !important;
+    stroke: #7f8c8d !important;
+}
+
+/* ── Tipos de Dados (tipo PK/FK/UK) mostrados em itálico ── */
+#db-canvas svg .er.entityLabel tspan:first-child,
+#db-modal-canvas svg .er.entityLabel tspan:first-child {
+    font-weight: bold;
+}
+
+
+/*============================================================
+  DESIGN SYSTEM — SEIVA PRESENTATION ENGINE (V4 - Premium)
+============================================================*/
+:root {
+  --c-bg: #fafafa;
+  --c-white: #ffffff;
+  --c-green-900: #0a1f16;
+  --c-green-800: #103324;
+  --c-green-700: #164a34;
+  --c-green-600: #1d6e4c;
+  --c-green-500: #269668;
+  --c-green-400: #4ec291;
+  --c-green-100: #d6f2e4;
+  --c-text: #1a1a1a;
+  --c-text-muted: #666666;
+  --c-border: #e6e6e6;
+  
+  --shadow-sm: 0 4px 12px rgba(0,0,0,0.03);
+  --shadow-md: 0 12px 32px rgba(0,0,0,0.06);
+  --shadow-lg: 0 24px 64px rgba(10,31,22,0.12);
+  
+  --radius-lg: 32px;
+  --radius-md: 20px;
+  --radius-sm: 12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--c-bg);
+  color: var(--c-text);
+  overflow: hidden;
+  height: 100vh; width: 100vw;
+  -webkit-font-smoothing: antialiased;
+  /* Reduz tudo (textos, imagens, espaçamentos) na mesma proporção do zoom
+     manual de 70% que antes era necessário — agora já vem correto por padrão. */
+  zoom: 0.7;
+}
+
+/* BACKGROUNDS DINÂMICOS GERAIS */
+.bg-mesh {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  background: radial-gradient(at 0% 0%, rgba(214,242,228,0.4) 0px, transparent 50%),
+              radial-gradient(at 100% 100%, rgba(78,194,145,0.1) 0px, transparent 50%);
+}
+
+/* PROGRESS BAR */
+#progress {
+  position: fixed; top: 0; left: 0; height: 5px; z-index: 9999;
+  background: linear-gradient(90deg, var(--c-green-800), var(--c-green-400));
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* NAV CONTROLS */
+#nav {
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); z-index: 999;
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0,0,0,0.05); box-shadow: var(--shadow-md);
+  border-radius: 100px; padding: 10px 24px;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #d4d4d4; border: none; cursor: pointer; transition: 0.3s; }
+.dot.on { background: var(--c-green-600); width: 28px; border-radius: 8px; }
+.nb { background: none; border: none; color: var(--c-text); cursor: pointer; display: flex; padding: 4px; transition: 0.2s; opacity: 0.5; }
+.nb:hover { transform: scale(1.1); opacity: 1; color: var(--c-green-600); }
+
+/* SLIDE BASE */
+.s {
+  position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(30px) scale(0.98);
+  overflow-y: auto; overflow-x: hidden;
+  padding: 60px 40px 100px 40px;
+}
+.s.on { opacity: 1; pointer-events: all; transform: translateY(0) scale(1); }
+
+/* ANIMAÇÕES DE ENTRADA (REVEAL) */
+.rv { opacity: 0; transform: translateY(40px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
+.rv-scale { opacity: 0; transform: scale(0.9); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
+.s.on .rv, .s.on .rv-scale { opacity: 1; transform: translate(0) scale(1); }
+.d1 { transition-delay: 0.1s; } .d2 { transition-delay: 0.2s; } .d3 { transition-delay: 0.3s; }
+.d4 { transition-delay: 0.4s; } .d5 { transition-delay: 0.5s; } .d6 { transition-delay: 0.6s; }
+
+/* TITULOS GERAIS */
+.title-wrapper { text-align: center; margin-bottom: 60px; width: 100%; }
+.badge { display: inline-block; background: var(--c-green-100); color: var(--c-green-800); padding: 6px 16px; border-radius: 100px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 20px; }
+.section-title { font-family: 'Playfair Display', serif; font-size: 4.5rem; font-weight: 700; color: var(--c-green-900); letter-spacing: -0.02em; line-height: 1.05; }
+.section-sub { font-size: 1.4rem; font-weight: 300; color: var(--c-text-muted); max-width: 800px; margin: 20px auto 0 auto; line-height: 1.5; }
+
+/*============================================================
+   SLIDE 0 — CAPA (PREMIUM REDESIGN)
+============================================================*/
+.capa { 
+  justify-content: center; align-items: center; text-align: center; 
+  background: var(--c-green-900); color: var(--c-white);
+  padding: 0; overflow: hidden;
+}
+/* Fundo dinâmico escuro e elegante da capa */
+.capa::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% -20%, var(--c-green-700) 0%, transparent 60%),
+              radial-gradient(circle at 100% 100%, rgba(78, 194, 145, 0.1) 0%, transparent 50%);
+  z-index: -1;
+}
+.capa-content {
+  display: flex; flex-direction: column; align-items: center; gap: 24px; z-index: 2; width: 100%; max-width: 1200px;
+}
+.capa-brand {
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+}
+.capa-logo-wrap {
+  position: relative;
+}
+.capa-logo-wrap::after {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 250px; height: 250px; background: var(--c-green-400); border-radius: 50%;
+  filter: blur(100px); opacity: 0.3; z-index: -1;
+}
+.capa-logo { width: 460px; filter: brightness(0) invert(1) drop-shadow(0 20px 40px rgba(0,0,0,0.5)); }
+
+.capa-divider {
+  width: 1px; height: 80px; background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.3), transparent);
+}
+
+.capa-footer {
+  display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 40px; width: 100%;
+  background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px); border-radius: var(--radius-lg); padding: 40px 50px;
+}
+.capa-footer-col { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.capa-footer-col:not(:last-child) { border-right: 1px solid rgba(255,255,255,0.08); }
+.capa-footer-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: var(--c-green-400); margin-bottom: 12px; }
+.capa-footer-text { font-size: 1.15rem; font-weight: 300; color: rgba(255,255,255,0.9); line-height: 1.6; }
+.capa-footer-text strong { font-weight: 600; color: white; }
+
+/*============================================================
+   SLIDE 1 — SUMÁRIO
+============================================================*/
+.sumario { justify-content: center; align-items: center; }
+.sum-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; max-width: 1100px; width: 100%; }
+.sum-card {
+  background: var(--c-white); padding: 32px 40px; border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm); border: 1px solid var(--c-border);
+  display: flex; align-items: center; gap: 24px; cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sum-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-lg); border-color: var(--c-green-400); }
+.sum-num { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 700; color: var(--c-green-100); -webkit-text-stroke: 1px var(--c-green-500); }
+.sum-txt { font-size: 1.4rem; font-weight: 600; color: var(--c-green-900); }
+
+/*============================================================
+   SLIDE 2 — PROBLEMÁTICA
+============================================================*/
+.prob { justify-content: center; align-items: center; }
+.prob-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; max-width: 1300px; width: 100%; }
+.prob-card {
+  background: var(--c-white); padding: 60px 40px; border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md); border: 1px solid var(--c-border);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  transition: 0.4s;
+}
+.prob-card:hover { transform: translateY(-10px); box-shadow: var(--shadow-lg); }
+.prob-num {
+  font-family: 'Playfair Display', serif; font-size: 6.5rem; font-weight: 700; line-height: 1; margin-bottom: 24px;
+  color: var(--c-green-700); letter-spacing: -0.05em;
+}
+.prob-num span { font-size: 3.5rem; color: var(--c-green-400); }
+.prob-desc { font-size: 1.25rem; font-weight: 400; color: var(--c-text); line-height: 1.6; margin-bottom: 32px; flex: 1; }
+.prob-src { font-size: 0.8rem; font-weight: 700; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: 0.1em; background: var(--c-bg); padding: 8px 16px; border-radius: 100px; }
+
+/*============================================================
+   SLIDE 3 — FRICÇÕES
+============================================================*/
+.fric { justify-content: center; align-items: center; }
+.fric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; max-width: 1200px; width: 100%; }
+.fric-card {
+  background: var(--c-white); border-radius: var(--radius-lg); padding: 40px;
+  box-shadow: var(--shadow-md); border: 1px solid var(--c-border);
+  display: flex; flex-direction: column; gap: 20px;
+  transition: 0.4s;
+}
+.fric-card:hover { transform: scale(1.02); border-color: var(--c-green-400); }
+.fric-icon-box {
+  width: 64px; height: 64px; border-radius: 16px; background: #fff1f2; color: #e11d48;
+  display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
+}
+.fric-q { font-size: 1.5rem; font-weight: 700; color: var(--c-green-900); line-height: 1.3; }
+.fric-a { font-size: 1.15rem; color: var(--c-text-muted); font-weight: 400; line-height: 1.6; }
+
+/*============================================================
+   SLIDE 4 — SOLUÇÃO
+============================================================*/
+.sol { justify-content: center; align-items: center; }
+.sol-layout { display: grid; grid-template-columns: 1fr 1.3fr; gap: 80px; max-width: 1400px; width: 100%; align-items: center; }
+.sol-content { display: flex; flex-direction: column; gap: 32px; }
+.sol-item { display: flex; gap: 24px; align-items: flex-start; }
+.sol-item-icon {
+  width: 56px; height: 56px; border-radius: 16px; background: var(--c-green-100); color: var(--c-green-700);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sol-item-text { font-size: 1.35rem; font-weight: 400; color: var(--c-text); line-height: 1.5; padding-top: 10px; }
+.sol-item-text strong { color: var(--c-green-800); font-weight: 700; }
+
+.sol-images { position: relative; height: 650px; width: 100%; display: flex; align-items: center; justify-content: center; }
+.sol-img-main { width: 90%; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 2; position: relative; transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1); border: 8px solid white; }
+.sol-img-sub { position: absolute; width: 65%; border-radius: var(--radius-md); box-shadow: var(--shadow-md); z-index: 3; border: 6px solid white; transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+.sol-img-sub.left { bottom: 5%; left: -10%; }
+.sol-img-sub.right { top: 5%; right: -10%; }
+.sol-images:hover .sol-img-main { transform: scale(1.03); }
+.sol-images:hover .sol-img-sub.left { transform: translate(-20px, 20px) scale(1.05); }
+.sol-images:hover .sol-img-sub.right { transform: translate(20px, -20px) scale(1.05); }
+
+/*============================================================
+   SLIDE 5 — PROTÓTIPO
+============================================================*/
+.proto { justify-content: center; align-items: center; background: var(--c-green-900); text-align: center; }
+.proto .title-wrapper { margin-bottom: 0; }
+.proto .section-title { color: white; font-size: 6rem; margin-top: 32px; }
+.proto .section-sub { color: var(--c-green-400); font-size: 2rem; font-weight: 400; }
+.proto-icon { color: var(--c-green-400); width: 140px; height: 140px; stroke-width: 1; animation: float 4s infinite alternate; }
+
+/*============================================================
+   SLIDES DE REQUISITOS
+============================================================*/
+.req { align-items: center; }
+.req-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1400px; width: 100%; }
+.req-card {
+  background: var(--c-white); padding: 40px 32px; border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm); border: 1px solid var(--c-border);
+  display: flex; flex-direction: column; transition: 0.4s;
+}
+.req-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-md); border-color: var(--c-green-400); }
+.req-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.req-id { font-family: 'JetBrains Mono', monospace; font-size: 1.15rem; font-weight: 800; color: var(--c-text); }
+.req-badge { padding: 6px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; }
+.req-badge.essencial { background: #fee2e2; color: #b91c1c; }
+.req-badge.importante { background: #fef3c7; color: #b45309; }
+.req-title { font-size: 1.4rem; font-weight: 800; color: var(--c-green-900); margin-bottom: 12px; line-height: 1.3; }
+.req-desc { font-size: 1.1rem; font-weight: 400; color: var(--c-text-muted); line-height: 1.6; }
+
+.req-card.rnf { border-top: 6px solid var(--c-green-500); }
+
+/*============================================================
+   SLIDE 10 — CASO DE USO
+============================================================*/
+.uc { align-items: center; }
+.uc-content { display: flex; flex-direction: column; align-items: center; gap: 50px; max-width: 1100px; width: 100%; }
+.uc-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; width: 100%; }
+.uc-item {
+  display: flex; gap: 20px; align-items: flex-start; background: var(--c-white); padding: 20px 24px;
+  border-radius: var(--radius-md); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm);
+}
+.uc-code { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 800; color: var(--c-green-800); background: var(--c-green-100); padding: 6px 10px; border-radius: 6px; }
+.uc-txt-title { font-weight: 800; font-size: 1.2rem; color: var(--c-green-900); margin-bottom: 6px; }
+.uc-txt-desc { font-size: 1.05rem; font-weight: 400; color: var(--c-text-muted); line-height: 1.5; }
+
+.btn-open-pdf {
+  background: var(--c-green-900); color: white; border: none; padding: 20px 48px; border-radius: 100px;
+  font-size: 1.25rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 16px;
+  box-shadow: var(--shadow-md); transition: 0.3s;
+}
+.btn-open-pdf:hover { background: var(--c-green-600); transform: scale(1.05); }
+
+/* MODAL PDF */
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(16px);
+  z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: 0.4s;
+}
+.modal.on { opacity: 1; pointer-events: all; }
+.modal-content { width: 95vw; height: 90vh; background: white; border-radius: var(--radius-lg); overflow: hidden; position: relative; display: flex; flex-direction: column; box-shadow: 0 40px 100px rgba(0,0,0,0.5);}
+.modal-header { padding: 20px 32px; background: var(--c-bg); border-bottom: 1px solid var(--c-border); display: flex; justify-content: space-between; align-items: center; }
+.btn-close { background: #e11d48; color: white; border: none; padding: 10px 24px; border-radius: 100px; font-weight: 800; cursor: pointer; font-size: 0.9rem; letter-spacing: 0.1em; }
+
+/*============================================================
+   SLIDE 11 — REFERÊNCIAS
+============================================================*/
+.ref { justify-content: center; align-items: center; text-align: center; }
+.ref-list { display: flex; flex-direction: column; gap: 24px; max-width: 1000px; width: 100%; }
+.ref-item {
+  background: var(--c-white); padding: 32px 40px; border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm); border: 1px solid var(--c-border); text-align: left;
+}
+.ref-item p { font-size: 1.25rem; font-weight: 400; color: var(--c-text); line-height: 1.6; }
+.ref-item strong { color: var(--c-green-900); font-weight: 800; }
+.ref-item a { color: var(--c-green-600); text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 1.1rem; }
+.ref-item a:hover { text-decoration: underline; color: var(--c-green-500); }
+
+/*============================================================
+   SLIDE 12 — ENCERRAMENTO (RAÍZES DE LUZ)
+   Cena única: linhas orgânicas "crescem" da base até convergir
+   num ponto de luz que revela a marca. Sem dependência de vídeo.
+============================================================*/
+.encerramento {
+  justify-content: center; align-items: center; text-align: center;
+  background: var(--c-green-900); padding: 0; overflow: hidden;
+}
+.encerramento::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background: radial-gradient(circle at 50% 88%, var(--c-green-700) 0%, transparent 55%),
+              radial-gradient(circle at 50% 18%, rgba(78,194,145,0.14) 0%, transparent 60%);
+}
+
+/* Traçado das "raízes" que sobem e convergem no ponto da logo */
+.enc-svg { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; }
+.enc-path {
+  fill: none; stroke: url(#rootGrad); stroke-width: 3; stroke-linecap: round;
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+  filter: drop-shadow(0 0 6px rgba(78,194,145,0.35));
+}
+.s.on.encerramento .enc-path { animation: enc-draw 1.6s cubic-bezier(0.65,0,0.35,1) forwards; }
+.s.on.encerramento .p0 { animation-delay: .2s; }
+.s.on.encerramento .p1 { animation-delay: .5s; }
+.s.on.encerramento .p2 { animation-delay: .6s; }
+.s.on.encerramento .p3 { animation-delay: .9s; }
+.s.on.encerramento .p4 { animation-delay: .95s; }
+@keyframes enc-draw { to { stroke-dashoffset: 0; } }
+
+.enc-bud {
+  fill: var(--c-green-100); opacity: 0;
+  filter: drop-shadow(0 0 10px rgba(214,242,228,0.8));
+}
+.s.on.encerramento .enc-bud { animation: enc-bud-pop .6s ease forwards; }
+.s.on.encerramento .b0 { animation-delay: 1.75s; }
+.s.on.encerramento .b1 { animation-delay: 1.95s; }
+.s.on.encerramento .b2 { animation-delay: 2.05s; }
+.s.on.encerramento .b3 { animation-delay: 2.2s; }
+.s.on.encerramento .b4 { animation-delay: 2.25s; }
+@keyframes enc-bud-pop {
+  0% { opacity: 0; transform: scale(0); }
+  60% { opacity: 1; transform: scale(1.4); }
+  100% { opacity: .85; transform: scale(1); }
+}
+
+.enc-burst { opacity: 0; transform-origin: 500px 380px; transform: scale(.2); }
+.s.on.encerramento .enc-burst { animation: enc-burst-pulse 1.5s ease-out forwards; animation-delay: 1.85s; }
+@keyframes enc-burst-pulse {
+  0% { opacity: 0; transform: scale(.2); }
+  35% { opacity: .9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+
+/* Partículas de luz subindo, como sementes — textura ambiente sutil */
+.enc-particles { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.enc-particles span {
+  position: absolute; bottom: -20px; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--c-green-100); opacity: 0;
+  box-shadow: 0 0 8px 2px rgba(214,242,228,0.6);
+}
+.enc-particles span:nth-child(1) { left: 22%; }
+.enc-particles span:nth-child(2) { left: 38%; }
+.enc-particles span:nth-child(3) { left: 50%; }
+.enc-particles span:nth-child(4) { left: 63%; }
+.enc-particles span:nth-child(5) { left: 76%; }
+.enc-particles span:nth-child(6) { left: 32%; }
+.s.on.encerramento .enc-particles span { animation: enc-float 7s ease-in-out infinite; }
+.s.on.encerramento .enc-particles span:nth-child(1) { animation-delay: 2.4s; }
+.s.on.encerramento .enc-particles span:nth-child(2) { animation-delay: 3.2s; }
+.s.on.encerramento .enc-particles span:nth-child(3) { animation-delay: 2.7s; }
+.s.on.encerramento .enc-particles span:nth-child(4) { animation-delay: 3.9s; }
+.s.on.encerramento .enc-particles span:nth-child(5) { animation-delay: 3.5s; }
+.s.on.encerramento .enc-particles span:nth-child(6) { animation-delay: 4.4s; }
+@keyframes enc-float {
+  0% { transform: translateY(0) scale(.6); opacity: 0; }
+  15% { opacity: .75; }
+  100% { transform: translateY(-620px) scale(1.1); opacity: 0; }
+}
+
+/* Conteúdo central: logo, slogan, agradecimento */
+.enc-content { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 26px; }
+
+.enc-logo-wrap { position: relative; }
+.enc-logo-wrap::after {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 220px; height: 220px; background: var(--c-green-400); border-radius: 50%;
+  filter: blur(90px); opacity: 0;
+}
+.s.on.encerramento .enc-logo-wrap::after { animation: enc-glow 2s ease forwards; animation-delay: 2.15s; }
+@keyframes enc-glow { to { opacity: .45; } }
+
+.enc-logo {
+  width: 260px; opacity: 0; transform: scale(.7);
+  filter: brightness(0) invert(1) drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+}
+.s.on.encerramento .enc-logo { animation: enc-logo-in 1.1s cubic-bezier(0.16,1,0.3,1) forwards; animation-delay: 2.15s; }
+@keyframes enc-logo-in { to { opacity: 1; transform: scale(1); } }
+
+.enc-slogan {
+  font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 600;
+  color: var(--c-white); line-height: 1.25; max-width: 720px;
+  opacity: 0; transform: translateY(24px);
+}
+.s.on.encerramento .enc-slogan { animation: enc-rise 1s cubic-bezier(0.16,1,0.3,1) forwards; animation-delay: 3s; }
+.enc-slogan em {
+  font-style: normal;
+  background: linear-gradient(90deg, var(--c-green-400), var(--c-green-100));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+@keyframes enc-rise { to { opacity: 1; transform: translateY(0); } }
+
+.enc-divider { width: 40px; height: 1px; background: rgba(255,255,255,0.25); opacity: 0; }
+.s.on.encerramento .enc-divider { animation: enc-rise 1s ease forwards; animation-delay: 3.5s; }
+
+.enc-thanks {
+  font-size: 1.05rem; letter-spacing: 0.06em; font-weight: 500;
+  color: rgba(255,255,255,0.6); opacity: 0; transform: translateY(24px);
+}
+.s.on.encerramento .enc-thanks { animation: enc-rise 1s ease forwards; animation-delay: 3.7s; }
+
+/*============================================================
+   CAPA — SEIVA TEXT + LOGO GLOW REFORÇADO
+============================================================*/
+.capa-seiva-text {
+  font-family: 'Playfair Display', serif; font-size: 6rem; font-weight: 700;
+  color: rgba(255,255,255,0.95); letter-spacing: 0.25em; text-transform: uppercase;
+  margin-top: -8px; margin-bottom: 10px;
+  text-shadow: 0 0 80px rgba(78, 194, 145, 0.4), 0 0 160px rgba(78, 194, 145, 0.15);
+}
+.capa-logo-wrap::after {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 400px; height: 400px; background: var(--c-green-400); border-radius: 50%;
+  filter: blur(120px); opacity: 0.35; z-index: -1;
+  animation: pulse-glow 4s ease-in-out infinite alternate;
+}
+@keyframes pulse-glow {
+  0% { opacity: 0.25; transform: translate(-50%, -50%) scale(0.9); }
+  100% { opacity: 0.45; transform: translate(-50%, -50%) scale(1.15); }
+}
+
+/*============================================================
+   REQUISITOS — EFEITO SPOTLIGHT (CLICK TO FOCUS)
+============================================================*/
+.req-grid.has-focus .req-card {
+  filter: blur(4px) saturate(0.3);
+  opacity: 0.4;
+  transform: scale(0.95);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.req-grid.has-focus .req-card.focused {
+  filter: none;
+  opacity: 1;
+  transform: scale(1.08);
+  z-index: 50;
+  box-shadow: 0 30px 80px rgba(10,31,22,0.25);
+  border-color: var(--c-green-400);
+}
+
+/*============================================================
+   MELHORIAS DE LEGIBILIDADE (AUDITÓRIO)
+============================================================*/
+.prob-num { font-size: 7rem; }
+.fric-q { font-size: 1.7rem; }
+.fric-a { font-size: 1.25rem; }
+.req-title { font-size: 1.5rem; }
+.req-desc { font-size: 1.15rem; }
+.uc-txt-title { font-size: 1.3rem; }
+.uc-txt-desc { font-size: 1.15rem; }
+.section-title { font-size: 4.8rem; }
+.section-sub { font-size: 1.5rem; }
+
+/*============================================================
+   SUMÁRIO MELHORADO
+============================================================*/
+.sum-card { padding: 36px 44px; }
+.sum-num { font-size: 3.5rem; }
+.sum-txt { font-size: 1.5rem; }
+.sum-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+  background: linear-gradient(to bottom, var(--c-green-600), var(--c-green-400));
+  border-radius: 0 4px 4px 0; transform: scaleY(0); transition: 0.4s; transform-origin: center;
+}
+.sum-card:hover::before { transform: scaleY(1); }
+.sum-card { position: relative; overflow: hidden; }
+
+/*============================================================
+   ANIMAÇÃO FLOAT GLOBAL
+============================================================*/
+@keyframes float {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-12px); }
+}
+
+/*============================================================
+   SLIDES 11-13 — DIAGRAMA, BANCO DE DADOS, RASTREABILIDADE
+============================================================*/
+.diagram-slide { align-items: center; padding-top: 40px !important; }
+.filter-bar {
+  display: flex; gap: 12px; justify-content: center; align-items: center;
+  margin-bottom: 18px; flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 12px 28px; border: 2px solid var(--c-border); border-radius: 100px;
+  background: var(--c-white); font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem; font-weight: 700; color: var(--c-text-muted);
+  cursor: pointer; transition: all 0.3s;
+}
+.filter-btn:hover { border-color: var(--c-green-400); color: var(--c-green-700); }
+.filter-btn.active { background: var(--c-green-900); color: white; border-color: var(--c-green-900); }
+.pz-wrap {
+  width: 100%; flex: 1; position: relative; overflow: hidden;
+  border-radius: var(--radius-lg); background: #f8faf9;
+  border: 1px solid var(--c-border); cursor: grab; min-height: 400px;
+}
+.pz-wrap:active { cursor: grabbing; }
+.pz-canvas { transform-origin: 0 0; display: inline-block; min-width: 100%; }
+.pz-canvas svg { display: block; max-width: none !important; height: auto !important; }
+.zoom-bar {
+  position: absolute; bottom: 18px; right: 18px;
+  display: flex; gap: 6px; z-index: 20;
+}
+.zoom-bar button {
+  width: 40px; height: 40px; border-radius: 12px;
+  border: 1px solid var(--c-border); background: white;
+  font-size: 1.3rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm); transition: 0.2s;
+  font-family: 'Outfit', sans-serif; color: var(--c-green-900);
+}
+.zoom-bar button:hover { background: var(--c-green-100); transform: scale(1.08); }
+.detail-panel {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(10px); z-index: 11000;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: 0.35s;
+}
+.detail-panel.on { opacity: 1; pointer-events: all; }
+.detail-card {
+  background: white; border-radius: var(--radius-lg);
+  box-shadow: 0 40px 100px rgba(0,0,0,0.4);
+  max-width: 560px; width: 92vw; max-height: 85vh;
+  overflow-y: auto; animation: detailIn 0.35s;
+}
+@keyframes detailIn {
+  from { transform: scale(0.85) translateY(40px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+.detail-hdr {
+  padding: 20px 24px; color: white; font-size: 1.3rem; font-weight: 800;
+  display: flex; justify-content: space-between; align-items: center;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.detail-hdr .d-close {
+  background: rgba(255,255,255,0.2); border: none; color: white;
+  padding: 6px 14px; border-radius: 8px; cursor: pointer;
+  font-weight: 700; font-size: 0.85rem; transition: 0.2s;
+}
+.detail-hdr .d-close:hover { background: rgba(255,255,255,0.35); }
+.detail-rf {
+  font-size: 0.7rem; background: rgba(255,255,255,0.25);
+  padding: 3px 10px; border-radius: 6px; font-weight: 700; margin-left: 10px;
+}
+.detail-body { padding: 20px 24px; }
+.detail-section-title {
+  font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--c-text-muted);
+  margin-top: 14px; margin-bottom: 6px; padding-top: 10px;
+  border-top: 1px dashed var(--c-border);
+}
+.detail-section-title:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.detail-attr, .detail-method {
+  font-family: 'Courier New', monospace; font-size: 0.78rem;
+  line-height: 1.6; color: #374151; padding: 1px 0;
+}
+.detail-method { color: var(--c-green-700); }
+.trace { align-items: center; }
+.trace-wrapper {
+  max-width: 1450px; width: 100%; overflow-x: auto;
+  border-radius: var(--radius-md); box-shadow: var(--shadow-md);
+  border: 1px solid var(--c-border); background: white;
+}
+.trace-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.trace-table th {
+  background: var(--c-green-900); color: white; padding: 14px 12px;
+  text-align: left; font-weight: 700; font-size: 0.8rem;
+  letter-spacing: 0.05em; white-space: nowrap; position: sticky; top: 0;
+}
+.trace-table td {
+  padding: 12px; border-bottom: 1px solid #f3f4f6;
+  vertical-align: top; line-height: 1.5;
+}
+.trace-table tr:hover td { background: #f0fdf4; }
+.trace-table .trf {
+  font-family: 'Courier New', monospace; font-weight: 800;
+  color: var(--c-green-800); white-space: nowrap;
+}
+.trace-table .trd { font-weight: 600; color: var(--c-green-900); white-space: nowrap; }
+.trace-table .trc { font-family: 'Courier New', monospace; font-size: 0.78rem; color: #374151; }
+.tb-e {
+  display: inline-block; background: #fee2e2; color: #b91c1c;
+  font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 100px;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.tb-i {
+  display: inline-block; background: #fef3c7; color: #b45309;
+  font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 100px;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.diagram-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(16px); z-index: 10000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: 0.4s;
+}
+.diagram-modal.on { opacity: 1; pointer-events: all; }
+.dm-content {
+  width: 100vw; height: 100vh; background: var(--c-bg);
+  border-radius: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: none;
+}
+.dm-header {
+  padding: 8px 24px; background: var(--c-green-900);
+  border-bottom: none;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-shrink: 0;
+}
+.dm-header h3 { color: #fff !important; font-size: 1.1rem !important; }
+.dm-header .filter-btn { 
+  color: #fff; border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+  padding: 6px 16px; font-size: 0.8rem;
+}
+.dm-header .filter-btn.active { background: rgba(255,255,255,0.25); }
+.dm-header .btn-close {
+  color: #fff; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+  padding: 6px 18px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.8rem;
+}
+.dm-header .btn-close:hover { background: rgba(255,255,255,0.3); }
+.dm-body {
+  position: relative; overflow: hidden; flex: 1; cursor: grab; background: #f8faf9;
+}
+.dm-body:active { cursor: grabbing; }
+.dm-body .pz-canvas { min-width: auto; }
+
+
+/*============================================================
+   MERMAID SVG STYLES & ISOLATION MODE
+============================================================*/
+
+/* Standardize SVG display for pan/zoom */
+.pz-canvas svg {
+  display: block;
+  overflow: visible !important;
+}
+
+/* Nuke ALL clip paths to completely stop Mermaid from truncating text */
+.pz-canvas svg * {
+  clip-path: none !important;
+}
+
+/* Mermaid class box text styles */
+.pz-canvas svg text {
+  overflow: visible !important;
+}
+.pz-canvas svg .classTitle text,
+.pz-canvas svg .classTitle tspan {
+  font-weight: 700 !important;
+}
+
+/* Cluster (namespace) backgrounds — colour-coded */
+.pz-canvas svg .cluster rect {
+  stroke-width: 2px !important;
+  filter: none !important;
+}
+.pz-canvas svg g.cluster:nth-of-type(1) > rect  { fill: #eff6ff !important; stroke: #93c5fd !important; }
+.pz-canvas svg g.cluster:nth-of-type(2) > rect  { fill: #fef2f2 !important; stroke: #fca5a5 !important; }
+.pz-canvas svg g.cluster:nth-of-type(3) > rect  { fill: #ecfdf5 !important; stroke: #6ee7b7 !important; }
+.pz-canvas svg g.cluster:nth-of-type(4) > rect  { fill: #fefce8 !important; stroke: #fde047 !important; }
+.pz-canvas svg g.cluster:nth-of-type(5) > rect  { fill: #fdf4ff !important; stroke: #d8b4fe !important; }
+.pz-canvas svg g.cluster:nth-of-type(6) > rect  { fill: #fff7ed !important; stroke: #fdba74 !important; }
+.pz-canvas svg g.cluster:nth-of-type(7) > rect  { fill: #f0fdfa !important; stroke: #5eead4 !important; }
+.pz-canvas svg g.cluster:nth-of-type(8) > rect  { fill: #faf5ff !important; stroke: #c4b5fd !important; }
+.pz-canvas svg .cluster span,
+.pz-canvas svg .cluster .nodeLabel,
+.pz-canvas svg .cluster-label text,
+.pz-canvas svg .cluster-label span {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.06em !important;
+  fill: var(--c-green-900) !important;
+}
+
+/* SPOTLIGHT DIMMING — when a node is focused, fade everything else */
+.pz-canvas svg { transition: opacity 0.3s; }
+.pz-canvas.diagram-focused svg .classGroup,
+.pz-canvas.diagram-focused svg .er.entityBox,
+.pz-canvas.diagram-focused svg .edgePaths,
+.pz-canvas.diagram-focused svg .edgeLabel,
+.pz-canvas.diagram-focused svg .cluster {
+  opacity: 0.08 !important;
+  transition: opacity 0.4s ease;
+}
+.pz-canvas.diagram-focused svg .node-focused,
+.pz-canvas.diagram-focused svg .node-focused * {
+  opacity: 1 !important;
+  transition: opacity 0.4s ease;
+  filter: drop-shadow(0 16px 32px rgba(0,0,0,0.4));
+}
+
+/* Modal body pan/zoom container */
+.dm-body { position: relative; overflow: hidden; flex: 1; cursor: grab; background: #f8faf9; }
+.dm-body:active { cursor: grabbing; }
+.dm-body .pz-canvas { transform-origin: 0 0; display: inline-block; min-width: auto; }
+.dm-body .zoom-bar { position: absolute; bottom: 18px; right: 18px; display: flex; gap: 6px; z-index: 20; }
+
+/*============================================================
+   CLASS SPOTLIGHT MODAL (large readable card on click)
+============================================================*/
+.class-spotlight-overlay {
+  position: fixed; inset: 0;
+  background: rgba(10, 31, 22, 0.75);
+  backdrop-filter: blur(18px);
+  z-index: 20000;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.class-spotlight-overlay.on {
+  opacity: 1; pointer-events: all;
+}
+.class-spotlight-card {
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 48px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08);
+  width: min(820px, 92vw);
+  max-height: 88vh;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  animation: spotlightIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes spotlightIn {
+  from { transform: scale(0.88) translateY(32px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+.class-spotlight-header {
+  background: linear-gradient(135deg, var(--c-green-900) 0%, var(--c-green-700) 100%);
+  padding: 28px 36px;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-shrink: 0;
+}
+.class-spotlight-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2rem; font-weight: 800;
+  color: #ffffff; letter-spacing: -0.02em;
+}
+.class-spotlight-rf {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--c-green-400);
+  margin-top: 4px;
+}
+.class-spotlight-close {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white; border-radius: 12px;
+  padding: 10px 20px; cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  transition: 0.2s;
+}
+.class-spotlight-close:hover { background: rgba(255,255,255,0.28); }
+.class-spotlight-body {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0; overflow-y: auto; flex: 1;
+}
+.class-spotlight-section {
+  padding: 28px 32px;
+  border-right: 1px solid #f0f4f2;
+}
+.class-spotlight-section:last-child { border-right: none; }
+.class-spotlight-section-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.68rem; font-weight: 800; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--c-green-600);
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.class-spotlight-section-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--c-green-100);
+}
+.class-spotlight-item {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem; line-height: 2;
+  color: #374151; padding: 2px 0;
+  border-bottom: 1px solid #f9fafb;
+  white-space: pre-wrap; word-break: break-word;
+}
+.class-spotlight-item.private { color: #b91c1c; }
+.class-spotlight-item.public  { color: #166534; }
+.class-spotlight-item.constructor { color: #1e40af; font-weight: 700; }
+
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+<div id="progress" style="width:0%"></div>
+
+<div id="slides-container">
+
+  <!-- ═══════ 0. CAPA (NOVA) ═══════ -->
+  <section class="s on capa" data-s="0">
+    <div class="capa-content">
+      <div class="capa-brand">
+        <div class="capa-logo-wrap rv-scale d1">
+          <img src="public/seiva-logo.png" alt="SEIVA" class="capa-logo" onerror="this.src='docs/logo seiva.png'">
+        </div>
+        <h1 class="capa-seiva-text rv d2">SEIVA</h1>
+      </div>
+      
+      <div class="capa-divider rv d3"></div>
+      
+      <div class="capa-footer rv d4">
+        <div class="capa-footer-col">
+          <div class="capa-footer-label">Projeto Integrador</div>
+          <div class="capa-footer-text"><strong>ADS 4º Período</strong><br>IFBA Campus Eunápolis (2026)</div>
+        </div>
+        <div class="capa-footer-col">
+          <div class="capa-footer-label">Equipe de Desenvolvimento</div>
+          <div class="capa-footer-text">Ian Marcos • Jhon Abner • Maria Eduarda<br>Quételi Tourinho • Victor Hugo</div>
+        </div>
+        <div class="capa-footer-col">
+          <div class="capa-footer-label">Orientação</div>
+          <div class="capa-footer-text">Prof. <strong>Júlio Oliveira</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 1. SUMÁRIO ═══════ -->
+  <section class="s sumario" data-s="1">
+    <div class="title-wrapper rv">
+      <span class="badge">Roteiro</span>
+      <h2 class="section-title">Sumário</h2>
+    </div>
+    <div class="sum-grid">
+      <div class="sum-card rv d1" onclick="go(2)"><span class="sum-num">01</span><span class="sum-txt">Problemática</span></div>
+      <div class="sum-card rv d2" onclick="go(3)"><span class="sum-num">02</span><span class="sum-txt">Fricções do Casal</span></div>
+      <div class="sum-card rv d3" onclick="go(4)"><span class="sum-num">03</span><span class="sum-txt">A Solução SEIVA</span></div>
+      <div class="sum-card rv d4" onclick="go(5)"><span class="sum-num">04</span><span class="sum-txt">Demonstração (Protótipo)</span></div>
+      <div class="sum-card rv d5" onclick="go(6)"><span class="sum-num">05</span><span class="sum-txt">Requisitos Funcionais</span></div>
+      <div class="sum-card rv d6" onclick="go(8)"><span class="sum-num">06</span><span class="sum-txt">Requisitos Não Funcionais</span></div>
+      <div class="sum-card rv d6" onclick="go(10)"><span class="sum-num">07</span><span class="sum-txt">Casos de Uso</span></div>
+      <div class="sum-card rv d6" onclick="go(11)"><span class="sum-num">08</span><span class="sum-txt">Diagrama de Classes</span></div>
+      <div class="sum-card rv d6" onclick="go(12)"><span class="sum-num">09</span><span class="sum-txt">Banco de Dados</span></div>
+      <div class="sum-card rv d6" onclick="go(13)"><span class="sum-num">10</span><span class="sum-txt">Rastreabilidade</span></div>
+      <div class="sum-card rv d6" onclick="go(14)"><span class="sum-num">11</span><span class="sum-txt">Referências</span></div>
+    </div>
+  </section>
+
+  <!-- ═══════ 2. PROBLEMÁTICA ═══════ -->
+  <section class="s prob" data-s="2">
+    <div class="title-wrapper rv">
+      <span class="badge">O Cenário</span>
+      <h2 class="section-title">A crise financeira nas relações</h2>
+      <p class="section-sub">A desorganização financeira não afeta apenas os orçamentos — ela é uma das principais causas de destruição de relacionamentos no Brasil.</p>
+    </div>
+    <div class="prob-grid">
+      <div class="prob-card rv d1">
+        <div class="prob-num">78,9<span>%</span></div>
+        <div class="prob-desc">das famílias brasileiras encerraram 2025 com algum tipo de dívida ativa.</div>
+        <div class="prob-src">CNC — PEIC</div>
+      </div>
+      <div class="prob-card rv d2">
+        <div class="prob-num">60<span>%</span></div>
+        <div class="prob-desc">dos divórcios no Brasil são causados diretamente por problemas financeiros.</div>
+        <div class="prob-src">IBGE, 2018</div>
+      </div>
+      <div class="prob-card rv d3">
+        <div class="prob-num">53<span>%</span></div>
+        <div class="prob-desc">apontam o dinheiro como o principal motivo de brigas amorosas constantes.</div>
+        <div class="prob-src">Serasa / Opinion Box</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 3. FRICÇÕES ═══════ -->
+  <section class="s fric" data-s="3">
+    <div class="title-wrapper rv">
+      <span class="badge">Dores Reais</span>
+      <h2 class="section-title">Fricções do Dia a Dia</h2>
+      <p class="section-sub">Situações rotineiras que se transformam em desgaste e ressentimento quando não há um sistema claro.</p>
+    </div>
+    <div class="fric-grid">
+      <div class="fric-card rv d1">
+        <div class="fric-icon-box"><i data-feather="eye-off"></i></div>
+        <div class="fric-q">"Você gastou quanto nisso?"</div>
+        <div class="fric-a">Gera sentimento de julgamento, constrangimento e perda irreversível da individualidade financeira.</div>
+      </div>
+      <div class="fric-card rv d2">
+        <div class="fric-icon-box"><i data-feather="pie-chart"></i></div>
+        <div class="fric-q">Dividir contas 50/50 com rendas diferentes</div>
+        <div class="fric-a">Cria uma sensação constante de injustiça e sobrecarga severa para o parceiro que ganha menos.</div>
+      </div>
+      <div class="fric-card rv d3">
+        <div class="fric-icon-box"><i data-feather="target"></i></div>
+        <div class="fric-q">Sonhos sem acompanhamento conjunto</div>
+        <div class="fric-a">Resulta no abandono de metas, frustração mútua e estagnação financeira do casal no longo prazo.</div>
+      </div>
+      <div class="fric-card rv d4">
+        <div class="fric-icon-box"><i data-feather="message-square"></i></div>
+        <div class="fric-q">Cobrar o parceiro por conta atrasada</div>
+        <div class="fric-a">Provoca tensão e atrito imediatos, forçando um dos parceiros ao papel indesejado de "cobrador".</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 4. SOLUÇÃO ═══════ -->
+  <section class="s sol" data-s="4">
+    <div class="sol-layout">
+      <div class="sol-content">
+        <div class="title-wrapper rv" style="text-align: left; margin-bottom: 0;">
+          <span class="badge">Nossa Resposta</span>
+          <h2 class="section-title">A Solução SEIVA</h2>
+        </div>
+        
+        <div class="sol-item rv d1">
+          <div class="sol-item-icon"><i data-feather="users"></i></div>
+          <div class="sol-item-text">Um sistema de gestão financeira pessoal e compartilhada, construído exclusivamente para <strong>quem divide a vida com alguém</strong>.</div>
+        </div>
+        
+        <div class="sol-item rv d2">
+          <div class="sol-item-icon"><i data-feather="lock"></i></div>
+          <div class="sol-item-text">A <strong>Caixa Preta</strong> protege a privacidade individual com criptografia de ponta, acabando com o julgamento de gastos pessoais.</div>
+        </div>
+        
+        <div class="sol-item rv d3">
+          <div class="sol-item-icon"><i data-feather="home"></i></div>
+          <div class="sol-item-text">O <strong>Lar</strong> centraliza as contas comuns, dividindo as despesas de forma inteligente e acompanhando os objetivos do casal.</div>
+        </div>
+        
+        <div class="sol-item rv d4">
+          <div class="sol-item-icon"><i data-feather="bell"></i></div>
+          <div class="sol-item-text">O <strong>Cobrador Diplomata</strong> automatiza as notificações, removendo o atrito desgastante na hora de cobrar pendências.</div>
+        </div>
+      </div>
+      
+      <div class="sol-images rv-scale d5">
+        <img src="dashboard.png" alt="Painel Pessoal" class="sol-img-sub left" onerror="this.style.display='none'">
+        <img src="lar-inicio.png" alt="Tela do Lar" class="sol-img-main" onerror="this.src='dashboard.png'">
+        <img src="acordos.png" alt="Acordos" class="sol-img-sub right" onerror="this.style.display='none'">
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 5. PROTÓTIPO ═══════ -->
+  <section class="s proto" data-s="5">
+    <div class="title-wrapper rv">
+      <i data-feather="monitor" class="proto-icon"></i>
+      <h2 class="section-title">Demonstração Prática</h2>
+      <p class="section-sub">Exploração em tempo real da interface e funcionalidades do SEIVA.</p>
+    </div>
+  </section>
+
+  <!-- ═══════ 6. REQUISITOS FUNCIONAIS 1 ═══════ -->
+  <section class="s req" data-s="6">
+    <div class="title-wrapper rv">
+      <span class="badge">Arquitetura do Sistema</span>
+      <h2 class="section-title">Requisitos Funcionais</h2>
+      <p class="section-sub">Parte 1 de 2 — Funcionalidades Essenciais do MVP.</p>
+    </div>
+    <div class="req-grid">
+      <div class="req-card rv d1">
+        <div class="req-header">
+          <span class="req-id">RF001</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Cadastro e Autenticação</h3>
+        <p class="req-desc">Criação de conta com e-mail e senha, login seguro via token JWT e acesso unificado ao Painel Pessoal.</p>
+      </div>
+      <div class="req-card rv d2">
+        <div class="req-header">
+          <span class="req-id">RF002</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Caixa Preta (Privado)</h3>
+        <p class="req-desc">Área particular com dados rigorosamente criptografados antes do armazenamento para proteção financeira individual.</p>
+      </div>
+      <div class="req-card rv d3">
+        <div class="req-header">
+          <span class="req-id">RF003</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Inserção e Importação</h3>
+        <p class="req-desc">Lançamento manual simplificado de receitas e despesas e importação ágil de arquivo CSV em modelo padronizado.</p>
+      </div>
+      <div class="req-card rv d4">
+        <div class="req-header">
+          <span class="req-id">RF004</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Criar Lar e Convites</h3>
+        <p class="req-desc">Criação de um Lar compartilhado exclusivo e convite de membros via link ou e-mail para ativar a colaboração.</p>
+      </div>
+      <div class="req-card rv d5">
+        <div class="req-header">
+          <span class="req-id">RF005</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Cobrador Diplomata</h3>
+        <p class="req-desc">Envio automático, sistemático e neutro de notificações de vencimentos e pendências, eliminando cobranças manuais.</p>
+      </div>
+      <div class="req-card rv d6">
+        <div class="req-header">
+          <span class="req-id">RF006</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Mesa de Acordos</h3>
+        <p class="req-desc">Definição clara das regras de divisão de contas: divisão igualitária (50/50), proporcional à renda ou customizada.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 7. REQUISITOS FUNCIONAIS 2 ═══════ -->
+  <section class="s req" data-s="7">
+    <div class="title-wrapper rv">
+      <span class="badge">Arquitetura do Sistema</span>
+      <h2 class="section-title">Requisitos Funcionais</h2>
+      <p class="section-sub">Parte 2 de 2 — Funcionalidades Essenciais do MVP.</p>
+    </div>
+    <div class="req-grid">
+      <div class="req-card rv d1">
+        <div class="req-header">
+          <span class="req-id">RF007</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Criar Metas do Lar</h3>
+        <p class="req-desc">Criação de metas conjuntas com valor alvo, prazo determinado e barra de progresso visível por ambos os parceiros.</p>
+      </div>
+      <div class="req-card rv d2">
+        <div class="req-header">
+          <span class="req-id">RF008</span><span class="req-badge importante">Importante</span>
+        </div>
+        <h3 class="req-title">Gerenciar Projetos</h3>
+        <p class="req-desc">Criação de projetos detalhados com itens categorizados, orçamento macro estimado e acompanhamento granular.</p>
+      </div>
+      <div class="req-card rv d3">
+        <div class="req-header">
+          <span class="req-id">RF009</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Painéis Consolidados</h3>
+        <p class="req-desc">Painel Pessoal para finanças individuais e Dashboard específico por Lar com visão unificada da saúde do casal.</p>
+      </div>
+      <div class="req-card rv d4">
+        <div class="req-header">
+          <span class="req-id">RF010</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Lançar Despesa do Lar</h3>
+        <p class="req-desc">Registro, rateio imediato e acompanhamento de contas e despesas comuns exclusivas do espaço compartilhado.</p>
+      </div>
+      <div class="req-card rv d5">
+        <div class="req-header">
+          <span class="req-id">RF011</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Gestão de Conta (LGPD)</h3>
+        <p class="req-desc">Garantia da exclusão definitiva da conta e gestão transparente do consentimento de dados pelo usuário.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 8. REQUISITOS NÃO FUNCIONAIS 1 ═══════ -->
+  <section class="s req" data-s="8">
+    <div class="title-wrapper rv">
+      <span class="badge">Padrões de Qualidade</span>
+      <h2 class="section-title">Requisitos Não Funcionais</h2>
+      <p class="section-sub">Parte 1 de 2 — Segurança, Privacidade e Usabilidade.</p>
+    </div>
+    <div class="req-grid">
+      <div class="req-card rnf rv d1">
+        <div class="req-header">
+          <span class="req-id">RNF001</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Segurança e Privacidade</h3>
+        <p class="req-desc">Criptografia rigorosa e ininterrupta para os dados da Caixa Preta, segregação de Lares e autenticação via JWT.</p>
+      </div>
+      <div class="req-card rnf rv d2">
+        <div class="req-header">
+          <span class="req-id">RNF002</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">LGPD e Consentimento</h3>
+        <p class="req-desc">Transparência total com consentimento explícito e mecanismo de exclusão definitiva assegurado (Hard Delete).</p>
+      </div>
+      <div class="req-card rnf rv d3">
+        <div class="req-header">
+          <span class="req-id">RNF003</span><span class="req-badge importante">Importante</span>
+        </div>
+        <h3 class="req-title">Clareza de Uso</h3>
+        <p class="req-desc">Interface intuitiva e acessível para todos os níveis de educação financeira, dispensando jargões complexos.</p>
+      </div>
+      <div class="req-card rnf rv d4">
+        <div class="req-header">
+          <span class="req-id">RNF004</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Responsividade</h3>
+        <p class="req-desc">Sistema web moderno (desktop-first) perfeitamente adaptado para leitura em telas mobile a partir de 360px.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 9. REQUISITOS NÃO FUNCIONAIS 2 ═══════ -->
+  <section class="s req" data-s="9">
+    <div class="title-wrapper rv">
+      <span class="badge">Padrões de Qualidade</span>
+      <h2 class="section-title">Requisitos Não Funcionais</h2>
+      <p class="section-sub">Parte 2 de 2 — Infraestrutura, Desempenho e Tecnologias.</p>
+    </div>
+    <div class="req-grid">
+      <div class="req-card rnf rv d1">
+        <div class="req-header">
+          <span class="req-id">RNF005</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Restrições de Hardware</h3>
+        <p class="req-desc">Sistema otimizado para funcionar de forma fluída em computadores padrão (ex: processador Ryzen 3 e 8GB RAM).</p>
+      </div>
+      <div class="req-card rnf rv d2">
+        <div class="req-header">
+          <span class="req-id">RNF006</span><span class="req-badge essencial">Essencial</span>
+        </div>
+        <h3 class="req-title">Stack Tecnológica</h3>
+        <p class="req-desc">Vue.js 3 para reatividade frontend, PHP 8.3 + Laravel 11 no backend e MySQL 8 para persistência de dados sólida.</p>
+      </div>
+      <div class="req-card rnf rv d3">
+        <div class="req-header">
+          <span class="req-id">RNF007</span><span class="req-badge importante">Importante</span>
+        </div>
+        <h3 class="req-title">Desempenho Otimizado</h3>
+        <p class="req-desc">Garantir carregamento de telas e processamento eficientes, assegurando uma experiência fluida mesmo sob incidentes.</p>
+      </div>
+      <div class="req-card rnf rv d4">
+        <div class="req-header">
+          <span class="req-id">RNF008</span><span class="req-badge importante">Importante</span>
+        </div>
+        <h3 class="req-title">Compatibilidade Web</h3>
+        <p class="req-desc">Suporte nativo garantido e homologado para as últimas versões do Google Chrome, Mozilla Firefox e Microsoft Edge.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 10. CASO DE USO ═══════ -->
+  <section class="s uc" data-s="10">
+    <div class="title-wrapper rv" style="margin-bottom: 40px;">
+      <span class="badge">Modelagem UML</span>
+      <h2 class="section-title">Casos de Uso</h2>
+      <p class="section-sub">Mapeamento completo e padronizado das interações dos atores com o sistema.</p>
+    </div>
+    
+    <div class="uc-content">
+      <button class="btn-open-pdf rv-scale d1" onclick="document.getElementById('pdf-modal').classList.add('on')">
+        <i data-feather="maximize-2"></i> Abrir Diagrama UML Completo
+      </button>
+      
+      <div class="uc-list rv d2">
+        <div class="uc-item"><span class="uc-code">UC01</span><div><div class="uc-txt-title">Realizar Cadastro</div><div class="uc-txt-desc">Criação de conta com e-mail e senha.</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC02</span><div><div class="uc-txt-title">Realizar Login</div><div class="uc-txt-desc">Autenticação segura via token JWT.</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC03</span><div><div class="uc-txt-title">Recuperar Senha</div><div class="uc-txt-desc">Recuperação por e-mail (extend de UC02).</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC04</span><div><div class="uc-txt-title">Configurar Caixa Preta</div><div class="uc-txt-desc">Área privada com dados criptografados.</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC05</span><div><div class="uc-txt-title">Inserir Dados Financeiros</div><div class="uc-txt-desc">Lançamento manual de receitas/despesas.</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC06</span><div><div class="uc-txt-title">Importar Arquivo</div><div class="uc-txt-desc">Importação de CSV (extend de UC05).</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC07</span><div><div class="uc-txt-title">Gerenciar Lar</div><div class="uc-txt-desc">Criação de Lar compartilhado e gestão.</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC08</span><div><div class="uc-txt-title">Gerenciar Membros</div><div class="uc-txt-desc">Permissões, papéis e desligamentos.</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC09</span><div><div class="uc-txt-title">Aceitar Convite Lar</div><div class="uc-txt-desc">Aceitar ingresso via link ou e-mail.</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC10</span><div><div class="uc-txt-title">Mesa de Acordos</div><div class="uc-txt-desc">Regras: igualitária, proporcional, customizada.</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC11</span><div><div class="uc-txt-title">Metas e Projetos</div><div class="uc-txt-desc">Criação e acompanhamento colaborativo.</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC12</span><div><div class="uc-txt-title">Painel Pessoal</div><div class="uc-txt-desc">Visão geral financeira individual do usuário.</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC13</span><div><div class="uc-txt-title">Dashboard Lar</div><div class="uc-txt-desc">Visão consolidada do grupo e pendências.</div></div></div>
+        <div class="uc-item"><span class="uc-code">UC14</span><div><div class="uc-txt-title">Cobrança Diplomata</div><div class="uc-txt-desc">Notificações automáticas e pacíficas.</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODAL PDF CASO DE USO -->
+  <div id="pdf-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 1.6rem; font-weight: 700; color: var(--c-green-900);">Diagrama de Caso de Uso</h3>
+        <button class="btn-close" onclick="document.getElementById('pdf-modal').classList.remove('on')">X FECHAR</button>
+      </div>
+      <object data="docs/Diagrama de Caso e de Uso SEIVA (1).pdf" type="application/pdf" width="100%" height="100%">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px;">
+          <i data-feather="file-text" style="width: 64px; height: 64px; color: var(--c-text-muted);"></i>
+          <p style="font-size: 1.2rem;">Não foi possível carregar o PDF nativamente.</p>
+          <a href="docs/Diagrama de Caso e de Uso SEIVA (1).pdf" target="_blank" style="background: var(--c-green-700); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700;">Clique aqui para fazer o download</a>
+        </div>
+      </object>
+    </div>
+  </div>
+
+  <!-- ═══════ 11. DIAGRAMA DE CLASSES ═══════ -->
+  <section class="s diagram-slide" data-s="11">
+    <div class="title-wrapper rv" style="margin-bottom:16px;">
+      <span class="badge">Modelagem UML</span>
+      <h2 class="section-title">Diagrama de Classes</h2>
+      <p class="section-sub">Arraste para navegar · Scroll para zoom · Clique numa classe para detalhes.</p>
+    </div>
+    <div class="filter-bar rv d1">
+      <button class="filter-btn active" onclick="setView('class','all',this)">🔍 Visão Completa</button>
+      <button class="filter-btn" onclick="setView('class','ess',this)">⭐ Somente Essenciais</button>
+      <button class="btn-open-pdf" style="padding:12px 28px;font-size:1rem;" onclick="openModal('class')"><i data-feather="maximize-2"></i> Tela Cheia</button>
+    </div>
+    <div class="pz-wrap rv d2" id="class-pz">
+      <div class="pz-canvas" id="class-canvas"></div>
+      <div class="zoom-bar">
+        <button onclick="pzBtn('class-pz',1.3)">+</button>
+        <button onclick="pzBtn('class-pz',0.7)">−</button>
+        <button onclick="pzReset('class-pz')">⟲</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 12. BANCO DE DADOS ═══════ -->
+  <section class="s diagram-slide" data-s="12">
+    <div class="title-wrapper rv" style="margin-bottom:16px;">
+      <span class="badge">Modelo Físico — MySQL 8</span>
+      <h2 class="section-title">Banco de Dados</h2>
+      <p class="section-sub">Estrutura relacional completa — tabelas, chaves e relacionamentos.<br>Arraste para navegar · Scroll para zoom · Clique numa tabela para detalhes.</p>
+    </div>
+    <div class="filter-bar rv d1">
+      <button class="filter-btn active" onclick="setView('db','all',this)">🔍 Visão Completa</button>
+      <button class="filter-btn" onclick="setView('db','ess',this)">⭐ Somente Essenciais</button>
+      <button class="btn-open-pdf" style="padding:12px 28px;font-size:1rem;" onclick="openModal('db')"><i data-feather="maximize-2"></i> Tela Cheia</button>
+    </div>
+    <div class="pz-wrap rv d2" id="db-pz">
+      <div class="pz-canvas" id="db-canvas"></div>
+      <div class="zoom-bar">
+        <button onclick="pzBtn('db-pz',1.3)">+</button>
+        <button onclick="pzBtn('db-pz',0.7)">−</button>
+        <button onclick="pzReset('db-pz')">⟲</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 13. MATRIZ DE RASTREABILIDADE ═══════ -->
+  <section class="s trace" data-s="13">
+    <div class="title-wrapper rv" style="margin-bottom:20px;">
+      <span class="badge">Validação de Cobertura</span>
+      <h2 class="section-title">Matriz de Rastreabilidade</h2>
+      <p class="section-sub">Rastreamento cruzado: cada requisito funcional até seus casos de uso, classes e tabelas.</p>
+    </div>
+    <div class="trace-wrapper rv d1" id="trace-wrapper"></div>
+  </section>
+
+  <!-- MODAL DIAGRAMA DE CLASSES -->
+  <div id="class-modal" class="diagram-modal">
+    <div class="dm-content">
+      <div class="dm-header">
+        <h3 style="font-size:1.4rem;font-weight:700;color:var(--c-green-900);">Diagrama de Classes — SEIVA</h3>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button class="filter-btn active" onclick="setView('class','all',this)">Completo</button>
+          <button class="filter-btn" onclick="setView('class','ess',this)">Essenciais</button>
+          <button class="btn-close" onclick="closeModal('class')">X FECHAR</button>
+        </div>
+      </div>
+      <div class="dm-body" id="class-modal-body">
+        <div class="pz-canvas" id="class-modal-canvas"></div>
+        <div class="zoom-bar">
+          <button onclick="pzBtn('class-modal-body',1.3)">+</button>
+          <button onclick="pzBtn('class-modal-body',0.7)">−</button>
+          <button onclick="pzReset('class-modal-body')">⟲</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL BANCO DE DADOS -->
+  <div id="db-modal" class="diagram-modal">
+    <div class="dm-content">
+      <div class="dm-header">
+        <h3 style="font-size:1.4rem;font-weight:700;color:var(--c-green-900);">Banco de Dados — SEIVA (MySQL 8)</h3>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button class="filter-btn active" onclick="setView('db','all',this)">Completo</button>
+          <button class="filter-btn" onclick="setView('db','ess',this)">Essenciais</button>
+          <button class="btn-close" onclick="closeModal('db')">X FECHAR</button>
+        </div>
+      </div>
+      <div class="dm-body" id="db-modal-body">
+        <div class="pz-canvas" id="db-modal-canvas"></div>
+        <div class="zoom-bar">
+          <button onclick="pzBtn('db-modal-body',1.3)">+</button>
+          <button onclick="pzBtn('db-modal-body',0.7)">−</button>
+          <button onclick="pzReset('db-modal-body')">⟲</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAIL PANEL -->
+  <div id="detail-panel" class="detail-panel" onclick="if(event.target===this)this.classList.remove('on')">
+    <div class="detail-card" id="detail-card"></div>
+  </div>
+
+  <!-- CLASS SPOTLIGHT MODAL -->
+  <div id="class-spotlight-overlay" class="class-spotlight-overlay"
+       onclick="if(event.target===this) closeClassSpotlight()">
+    <div class="class-spotlight-card">
+      <div class="class-spotlight-header">
+        <div>
+          <div class="class-spotlight-name" id="cs-class-name">ClassName</div>
+          <div class="class-spotlight-rf" id="cs-rf"></div>
+        </div>
+        <button class="class-spotlight-close" onclick="closeClassSpotlight()">✕ Fechar</button>
+      </div>
+      <div class="class-spotlight-body">
+        <div class="class-spotlight-section">
+          <div class="class-spotlight-section-title">🔒 Atributos</div>
+          <div id="cs-attrs"></div>
+        </div>
+        <div class="class-spotlight-section">
+          <div class="class-spotlight-section-title">⚡ Métodos</div>
+          <div id="cs-methods"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ═══════ 14. REFERÊNCIAS ═══════ -->
+  <section class="s ref" data-s="14">
+    <div class="title-wrapper rv">
+      <span class="badge">Fontes e Dados Acadêmicos</span>
+      <h2 class="section-title">Referências</h2>
+      <p class="section-sub">Toda a documentação, relatórios e dados estatísticos utilizados na construção estrutural e conceitual do projeto.</p>
+    </div>
+    
+    <div class="ref-list rv d1">
+      <div class="ref-item">
+        <p><strong>CNC</strong>. Confederação Nacional do Comércio de Bens, Serviços e Turismo. <em>Pesquisa de Endividamento e Inadimplência do Consumidor (PEIC)</em>. Relatório de 2025.</p>
+        <a href="https://portaldocomercio.org.br/pesquisas/peic-pesquisa-de-endividamento-e-inadimplencia-do-consumidor/" target="_blank"><i data-feather="external-link" style="width:18px"></i> Acessar publicação original</a>
+      </div>
+      <div class="ref-item">
+        <p><strong>IBGE</strong>. Instituto Brasileiro de Geografia e Estatística. <em>Estatísticas do Registro Civil — Levantamento sobre Divórcios e motivações financeiras conjugais</em>. 2018.</p>
+        <a href="https://www.ibge.gov.br/" target="_blank"><i data-feather="external-link" style="width:18px"></i> Acessar portal de dados</a>
+      </div>
+      <div class="ref-item">
+        <p><strong>Serasa / Opinion Box</strong>. <em>Comportamento Financeiro dos Casais Brasileiros — Estudo e Relatório Anual</em>. São Paulo, 2025.</p>
+        <a href="https://www.serasa.com.br/" target="_blank"><i data-feather="external-link" style="width:18px"></i> Acessar pesquisa completa</a>
+      </div>
+      <div class="ref-item">
+        <p><strong>Ferramentas de Engenharia de Software</strong>: Estruturação UML desenvolvida via <a href="https://mermaid.live" target="_blank">Mermaid.live</a>. Modelagem física (ER) elaborada no <a href="https://dbdiagram.io" target="_blank">dbdiagram.io</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ 15. ENCERRAMENTO (RAÍZES DE LUZ) ═══════ -->
+  <section class="s encerramento" data-s="15">
+    <svg class="enc-svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="rootGrad" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stop-color="#164a34"/>
+          <stop offset="55%" stop-color="#269668"/>
+          <stop offset="100%" stop-color="#bdeed7"/>
+        </linearGradient>
+        <radialGradient id="burstGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#d6f2e4" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#d6f2e4" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <path class="enc-path p0" pathLength="100" d="M500,1000 C500,860 500,760 500,640 C500,560 500,480 500,400"/>
+      <path class="enc-path p1" pathLength="100" d="M500,760 C440,700 380,660 300,600 C240,555 200,520 170,470"/>
+      <path class="enc-path p2" pathLength="100" d="M500,640 C560,580 610,540 660,490 C700,450 730,420 760,380"/>
+      <path class="enc-path p3" pathLength="100" d="M500,860 C420,820 350,790 260,760 C190,735 140,715 90,690"/>
+      <path class="enc-path p4" pathLength="100" d="M500,860 C580,820 650,790 740,760 C810,735 860,715 910,690"/>
+      <circle class="enc-bud b0" cx="500" cy="400" r="8"/>
+      <circle class="enc-bud b1" cx="170" cy="470" r="6"/>
+      <circle class="enc-bud b2" cx="760" cy="380" r="6"/>
+      <circle class="enc-bud b3" cx="90" cy="690" r="5"/>
+      <circle class="enc-bud b4" cx="910" cy="690" r="5"/>
+      <circle class="enc-burst" cx="500" cy="380" r="140" fill="url(#burstGrad)"/>
+    </svg>
+
+    <div class="enc-particles">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="enc-content">
+      <div class="enc-logo-wrap">
+        <img src="public/seiva-logo.png" alt="SEIVA" class="enc-logo" onerror="this.src='docs/logo seiva.png'">
+      </div>
+      <h2 class="enc-slogan">Onde seu dinheiro <em>cria raízes.</em></h2>
+      <div class="enc-divider"></div>
+      <p class="enc-thanks">Obrigado pela atenção</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- CONTROLES -->
+<div id="nav">
+  <button class="nb" onclick="prev()"><i data-feather="chevron-left"></i></button>
+  <div id="dots"></div>
+  <button class="nb" onclick="next()"><i data-feather="chevron-right"></i></button>
+</div>
+
+<script>
+feather.replace();
+
+const slides = document.querySelectorAll('.s');
+const total = slides.length;
+let current = 0;
+
+function go(n) {
+  if (n < 0 || n >= total) return;
+  slides[current].classList.remove('on');
+  current = n;
+  slides[current].classList.add('on');
+  
+  // Progress Bar
+  document.getElementById('progress').style.width = ((current / (total - 1)) * 100) + '%';
+  
+  // Dots update
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.classList.toggle('on', i === current);
+  });
+  
+  // Scroll to top of slide
+  slides[current].scrollTop = 0;
+  
+  // Corrigir caixas do Mermaid assim que o slide ficar visível
+  // (getBBox só funciona corretamente com elementos visíveis no DOM)
+  const fixAndReset = () => {
+    if (typeof nukeMermaidBugs === 'function') nukeMermaidBugs();
+    if (typeof pzReset === 'function') {
+      if (slides[current].querySelector('#class-pz')) pzReset('class-pz');
+      if (slides[current].querySelector('#db-pz')) pzReset('db-pz');
+    }
+  };
+  
+  setTimeout(fixAndReset, 200);
+  setTimeout(fixAndReset, 650);
+}
+
+function next() { go(current + 1); }
+function prev() { go(current - 1); }
+
+// Initialize dots
+const dotsContainer = document.getElementById('dots');
+for (let i = 0; i < total; i++) {
+  const d = document.createElement('button');
+  d.className = 'dot' + (i === 0 ? ' on' : '');
+  d.onclick = () => go(i);
+  dotsContainer.appendChild(d);
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+});
+
+// Close modal on escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('pdf-modal').classList.remove('on');
+    document.getElementById('class-modal').classList.remove('on');
+    document.getElementById('db-modal').classList.remove('on');
+    closeClassSpotlight();
+  }
+});
+
+// ========== SPOTLIGHT EFFECT — REQUISITOS ==========
+document.querySelectorAll('.req-card').forEach(card => {
+  card.style.cursor = 'pointer';
+  card.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const grid = card.closest('.req-grid');
+    if (card.classList.contains('focused')) {
+      // Desfaz o foco
+      card.classList.remove('focused');
+      grid.classList.remove('has-focus');
+    } else {
+      // Remove foco antigo de qualquer grid
+      document.querySelectorAll('.req-grid').forEach(g => {
+        g.classList.remove('has-focus');
+        g.querySelectorAll('.req-card').forEach(c => c.classList.remove('focused'));
+      });
+      // Aplica foco neste card
+      grid.classList.add('has-focus');
+      card.classList.add('focused');
+    }
+  });
+});
+// Clicar fora dos cards remove o spotlight
+document.addEventListener('click', () => {
+  document.querySelectorAll('.req-grid').forEach(g => {
+    g.classList.remove('has-focus');
+    g.querySelectorAll('.req-card').forEach(c => c.classList.remove('focused'));
+  });
+});
+
+// ========== MERMAID INIT ==========
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'default',
+  securityLevel: 'loose',
+  themeVariables: {
+    // Fonte em Courier New, tamanho menor. Limite de corte tratado no script inferior.
+    fontSize: '12px',
+    fontFamily: '"Courier New", Courier, monospace',
+    classText: '#1a1a1a',
+    lineColor: '#6b7280',
+    primaryColor: '#eff6ff',
+    primaryBorderColor: '#3b82f6',
+    primaryTextColor: '#1e3a5f',
+    secondaryColor: '#d6f2e4',
+    tertiaryColor: '#fef3c7'
+  },
+  classDiagram: {
+    useMaxWidth: false,
+    htmlLabels: false, // OBRIGATÓRIO ser false em ambiente local (file://) para evitar erro de CORS
+    nodeSpacing: 100, 
+    rankSpacing: 100,
+    diagramPadding: 60
+  },
+  er: {
+    useMaxWidth: false
+  }
+});
+
+// ========== CLASS DATA PARSER ==========
+// Robust line-by-line parser that handles namespace { class {} } nesting
+function parseClassData(source) {
+  const data = {};
+  const lines = source.split(/\r?\n/);
+  let className = null;
+  let depth = 0;          // brace depth when we entered the current class body
+  let classDepth = -1;    // brace depth of the line that opened the class
+  let classLines = [];
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    // Detect start of a class block: "class Foo {" or "class Foo {"
+    const classMatch = line.match(/^class\s+(\w+)\s*\{/);
+    if (classMatch && classDepth === -1) {
+      className = classMatch[1];
+      classLines = [];
+      classDepth = depth;
+      depth++; // count the opening brace of this class
+      continue;
+    }
+
+    // If we're inside a class body
+    if (classDepth !== -1) {
+      // Count braces in this line
+      for (const ch of line) {
+        if (ch === '{') depth++;
+        else if (ch === '}') depth--;
+      }
+
+      // If depth dropped to classDepth we just closed the class
+      if (depth <= classDepth) {
+        // Parse collected lines
+        const attrs = [], methods = [];
+        for (const cl of classLines) {
+          if (cl.startsWith('-') || cl.startsWith('+') || cl.startsWith('#') || cl.startsWith('~')) {
+            if (cl.includes('(')) methods.push(cl);
+            else attrs.push(cl);
+          }
+        }
+        data[className] = { attrs, methods };
+        className = null;
+        classDepth = -1;
+        classLines = [];
+      } else {
+        classLines.push(line);
+      }
+      continue;
+    }
+
+    // Outside any class: track global brace depth for namespaces
+    for (const ch of line) {
+      if (ch === '{') depth++;
+      else if (ch === '}') depth--;
+    }
+  }
+  return data;
+}
+
+// ========== CLASS SPOTLIGHT MODAL ==========
+function openClassSpotlight(className, source) {
+  const parsed = parseClassData(source);
+  const cls = parsed[className];
+  if (!cls) return;
+  
+  const overlay = document.getElementById('class-spotlight-overlay');
+  document.getElementById('cs-class-name').textContent = className;
+  
+  // Try to find which namespace/RF this class belongs to
+  const nsMatch = source.match(new RegExp('namespace\\s+(\\S+)\\s*\\{[^}]*class\\s+' + className));
+  const ns = nsMatch ? nsMatch[1].replace(/_/g, ' ') : '';
+  document.getElementById('cs-rf').textContent = ns;
+  
+  const attrsEl = document.getElementById('cs-attrs');
+  const methodsEl = document.getElementById('cs-methods');
+  
+  attrsEl.innerHTML = cls.attrs.length
+    ? cls.attrs.map(a => {
+        const isPrivate = a.startsWith('-');
+        const cls2 = isPrivate ? 'private' : 'public';
+        return `<div class="class-spotlight-item ${cls2}">${escHtml(a)}</div>`;
+      }).join('')
+    : '<div class="class-spotlight-item" style="color:#9ca3af;font-style:italic;">Nenhum atributo</div>';
+  
+  methodsEl.innerHTML = cls.methods.length
+    ? cls.methods.map(mt => {
+        const isConstructor = mt.includes(className + '(');
+        const isCls = isConstructor ? 'constructor' : (mt.startsWith('+') ? 'public' : 'private');
+        return `<div class="class-spotlight-item ${isCls}">${escHtml(mt)}</div>`;
+      }).join('')
+    : '<div class="class-spotlight-item" style="color:#9ca3af;font-style:italic;">Nenhum método</div>';
+  
+  overlay.classList.add('on');
+}
+
+function closeClassSpotlight() {
+  document.getElementById('class-spotlight-overlay').classList.remove('on');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ========== MERMAID CODE: DIAGRAMA DE CLASSES (COMPLETO) ==========
+const CLASS_ALL = `classDiagram
+    direction TB
+
+    namespace RF001_Cadastro_e_Autenticacao {
+        class Usuario {
+            - nome: String
+            - email: String
+            - telefone: String
+            - senhaHash: String
+            - tipoRenda: String
+            - rendaMensal: double
+            - diaRecebimento: int
+            - temRendaExtra: boolean
+            - rendaExtra: double
+            - bancoPrincipal: String
+            - contas: List~Conta~
+            - registrosCaixaPreta: List~RegistroCaixaPreta~
+            - transacoes: List~Transacao~
+            - metas: List~Meta~
+            - notificacoes: List~Notificacao~
+            + Usuario(nome: String, email: String, senha: String)
+            + getNome(): String
+            + setNome(nome: String): void
+            + getEmail(): String
+            + getRendaMensal(): double
+            + setRendaMensal(valor: double): void
+            + getRendaTotal(): double
+            + autenticar(email: String, senha: String): boolean
+            + adicionarConta(conta: Conta): void
+            + registrarTransacao(transacao: Transacao): void
+        }
+
+        class SessaoToken {
+            - token: String
+            - expiraEm: Date
+            - ativo: boolean
+            + SessaoToken(usuario: Usuario)
+            + getToken(): String
+            + isValido(): boolean
+            + revogar(): void
+        }
+    }
+
+    namespace RF002_Caixa_Preta {
+        class RegistroCaixaPreta {
+            - tituloCifrado: String
+            - valorCifrado: String
+            - contaCifrada: String
+            - data: Date
+            - bloqueado: boolean
+            + RegistroCaixaPreta(titulo: String,...)
+            + ↳ (valor: double, conta: String)
+            + getTituloCifrado(): String
+            + getValorCifrado(): String
+            + isBloqueado(): boolean
+            + setBloqueado(valor: boolean): void
+            - criptografar(dado: String): String
+            + descriptografar(chave: String): String
+        }
+    }
+
+    namespace RF003_Contas_e_Lancamentos {
+        class Conta {
+            - nome: String
+            - tipo: String
+            - saldo: double
+            - comprometido: double
+            - funcao: String
+            - objetivo: String
+            - cor: String
+            - chavePix: String
+            - limite: double
+            - usado: double
+            - vencimentoFatura: int
+            + Conta(nome: String,...)
+            + ↳ (tipo: String, saldoInicial: double)
+            + getNome(): String
+            + getTipo(): String
+            + getSaldo(): double
+            + getSaldoLivre(): double
+            + depositar(valor: double): void
+            + sacar(valor: double): boolean
+            + getComprometido(): double
+            + setComprometido(valor: double): void
+        }
+
+        class Categoria {
+            - nome: String
+            - emoji: String
+            - cor: String
+            - sistema: boolean
+            + Categoria(nome: String, emoji: String, cor: String)
+            + getNome(): String
+            + getEmoji(): String
+            + isSistema(): boolean
+        }
+
+        class Transacao {
+            - titulo: String
+            - emoji: String
+            - valor: double
+            - tipo: String
+            - data: Date
+            - visibilidade: String
+            - conta: Conta
+            - categoria: Categoria
+            + Transacao(titulo: String, valor: double,...)
+            + ↳ (tipo: String, conta: Conta)
+            + getTitulo(): String
+            + getValor(): double
+            + getTipo(): String
+            + getVisibilidade(): String
+            + setVisibilidade(vis: String): void
+            + getConta(): Conta
+            + getCategoria(): Categoria
+            + setCategoria(cat: Categoria): void
+        }
+    }
+
+    namespace RF004_Lar_e_Membros {
+        class Lar {
+            - nome: String
+            - emoji: String
+            - membros: List~LarMembro~
+            - despesas: List~DespesaLar~
+            - acordos: List~Acordo~
+            - propostas: List~Proposta~
+            - metas: List~Meta~
+            - projetos: List~Projeto~
+            - cobrancas: List~Cobranca~
+            + Lar(nome: String, fundador: Usuario)
+            + getNome(): String
+            + setNome(nome: String): void
+            + adicionarMembro(usuario: Usuario,papel: String)
+            + removerMembro(usuario: Usuario): void
+            + registrarDespesa(despesa: DespesaLar): void
+            + getCustoTotal(): double
+            + getRendaConjunta(): double
+        }
+
+        class LarMembro {
+            - usuario: Usuario
+            - papel: String
+            - rendaDeclarada: double
+            - percentualContribuicao: double
+            + LarMembro(usuario: Usuario, papel: String)
+            + getUsuario(): Usuario
+            + getPapel(): String
+            + setPapel(papel: String): void
+            + getRendaDeclarada(): double
+            + setRendaDeclarada(renda: double): void
+            + getPercentualContribuicao(): double
+            + calcularParte(despesaTotal: double): double
+        }
+
+        class ConviteLar {
+            - emailConvidado: String
+            - tokenConvite: String
+            - status: String
+            - expiraEm: Date
+            + ConviteLar(lar: Lar, email: String)
+            + getStatus(): String
+            + aceitar(usuario: Usuario): LarMembro
+            + expirar(): void
+            + isExpirado(): boolean
+        }
+    }
+
+    namespace RF005_Notificacoes {
+        class Notificacao {
+            - texto: String
+            - tipo: String
+            - lida: boolean
+            + Notificacao(texto: String, tipo: String)
+            + getTexto(): String
+            + getTipo(): String
+            + isLida(): boolean
+            + marcarComoLida(): void
+        }
+
+        class Cobranca {
+            - titulo: String
+            - valor: double
+            - destinatario: Usuario
+            - vencimento: Date
+            - mensagem: String
+            - estado: String
+            - canal: String
+            - antecedencia: String
+            + Cobranca(titulo: String,...)
+            + ↳ (valor: double, destinatario: Usuario)
+            + getTitulo(): String
+            + getValor(): double
+            + getDestinatario(): Usuario
+            + getEstado(): String
+            + enviar(): void
+            + confirmarRecebimento(): void
+        }
+    }
+
+    namespace RF006_Acordos_e_Despesas {
+        class RegraDivisao {
+            - tipo: String
+            - ativa: boolean
+            - detalhes: List~RegraDivisaoDetalhe~
+            + RegraDivisao(tipo: String)
+            + getTipo(): String
+            + isAtiva(): boolean
+            + setAtiva(ativa: boolean): void
+            + aplicar(despesa: DespesaLar): List~ParticipacaoDespesa~
+        }
+
+        class RegraDivisaoDetalhe {
+            - membro: LarMembro
+            - percentual: double
+            + RegraDivisaoDetalhe(membro: LarMembro,...)
+            + ↳ (percentual: double)
+            + getMembro(): LarMembro
+            + getPercentual(): double
+            + setPercentual(pct: double): void
+        }
+
+        class DespesaLar {
+            - titulo: String
+            - emoji: String
+            - valor: double
+            - tipoDespesa: String
+            - divisaoLabel: String
+            - status: String
+            - dataVencimento: Date
+            - comprovante: boolean
+            - participacoes: List~ParticipacaoDespesa~
+            + DespesaLar(titulo: String,...)
+            + ↳ (valor: double, tipo: String)
+            + getTitulo(): String
+            + getValor(): double
+            + getStatus(): String
+            + setStatus(status: String): void
+            + isPaga(): boolean
+            + temComprovante(): boolean
+        }
+
+        class ParticipacaoDespesa {
+            - membro: LarMembro
+            - valorParte: double
+            - pago: boolean
+            - transacaoQuitacao: Transacao
+            + ParticipacaoDespesa(membro: LarMembro,...)
+            + ↳ (valorParte: double)
+            + getMembro(): LarMembro
+            + getValorParte(): double
+            + isPago(): boolean
+            + confirmarPagamento(transacao: Transacao): void
+        }
+
+        class Acordo {
+            - tipo: String
+            - titulo: String
+            - imagem: String
+            - valorTotal: double
+            - guardado: double
+            - divisaoLabel: String
+            - valorMes: double
+            - contaDestino: String
+            - vencimento: Date
+            - parcelasTotal: int
+            - parcelasPagas: int
+            - status: String
+            - participantes: List~AcordoParticipante~
+            - historico: List~AcordoHistorico~
+            + Acordo(titulo: String,...)
+            + ↳ (valorTotal: double, tipo: String)
+            + getTitulo(): String
+            + getValorTotal(): double
+            + getGuardado(): double
+            + getProgresso(): int
+            + getStatus(): String
+            + contribuir(valor: double): void
+            + atualizarProgresso(): void
+            + isFinalizado(): boolean
+        }
+
+        class AcordoParticipante {
+            - membro: LarMembro
+            - parteMensal: double
+            + AcordoParticipante(membro: LarMembro,...)
+            + ↳ (parteMensal: double)
+            + getMembro(): LarMembro
+            + getParteMensal(): double
+            + setParteMensal(valor: double): void
+        }
+
+        class AcordoHistorico {
+            - descricao: String
+            - estado: String
+            + AcordoHistorico(descricao: String, estado: String)
+            + getDescricao(): String
+            + getEstado(): String
+        }
+
+        class Proposta {
+            - tipo: String
+            - titulo: String
+            - imagem: String
+            - link: String
+            - valorTotal: double
+            - divisaoLabel: String
+            - valorMesPorPessoa: double
+            - parcelasTotal: int
+            - prazoMeses: int
+            - mensagem: String
+            - status: String
+            - rodadas: List~NegociacaoRodada~
+            + Proposta(titulo: String,...)
+            + ↳ (valorTotal: double, tipo: String)
+            + getTitulo(): String
+            + getValorTotal(): double
+            + getStatus(): String
+            + aceitar(): Acordo
+            + recusar(): void
+            + contrapropor(novoValor: double): NegociacaoRodada
+        }
+
+        class NegociacaoRodada {
+            - autor: Usuario
+            - valorProposto: double
+            + NegociacaoRodada(autor: Usuario, valor: double)
+            + getAutor(): Usuario
+            + getValorProposto(): double
+        }
+    }
+
+    namespace RF007_Metas_e_Projetos {
+        class Meta {
+            - titulo: String
+            - emoji: String
+            - categoria: String
+            - valorAlvo: double
+            - valorAtual: double
+            - prazo: Date
+            - compartilhada: boolean
+            - contaGuardando: String
+            - contribuicaoMensal: double
+            - imagem: String
+            + Meta(titulo: String,...)
+            + ↳ (valorAlvo: double, categoria: String)
+            + getTitulo(): String
+            + getValorAlvo(): double
+            + getValorAtual(): double
+            + getProgresso(): int
+            + isCompartilhada(): boolean
+            + contribuir(valor: double): void
+            + isAlcancada(): boolean
+        }
+
+        class Projeto {
+            - nome: String
+            - descricao: String
+            - orcamentoEstimado: double
+            - gastoAtual: double
+            - status: String
+            - itens: List~ProjetoItem~
+            + Projeto(nome: String, orcamento: double)
+            + getNome(): String
+            + getOrcamentoEstimado(): double
+            + getGastoAtual(): double
+            + getProgresso(): int
+            + getStatus(): String
+            + adicionarItem(item: ProjetoItem): void
+        }
+
+        class ProjetoItem {
+            - nome: String
+            - categoria: Categoria
+            - valorEstimado: double
+            - valorReal: double
+            - adquirido: boolean
+            + ProjetoItem(nome: String, valorEstimado: double)
+            + getNome(): String
+            + getValorEstimado(): double
+            + getValorReal(): double
+            + isAdquirido(): boolean
+            + marcarAdquirido(valorReal: double): void
+        }
+
+        class ProdutoWatchlist {
+            - nome: String
+            - emoji: String
+            - preco: double
+            - loja: String
+            - imagem: String
+            + ProdutoWatchlist(nome: String,...)
+            + ↳ (preco: double, loja: String)
+            + getNome(): String
+            + getPreco(): double
+            + getLoja(): String
+        }
+    }
+
+    Usuario "1" *-- "0..*" SessaoToken : possui
+    Usuario "1" *-- "0..*" Conta : possui
+    Usuario "1" *-- "0..*" RegistroCaixaPreta : protege
+    Usuario "1" *-- "0..*" Transacao : registra
+    Usuario "1" *-- "0..*" Notificacao : recebe
+    Usuario "1" *-- "0..*" ProdutoWatchlist : observa
+
+    Lar "1" *-- "1..*" LarMembro : compõe
+    Lar "1" *-- "0..*" ConviteLar : emite
+    Lar "1" *-- "0..*" DespesaLar : possui
+    Lar "1" *-- "0..*" Acordo : gerencia
+    Lar "1" *-- "0..*" Proposta : recebe
+    Lar "1" *-- "0..*" Cobranca : gera
+
+    RegraDivisao "1" *-- "1..*" RegraDivisaoDetalhe : detalha
+    DespesaLar "1" *-- "1..*" ParticipacaoDespesa : divide em
+    Acordo "1" *-- "1..*" AcordoParticipante : envolve
+    Acordo "1" *-- "0..*" AcordoHistorico : registra
+    Proposta "1" *-- "0..*" NegociacaoRodada : negocia
+    Projeto "1" *-- "0..*" ProjetoItem : contém
+
+    Lar "1" o-- "0..*" RegraDivisao : define
+    Lar "1" o-- "0..*" Meta : compartilha
+    Lar "1" o-- "0..*" Projeto : compartilha
+    Usuario "1" o-- "0..*" Meta : cria
+    Usuario "1" o-- "0..*" Projeto : cria
+
+    LarMembro "0..*" --> "1" Usuario : referencia
+    Transacao "0..*" --> "1" Conta : sai de
+    Transacao "0..*" --> "1" Categoria : classificada por
+    ProjetoItem "0..*" --> "0..1" Categoria : classificado por
+    Cobranca "0..*" --> "1" Usuario : destinado a
+    RegraDivisao "1" --> "0..*" DespesaLar : aplicada a
+
+    Proposta "1" ..> "0..1" Acordo : origina
+    ParticipacaoDespesa "0..1" ..> "0..1" Transacao : quitada por`;
+
+// ========== DIAGRAMA ESSENCIAL (sem classes auxiliares) ==========
+const CLASS_ESS = `classDiagram
+    direction TB
+
+    namespace RF001_Cadastro_e_Autenticacao {
+        class Usuario {
+            - nome: String
+            - email: String
+            - telefone: String
+            - senhaHash: String
+            - tipoRenda: String
+            - rendaMensal: double
+            - diaRecebimento: int
+            - temRendaExtra: boolean
+            - rendaExtra: double
+            - bancoPrincipal: String
+            - contas: List~Conta~
+            - registrosCaixaPreta: List~RegistroCaixaPreta~
+            - transacoes: List~Transacao~
+            - metas: List~Meta~
+            - notificacoes: List~Notificacao~
+            + Usuario(nome: String, email: String, senha: String)
+            + getNome(): String
+            + setNome(nome: String): void
+            + getEmail(): String
+            + getRendaMensal(): double
+            + setRendaMensal(valor: double): void
+            + getRendaTotal(): double
+            + autenticar(email: String, senha: String): boolean
+            + adicionarConta(conta: Conta): void
+            + registrarTransacao(transacao: Transacao): void
+        }
+
+        class SessaoToken {
+            - token: String
+            - expiraEm: Date
+            - ativo: boolean
+            + SessaoToken(usuario: Usuario)
+            + getToken(): String
+            + isValido(): boolean
+            + revogar(): void
+        }
+    }
+
+    namespace RF002_Caixa_Preta {
+        class RegistroCaixaPreta {
+            - tituloCifrado: String
+            - valorCifrado: String
+            - contaCifrada: String
+            - data: Date
+            - bloqueado: boolean
+            + RegistroCaixaPreta(titulo: String,...)
+            + ↳ (valor: double, conta: String)
+            + getTituloCifrado(): String
+            + getValorCifrado(): String
+            + isBloqueado(): boolean
+            + setBloqueado(valor: boolean): void
+            - criptografar(dado: String): String
+            + descriptografar(chave: String): String
+        }
+    }
+
+    namespace RF003_Contas_e_Lancamentos {
+        class Conta {
+            - nome: String
+            - tipo: String
+            - saldo: double
+            - comprometido: double
+            - funcao: String
+            - objetivo: String
+            - cor: String
+            - chavePix: String
+            - limite: double
+            - usado: double
+            - vencimentoFatura: int
+            + Conta(nome: String,...)
+            + ↳ (tipo: String, saldoInicial: double)
+            + getNome(): String
+            + getTipo(): String
+            + getSaldo(): double
+            + getSaldoLivre(): double
+            + depositar(valor: double): void
+            + sacar(valor: double): boolean
+            + getComprometido(): double
+            + setComprometido(valor: double): void
+        }
+
+        class Categoria {
+            - nome: String
+            - emoji: String
+            - cor: String
+            - sistema: boolean
+            + Categoria(nome: String, emoji: String, cor: String)
+            + getNome(): String
+            + getEmoji(): String
+            + isSistema(): boolean
+        }
+
+        class Transacao {
+            - titulo: String
+            - emoji: String
+            - valor: double
+            - tipo: String
+            - data: Date
+            - visibilidade: String
+            - conta: Conta
+            - categoria: Categoria
+            + Transacao(titulo: String, valor: double,...)
+            + ↳ (tipo: String, conta: Conta)
+            + getTitulo(): String
+            + getValor(): double
+            + getTipo(): String
+            + getVisibilidade(): String
+            + setVisibilidade(vis: String): void
+            + getConta(): Conta
+            + getCategoria(): Categoria
+            + setCategoria(cat: Categoria): void
+        }
+    }
+
+    namespace RF004_Lar_e_Membros {
+        class Lar {
+            - nome: String
+            - emoji: String
+            - membros: List~LarMembro~
+            - despesas: List~DespesaLar~
+            - acordos: List~Acordo~
+            - propostas: List~Proposta~
+            - metas: List~Meta~
+            - projetos: List~Projeto~
+            - cobrancas: List~Cobranca~
+            + Lar(nome: String, fundador: Usuario)
+            + getNome(): String
+            + setNome(nome: String): void
+            + adicionarMembro(usuario: Usuario,papel: String)
+            + removerMembro(usuario: Usuario): void
+            + registrarDespesa(despesa: DespesaLar): void
+            + getCustoTotal(): double
+            + getRendaConjunta(): double
+        }
+
+        class LarMembro {
+            - usuario: Usuario
+            - papel: String
+            - rendaDeclarada: double
+            - percentualContribuicao: double
+            + LarMembro(usuario: Usuario, papel: String)
+            + getUsuario(): Usuario
+            + getPapel(): String
+            + setPapel(papel: String): void
+            + getRendaDeclarada(): double
+            + setRendaDeclarada(renda: double): void
+            + getPercentualContribuicao(): double
+            + calcularParte(despesaTotal: double): double
+        }
+
+        class ConviteLar {
+            - emailConvidado: String
+            - tokenConvite: String
+            - status: String
+            - expiraEm: Date
+            + ConviteLar(lar: Lar, email: String)
+            + getStatus(): String
+            + aceitar(usuario: Usuario): LarMembro
+            + expirar(): void
+            + isExpirado(): boolean
+        }
+    }
+
+    namespace RF005_Notificacoes {
+        class Cobranca {
+            - titulo: String
+            - valor: double
+            - destinatario: Usuario
+            - vencimento: Date
+            - mensagem: String
+            - estado: String
+            - canal: String
+            - antecedencia: String
+            + Cobranca(titulo: String,...)
+            + ↳ (valor: double, destinatario: Usuario)
+            + getTitulo(): String
+            + getValor(): double
+            + getDestinatario(): Usuario
+            + getEstado(): String
+            + enviar(): void
+            + confirmarRecebimento(): void
+        }
+    }
+
+    namespace RF006_Acordos_e_Despesas {
+        class RegraDivisao {
+            - tipo: String
+            - ativa: boolean
+            - detalhes: List~RegraDivisaoDetalhe~
+            + RegraDivisao(tipo: String)
+            + getTipo(): String
+            + isAtiva(): boolean
+            + setAtiva(ativa: boolean): void
+            + aplicar(despesa: DespesaLar): List~ParticipacaoDespesa~
+        }
+
+        class DespesaLar {
+            - titulo: String
+            - emoji: String
+            - valor: double
+            - tipoDespesa: String
+            - divisaoLabel: String
+            - status: String
+            - dataVencimento: Date
+            - comprovante: boolean
+            - participacoes: List~ParticipacaoDespesa~
+            + DespesaLar(titulo: String,...)
+            + ↳ (valor: double, tipo: String)
+            + getTitulo(): String
+            + getValor(): double
+            + getStatus(): String
+            + setStatus(status: String): void
+            + isPaga(): boolean
+            + temComprovante(): boolean
+        }
+
+        class ParticipacaoDespesa {
+            - membro: LarMembro
+            - valorParte: double
+            - pago: boolean
+            - transacaoQuitacao: Transacao
+            + ParticipacaoDespesa(membro: LarMembro,...)
+            + ↳ (valorParte: double)
+            + getMembro(): LarMembro
+            + getValorParte(): double
+            + isPago(): boolean
+            + confirmarPagamento(transacao: Transacao): void
+        }
+
+        class Acordo {
+            - tipo: String
+            - titulo: String
+            - imagem: String
+            - valorTotal: double
+            - guardado: double
+            - divisaoLabel: String
+            - valorMes: double
+            - contaDestino: String
+            - vencimento: Date
+            - parcelasTotal: int
+            - parcelasPagas: int
+            - status: String
+            - participantes: List~AcordoParticipante~
+            - historico: List~AcordoHistorico~
+            + Acordo(titulo: String,...)
+            + ↳ (valorTotal: double, tipo: String)
+            + getTitulo(): String
+            + getValorTotal(): double
+            + getGuardado(): double
+            + getProgresso(): int
+            + getStatus(): String
+            + contribuir(valor: double): void
+            + atualizarProgresso(): void
+            + isFinalizado(): boolean
+        }
+    }
+
+    Usuario "1" *-- "0..*" SessaoToken : possui
+    Usuario "1" *-- "0..*" Conta : possui
+    Usuario "1" *-- "0..*" RegistroCaixaPreta : protege
+    Usuario "1" *-- "0..*" Transacao : registra
+    Usuario "1" *-- "0..*" Cobranca : destinado a
+
+    Lar "1" *-- "1..*" LarMembro : compõe
+    Lar "1" *-- "0..*" ConviteLar : emite
+    Lar "1" *-- "0..*" DespesaLar : possui
+    Lar "1" *-- "0..*" Acordo : gerencia
+    Lar "1" *-- "0..*" Cobranca : gera
+
+    DespesaLar "1" *-- "1..*" ParticipacaoDespesa : divide em
+
+    Lar "1" o-- "0..*" RegraDivisao : define
+
+    LarMembro "0..*" --> "1" Usuario : referencia
+    Transacao "0..*" --> "1" Conta : sai de
+    Transacao "0..*" --> "1" Categoria : classificada por
+    RegraDivisao "1" --> "0..*" DespesaLar : aplicada a`;
+
+// ========== MERMAID CODE: ER DIAGRAM (COMPLETO) ==========
+const DB_ALL = `classDiagram
+    direction TB
+
+    namespace M_Autenticacao {
+        class usuarios {
+            <<Table>>
+            +BIGINT id_usuario PK
+            +VARCHAR(255) nome
+            +VARCHAR(255) email UK
+            +VARCHAR(20) telefone
+            +VARCHAR(255) senha_hash
+            +ENUM tipo_renda
+            +DECIMAL renda_mensal
+            +INT dia_recebimento
+            +BOOLEAN tem_renda_extra
+            +DECIMAL renda_extra
+            +VARCHAR(100) banco_principal
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class sessao_tokens {
+            <<Table>>
+            +BIGINT id_token PK
+            +BIGINT usuario_id FK
+            +VARCHAR(255) token_hash UK
+            +VARCHAR(50) ip_address
+            +VARCHAR(255) user_agent
+            +TIMESTAMP expires_at
+            +TIMESTAMP created_at
+        }
+        class registros_caixa_preta {
+            <<Table>>
+            +BIGINT id_registro PK
+            +BIGINT usuario_id FK
+            +VARCHAR(100) acao
+            +VARCHAR(50) ip_address
+            +VARCHAR(255) user_agent
+            +JSON detalhes
+            +TIMESTAMP created_at
+        }
+    }
+
+    namespace M_Gestao_Financeira {
+        class contas {
+            <<Table>>
+            +BIGINT id_conta PK
+            +BIGINT usuario_id FK
+            +VARCHAR(100) nome_instituicao
+            +ENUM tipo_conta
+            +DECIMAL saldo_atual
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class categorias {
+            <<Table>>
+            +BIGINT id_categoria PK
+            +BIGINT usuario_id FK
+            +VARCHAR(100) nome
+            +ENUM tipo
+            +VARCHAR(50) cor
+            +VARCHAR(50) icone
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class transacoes {
+            <<Table>>
+            +BIGINT id_transacao PK
+            +BIGINT usuario_id FK
+            +BIGINT conta_id FK
+            +BIGINT categoria_id FK
+            +BIGINT lar_id FK
+            +DECIMAL valor
+            +ENUM tipo
+            +VARCHAR(255) descricao
+            +DATE data_transacao
+            +ENUM status
+            +BOOLEAN eh_recorrente
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    namespace M_Gestao_Lares {
+        class lares {
+            <<Table>>
+            +BIGINT id_lar PK
+            +BIGINT criador_id FK
+            +VARCHAR(100) nome
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class lar_membros {
+            <<Table>>
+            +BIGINT id_membro PK
+            +BIGINT lar_id FK
+            +BIGINT usuario_id FK
+            +ENUM papel
+            +DECIMAL renda_declarada
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class convites_lar {
+            <<Table>>
+            +BIGINT id_convite PK
+            +BIGINT lar_id FK
+            +BIGINT autor_id FK
+            +VARCHAR(255) email_convidado
+            +VARCHAR(64) token_convite UK
+            +ENUM status
+            +TIMESTAMP expira_em
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    namespace M_Divisao_Despesas {
+        class regras_divisao {
+            <<Table>>
+            +BIGINT id_regra PK
+            +BIGINT lar_id FK
+            +ENUM tipo_regra
+            +BOOLEAN ativa
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class regras_divisao_detalhes {
+            <<Table>>
+            +BIGINT id_detalhe PK
+            +BIGINT regra_id FK
+            +BIGINT usuario_id FK
+            +DECIMAL percentual
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class despesas_lares {
+            <<Table>>
+            +BIGINT id_despesa_lar PK
+            +BIGINT lar_id FK
+            +BIGINT regra_divisao_id FK
+            +BIGINT autor_id FK
+            +VARCHAR(255) titulo
+            +DECIMAL valor_total
+            +DATE data_vencimento
+            +ENUM status
+            +BOOLEAN exige_comprovante
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class participacoes_despesas {
+            <<Table>>
+            +BIGINT id_participacao PK
+            +BIGINT despesa_lar_id FK
+            +BIGINT usuario_id FK
+            +DECIMAL valor_parte
+            +BOOLEAN pago
+            +BIGINT transacao_quitacao_id FK
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    namespace M_Acordos {
+        class acordos {
+            <<Table>>
+            +BIGINT id_acordo PK
+            +BIGINT lar_id FK
+            +BIGINT criador_id FK
+            +ENUM tipo
+            +VARCHAR(255) titulo
+            +DECIMAL valor_alvo
+            +DECIMAL valor_arrecadado
+            +DATE data_conclusao_prevista
+            +ENUM status
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class acordo_participantes {
+            <<Table>>
+            +BIGINT id_participacao PK
+            +BIGINT acordo_id FK
+            +BIGINT usuario_id FK
+            +DECIMAL contribuicao_mensal
+            +TIMESTAMP created_at
+        }
+        class acordo_historicos {
+            <<Table>>
+            +BIGINT id_historico PK
+            +BIGINT acordo_id FK
+            +ENUM acao
+            +JSON detalhes_antigos
+            +JSON detalhes_novos
+            +TIMESTAMP created_at
+        }
+        class propostas {
+            <<Table>>
+            +BIGINT id_proposta PK
+            +BIGINT lar_id FK
+            +BIGINT autor_id FK
+            +VARCHAR(255) titulo
+            +TEXT descricao
+            +DECIMAL valor_sugerido
+            +ENUM status
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class negociacao_rodadas {
+            <<Table>>
+            +BIGINT id_rodada PK
+            +BIGINT proposta_id FK
+            +BIGINT autor_id FK
+            +TEXT mensagem
+            +DECIMAL contraproposta_valor
+            +TIMESTAMP created_at
+        }
+    }
+
+    namespace M_Metas_Projetos {
+        class metas {
+            <<Table>>
+            +BIGINT id_meta PK
+            +BIGINT usuario_id FK
+            +BIGINT lar_id FK
+            +BIGINT responsavel_id FK
+            +VARCHAR(255) titulo
+            +DECIMAL valor_alvo
+            +DECIMAL valor_atual
+            +DATE data_limite
+            +ENUM status
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class projetos {
+            <<Table>>
+            +BIGINT id_projeto PK
+            +BIGINT usuario_id FK
+            +BIGINT lar_id FK
+            +VARCHAR(255) titulo
+            +DECIMAL orcamento_total
+            +ENUM status
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class projeto_itens {
+            <<Table>>
+            +BIGINT id_item PK
+            +BIGINT projeto_id FK
+            +BIGINT categoria_id FK
+            +VARCHAR(255) descricao
+            +DECIMAL custo_estimado
+            +DECIMAL custo_real
+            +BOOLEAN comprado
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    namespace M_Notificacoes {
+        class cobrancas {
+            <<Table>>
+            +BIGINT id_cobranca PK
+            +BIGINT lar_id FK
+            +BIGINT autor_id FK
+            +BIGINT destinatario_id FK
+            +VARCHAR(255) titulo
+            +DECIMAL valor
+            +DATE data_vencimento
+            +ENUM estado
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class notificacoes {
+            <<Table>>
+            +BIGINT id_notificacao PK
+            +BIGINT usuario_id FK
+            +BIGINT lar_id FK
+            +VARCHAR(255) titulo
+            +TEXT mensagem
+            +ENUM tipo
+            +BOOLEAN lida
+            +TIMESTAMP created_at
+        }
+        class produtos_watchlist {
+            <<Table>>
+            +BIGINT id_produto PK
+            +BIGINT usuario_id FK
+            +VARCHAR(255) nome
+            +VARCHAR(1000) link_referencia
+            +DECIMAL preco_alvo
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    %% Relacionamentos
+    usuarios --> sessao_tokens : fk_sessao_usuario
+    usuarios --> lares : fk_lar_criador
+    lares --> lar_membros : fk_membro_lar
+    usuarios --> lar_membros : fk_membro_usuario
+    lares --> convites_lar : fk_convite_lar
+    usuarios --> convites_lar : fk_convite_autor
+    usuarios --> contas : fk_conta_usuario
+    usuarios --> categorias : fk_categoria_usuario
+    usuarios --> transacoes : fk_transacao_usuario
+    contas --> transacoes : fk_transacao_conta
+    categorias --> transacoes : fk_transacao_categoria
+    lares --> transacoes : fk_transacao_lar
+    usuarios --> registros_caixa_preta : fk_caixapreta_usuario
+    lares --> regras_divisao : fk_regradiv_lar
+    regras_divisao --> regras_divisao_detalhes : fk_regradet_regra
+    usuarios --> regras_divisao_detalhes : fk_regradet_usuario
+    lares --> despesas_lares : fk_despesa_lar
+    regras_divisao --> despesas_lares : fk_despesa_regra
+    usuarios --> despesas_lares : fk_despesa_autor
+    despesas_lares --> participacoes_despesas : fk_part_despesa
+    usuarios --> participacoes_despesas : fk_part_usuario
+    transacoes --> participacoes_despesas : fk_part_transacao
+    lares --> acordos : fk_acordo_lar
+    usuarios --> acordos : fk_acordo_usuario
+    acordos --> acordo_participantes : fk_apart_acordo
+    usuarios --> acordo_participantes : fk_apart_usuario
+    acordos --> acordo_historicos : fk_ahist_acordo
+    lares --> propostas : fk_proposta_lar
+    usuarios --> propostas : fk_proposta_autor
+    propostas --> negociacao_rodadas : fk_negoc_proposta
+    usuarios --> negociacao_rodadas : fk_negoc_autor
+    usuarios --> metas : fk_meta_usuario
+    lares --> metas : fk_meta_lar
+    usuarios --> metas : fk_meta_responsavel
+    usuarios --> projetos : fk_projeto_usuario
+    lares --> projetos : fk_projeto_lar
+    projetos --> projeto_itens : fk_pitem_projeto
+    categorias --> projeto_itens : fk_pitem_categoria
+    usuarios --> notificacoes : fk_notif_usuario
+    lares --> notificacoes : fk_notif_lar
+    lares --> cobrancas : fk_cobranca_lar
+    usuarios --> cobrancas : fk_cobranca_autor
+    usuarios --> cobrancas : fk_cobranca_destinatario
+    usuarios --> produtos_watchlist : fk_watchlist_usuario
+`;
+
+// ========== ER DIAGRAM ESSENCIAL ==========
+const DB_ESS = `classDiagram
+    direction TB
+
+    namespace M_Autenticacao {
+        class usuarios {
+            <<Table>>
+            +BIGINT id_usuario PK
+            +VARCHAR(255) nome
+            +VARCHAR(255) email
+            +VARCHAR(20) telefone
+            +VARCHAR(255) senha_hash
+            +ENUM tipo_renda
+            +DECIMAL renda_mensal
+            +INT dia_recebimento
+            +BOOLEAN tem_renda_extra
+            +DECIMAL renda_extra
+            +VARCHAR(100) banco_principal
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class sessao_tokens {
+            <<Table>>
+            +BIGINT id_sessao_token PK
+            +BIGINT usuario_id FK
+            +VARCHAR(255) token
+            +TIMESTAMP expira_em
+            +TIMESTAMP created_at
+        }
+        class registros_caixa_preta {
+            <<Table>>
+            +BIGINT id_registro_caixa_preta PK
+            +BIGINT usuario_id FK
+            +TEXT titulo_cifrado
+            +TEXT valor_cifrado
+            +TEXT conta_cifrada
+            +DATE data
+            +BOOLEAN bloqueado
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    namespace M_Gestao_Financeira {
+        class contas {
+            <<Table>>
+            +BIGINT id_conta PK
+            +BIGINT usuario_id FK
+            +VARCHAR(255) nome
+            +ENUM tipo
+            +DECIMAL saldo
+            +DECIMAL comprometido
+            +ENUM funcao
+            +VARCHAR(255) objetivo
+            +VARCHAR(20) cor
+            +VARCHAR(255) chave_pix
+            +DECIMAL limite
+            +DECIMAL usado
+            +INT vencimento_fatura
+            +TIMESTAMP atualizado_em
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class categorias {
+            <<Table>>
+            +BIGINT id_categoria PK
+            +VARCHAR(100) nome
+            +VARCHAR(20) emoji
+            +VARCHAR(20) cor
+            +BOOLEAN sistema
+            +BIGINT usuario_id FK
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class transacoes {
+            <<Table>>
+            +BIGINT id_transacao PK
+            +BIGINT usuario_id FK
+            +BIGINT conta_id FK
+            +BIGINT categoria_id FK
+            +BIGINT lar_id FK
+            +VARCHAR(255) titulo
+            +VARCHAR(50) emoji
+            +DECIMAL valor
+            +ENUM tipo
+            +DATE data
+            +ENUM visibilidade
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    namespace M_Gestao_Lares {
+        class lares {
+            <<Table>>
+            +BIGINT id_lar PK
+            +VARCHAR(255) nome
+            +VARCHAR(50) emoji
+            +BIGINT criado_por FK
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class lar_membros {
+            <<Table>>
+            +BIGINT id_lar_membro PK
+            +BIGINT lar_id FK
+            +BIGINT usuario_id FK
+            +ENUM papel
+            +DECIMAL renda_declarada
+            +DECIMAL percentual_contribuicao
+            +TIMESTAMP aceito_em
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class convites_lar {
+            <<Table>>
+            +BIGINT id_convite_lar PK
+            +BIGINT lar_id FK
+            +BIGINT convidado_por FK
+            +VARCHAR(255) email_convidado
+            +VARCHAR(100) token_convite
+            +ENUM status
+            +TIMESTAMP expira_em
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    namespace M_Divisao_Despesas {
+        class regras_divisao {
+            <<Table>>
+            +BIGINT id_regra_divisao PK
+            +BIGINT lar_id FK
+            +ENUM tipo
+            +BOOLEAN ativa
+            +TIMESTAMP vigente_desde
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class despesas_lares {
+            <<Table>>
+            +BIGINT id_despesa_lar PK
+            +BIGINT lar_id FK
+            +BIGINT regra_divisao_id FK
+            +BIGINT registrada_por FK
+            +VARCHAR(255) titulo
+            +VARCHAR(50) emoji
+            +DECIMAL valor
+            +ENUM tipo_despesa
+            +VARCHAR(50) divisao_label
+            +ENUM status
+            +DATE data_vencimento
+            +BOOLEAN comprovante
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class participacoes_despesas {
+            <<Table>>
+            +BIGINT id_participacao_despesa PK
+            +BIGINT despesa_lar_id FK
+            +BIGINT usuario_id FK
+            +BIGINT transacao_id FK
+            +DECIMAL valor_parte
+            +BOOLEAN pago
+            +TIMESTAMP pago_em
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    namespace M_Acordos {
+        class acordos {
+            <<Table>>
+            +BIGINT id_acordo PK
+            +BIGINT lar_id FK
+            +BIGINT usuario_id FK
+            +ENUM tipo
+            +VARCHAR(255) titulo
+            +VARCHAR(255) imagem
+            +DECIMAL valor_total
+            +DECIMAL guardado
+            +INT progresso
+            +VARCHAR(50) divisao_label
+            +DECIMAL valor_mes
+            +VARCHAR(255) conta_destino
+            +DATE vencimento
+            +INT parcelas_total
+            +INT parcelas_pagas
+            +ENUM status
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    namespace M_Metas_Projetos {
+        class metas {
+            <<Table>>
+            +BIGINT id_meta PK
+            +BIGINT usuario_id FK
+            +BIGINT lar_id FK
+            +VARCHAR(255) titulo
+            +VARCHAR(50) emoji
+            +ENUM categoria
+            +DECIMAL valor_alvo
+            +DECIMAL valor_atual
+            +DATE prazo
+            +BOOLEAN compartilhada
+            +VARCHAR(255) conta_guardando
+            +VARCHAR(255) pix_destino
+            +BIGINT responsavel_usuario_id FK
+            +DECIMAL contribuicao_mensal
+            +VARCHAR(255) imagem
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    namespace M_Notificacoes {
+        class cobrancas {
+            <<Table>>
+            +BIGINT id_cobranca PK
+            +BIGINT lar_id FK
+            +BIGINT criada_por FK
+            +BIGINT destinatario_id FK
+            +VARCHAR(255) titulo
+            +DECIMAL valor
+            +DATE vencimento
+            +TEXT mensagem
+            +ENUM estado
+            +ENUM canal
+            +ENUM antecedencia
+            +TIMESTAMP enviada_em
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+        class notificacoes {
+            <<Table>>
+            +BIGINT id_notificacao PK
+            +BIGINT usuario_id FK
+            +BIGINT lar_id FK
+            +VARCHAR(255) texto
+            +ENUM tipo
+            +BOOLEAN lida
+            +TIMESTAMP created_at
+            +TIMESTAMP updated_at
+        }
+    }
+
+    %% Relacionamentos
+    usuarios --> sessao_tokens : fk_sessao_usuario
+    usuarios --> lares : fk_lar_criador
+    lares --> lar_membros : fk_membro_lar
+    usuarios --> lar_membros : fk_membro_usuario
+    lares --> convites_lar : fk_convite_lar
+    usuarios --> convites_lar : fk_convite_autor
+    usuarios --> contas : fk_conta_usuario
+    usuarios --> categorias : fk_categoria_usuario
+    usuarios --> transacoes : fk_transacao_usuario
+    contas --> transacoes : fk_transacao_conta
+    categorias --> transacoes : fk_transacao_categoria
+    lares --> transacoes : fk_transacao_lar
+    usuarios --> registros_caixa_preta : fk_caixapreta_usuario
+    lares --> regras_divisao : fk_regradiv_lar
+    lares --> despesas_lares : fk_despesa_lar
+    regras_divisao --> despesas_lares : fk_despesa_regra
+    usuarios --> despesas_lares : fk_despesa_autor
+    despesas_lares --> participacoes_despesas : fk_part_despesa
+    usuarios --> participacoes_despesas : fk_part_usuario
+    transacoes --> participacoes_despesas : fk_part_transacao
+    lares --> acordos : fk_acordo_lar
+    usuarios --> acordos : fk_acordo_usuario
+    usuarios --> metas : fk_meta_usuario
+    lares --> metas : fk_meta_lar
+    usuarios --> notificacoes : fk_notif_usuario
+    lares --> notificacoes : fk_notif_lar
+    lares --> cobrancas : fk_cobranca_lar
+    usuarios --> cobrancas : fk_cobranca_autor
+`;
+
+// ========== RASTREABILIDADE ==========
+const TRACE = [
+  {rf:'RF001',d:'Cadastro e Autenticação',p:'e',uc:'UC01, UC02, UC03',cl:'Usuario, SessaoToken',tb:'usuarios, sessao_tokens'},
+  {rf:'RF002',d:'Caixa Preta (Privado)',p:'e',uc:'UC04',cl:'RegistroCaixaPreta',tb:'registros_caixa_preta'},
+  {rf:'RF003',d:'Inserção e Importação',p:'e',uc:'UC05, UC06',cl:'Transacao, Conta, Categoria',tb:'transacoes, contas, categorias'},
+  {rf:'RF004',d:'Criar Lar e Convites',p:'e',uc:'UC07, UC08, UC09',cl:'Lar, LarMembro, ConviteLar',tb:'lares, lar_membros, convites_lar'},
+  {rf:'RF005',d:'Cobrador Diplomata',p:'e',uc:'UC14',cl:'Cobranca, Notificacao',tb:'cobrancas, notificacoes'},
+  {rf:'RF006',d:'Mesa de Acordos',p:'e',uc:'UC10',cl:'RegraDivisao, DespesaLar, ParticipacaoDespesa, Acordo, Proposta',tb:'regras_divisao, despesas_lares, participacoes_despesas, acordos, propostas'},
+  {rf:'RF007',d:'Criar Metas do Lar',p:'e',uc:'UC11',cl:'Meta',tb:'metas'},
+  {rf:'RF008',d:'Gerenciar Projetos',p:'i',uc:'UC11',cl:'Projeto, ProjetoItem',tb:'projetos, projeto_itens'},
+  {rf:'RF009',d:'Painéis Consolidados',p:'e',uc:'UC12, UC13',cl:'Transacao, Conta',tb:'transacoes, contas'},
+  {rf:'RF010',d:'Lançar Despesa do Lar',p:'e',uc:'UC10',cl:'DespesaLar, ParticipacaoDespesa',tb:'despesas_lares, participacoes_despesas'},
+  {rf:'RF011',d:'Gestão de Conta (LGPD)',p:'e',uc:'—',cl:'Usuario',tb:'usuarios'},
+];
+
+// ========== RENDER MERMAID ==========
+const diagrams = {};
+let renderCounter = 0;
+// Holds the current source code for each diagram type for the parser
+const currentDiagramSource = { class: null, db: null };
+
+async function renderMermaid(containerId, code, key) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  
+  // Cache source for spotlight parser
+  if (key.startsWith('class-')) currentDiagramSource.class = code;
+  if (key.startsWith('db-')) currentDiagramSource.db = code;
+  
+  try {
+    renderCounter++;
+    const id = 'mmd-' + key.replace(/[^a-zA-Z0-9]/g,'') + '-' + renderCounter;
+    const { svg } = await mermaid.render(id, code);
+    el.innerHTML = svg;
+    diagrams[key] = { svg, el };
+
+    const svgEl = el.querySelector('svg');
+    if (!svgEl) return;
+    
+    // Clean up bounds to remove initial render glitches
+    svgEl.removeAttribute('height');
+    svgEl.style.maxWidth = 'none';
+    
+    // Fix bounding box for pan-zoom
+    setTimeout(() => {
+      try {
+        const bbox = svgEl.getBBox();
+        if (bbox && bbox.width > 0) {
+          const pad = 80;
+          svgEl.setAttribute('viewBox', (bbox.x - pad) + ' ' + (bbox.y - pad) + ' ' + (bbox.width + pad * 2) + ' ' + (bbox.height + pad * 2));
+          svgEl.setAttribute('width', bbox.width + pad * 2);
+          svgEl.setAttribute('height', bbox.height + pad * 2);
+        }
+      } catch(_) {}
+      // Rodar o fix agressivo de caixas imediatamente após ajustar o viewBox
+      if (typeof nukeMermaidBugs === 'function') nukeMermaidBugs();
+    }, 150);
+
+    // ── SPOTLIGHT: click a class node to open detail modal ──
+    const isClassDiagram = key.startsWith('class-');
+    el.querySelectorAll('.classGroup, .er.entityBox').forEach(node => {
+      node.style.cursor = 'pointer';
+      node.addEventListener('click', (e) => {
+        const wrapId = el.closest('.pz-wrap, .dm-body')?.id;
+        if (wrapId && pzState[wrapId] && pzState[wrapId].wasDragging) return;
+        e.stopPropagation();
+        
+        if (isClassDiagram) {
+          // Robust extraction: try multiple selectors used by Mermaid 10 variants
+          function extractClassName(n) {
+            const selectors = [
+              '.classTitle text', 'text.classTitle',
+              '.classNameLabel text', '.nameBox text',
+              '.classBox text', '.label text',
+              'foreignObject .classTitle',
+              'foreignObject span',
+              'text', 'tspan'
+            ];
+            for (const sel of selectors) {
+              const el2 = n.querySelector(sel);
+              if (el2) {
+                const t = (el2.textContent || el2.innerText || '').trim();
+                if (t && /^[A-Z]/.test(t)) return t; // class names start uppercase
+              }
+            }
+            // Final fallback: first text node with uppercase start
+            for (const el2 of n.querySelectorAll('text, tspan')) {
+              const t = el2.textContent.trim();
+              if (t && /^[A-Z]/.test(t)) return t;
+            }
+            return '';
+          }
+          const rawName = extractClassName(node);
+          const src = currentDiagramSource.class;
+          if (rawName && src) {
+            openClassSpotlight(rawName, src);
+          } else {
+            focusNode(node, el);
+          }
+        } else {
+          // For ER / DB: use spotlight focus zoom
+          focusNode(node, el);
+        }
+      });
+    });
+
+    el.addEventListener('click', (e) => {
+      const wrapId = el.closest('.pz-wrap, .dm-body')?.id;
+      if (wrapId && pzState[wrapId] && pzState[wrapId].wasDragging) return;
+      removeFocus(el);
+    });
+
+  } catch(e) {
+    console.error('Mermaid render error:', e);
+    el.innerHTML = '<p style="padding:40px;color:red;">Erro ao renderizar diagrama: ' + e.message + '</p>';
+  }
+}
+
+
+// ========== FIX MERMAID BOXES (AGGRESSIVE DOM RESIZER v4) ==========
+// Solução definitiva para o problema de Bounding Box do Mermaid 10 com foreignObjects.
+// Varre cada node de classe, mede o tamanho real do HTML interno, calcula a largura,
+// e expande o SVG de forma centrada (pois nós de classe Elk são centrados no 0,0).
+function nukeMermaidBugs() {
+  document.querySelectorAll('.pz-canvas svg').forEach(svgEl => {
+    svgEl.querySelectorAll('[clip-path]').forEach(n => n.removeAttribute('clip-path'));
+    svgEl.querySelectorAll('clipPath').forEach(n => n.remove());
+
+    let anyChanged = false;
+    const PAD_X = 32;
+
+    svgEl.querySelectorAll('.classGroup, .node').forEach(group => {
+      const rects = Array.from(group.querySelectorAll('rect'));
+      if (rects.length === 0) return;
+      
+      let bodyRect = rects[0];
+      let titleRect = rects.length > 1 ? rects[1] : null;
+      if (titleRect && parseFloat(titleRect.getAttribute('height') || 0) > parseFloat(bodyRect.getAttribute('height') || 0)) {
+        [bodyRect, titleRect] = [titleRect, bodyRect];
+      }
+
+      const currW = parseFloat(bodyRect.getAttribute('width') || 0);
+
+      let maxTrueWidth = 0;
+      let hasText = false;
+
+      group.querySelectorAll('foreignObject').forEach(fo => {
+        const div = fo.querySelector('div');
+        if (!div) return;
+        hasText = true;
+        fo.style.overflow = 'visible';
+
+        const bb = div.getBoundingClientRect();
+        const ctm = svgEl.getScreenCTM();
+        let trueWidth = ctm && ctm.a ? bb.width / ctm.a : div.scrollWidth;
+        if (trueWidth <= 0) trueWidth = div.scrollWidth;
+        if (trueWidth > maxTrueWidth) maxTrueWidth = trueWidth;
+
+        const isTitle = fo.classList.contains('classTitle');
+        const transform = fo.getAttribute('transform');
+        if (transform) {
+           const match = transform.match(/translate\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/);
+           if (match) {
+             const ty = parseFloat(match[2]);
+             if (isTitle) {
+               fo.setAttribute('width', trueWidth + 4);
+               fo.setAttribute('transform', `translate(${-trueWidth / 2}, ${ty})`);
+             } else {
+               fo.setAttribute('width', trueWidth + 30);
+             }
+           }
+        }
+      });
+
+      if (!hasText || maxTrueWidth === 0) return;
+
+      const neededW = maxTrueWidth + PAD_X;
+      // Impede loops infinitos
+      if (neededW <= currW + 2) return;
+
+      anyChanged = true;
+      const newX = -neededW / 2;
+      rects.forEach(r => {
+        r.setAttribute('width', neededW);
+        r.setAttribute('x', newX);
+      });
+
+      group.querySelectorAll('line').forEach(l => {
+        const lx1 = parseFloat(l.getAttribute('x1') || 0);
+        const lx2 = parseFloat(l.getAttribute('x2') || 0);
+        if (Math.abs(Math.abs(lx2 - lx1) - currW) < 10) {
+          l.setAttribute('x1', newX);
+          l.setAttribute('x2', newX + neededW);
+        }
+      });
+
+      group.querySelectorAll('foreignObject').forEach(fo => {
+        if (fo.classList.contains('classTitle')) return;
+        const transform = fo.getAttribute('transform');
+        if (transform) {
+           const match = transform.match(/translate\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/);
+           if (match) {
+             const ty = parseFloat(match[2]);
+             fo.setAttribute('transform', `translate(${newX + 8}, ${ty})`);
+           }
+        }
+      });
+    });
+
+    svgEl.querySelectorAll('.edgeLabel').forEach(edge => {
+      const fo = edge.querySelector('foreignObject');
+      const labelG = edge.querySelector('.label');
+      if (!fo || !labelG) return;
+      const div = fo.querySelector('div');
+      if (!div) return;
+      fo.style.overflow = 'visible';
+      
+      const bb = div.getBoundingClientRect();
+      const ctm = svgEl.getScreenCTM();
+      let trueWidth = ctm && ctm.a ? bb.width / ctm.a : div.scrollWidth;
+      if (trueWidth <= 0) trueWidth = div.scrollWidth;
+      
+      const currW = parseFloat(fo.getAttribute('width') || 0);
+      if (trueWidth > currW + 2) {
+         anyChanged = true;
+         fo.setAttribute('width', trueWidth + 8);
+         const transform = labelG.getAttribute('transform');
+         if (transform) {
+           const match = transform.match(/translate\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/);
+           if (match) {
+             const ty = parseFloat(match[2]);
+             labelG.setAttribute('transform', `translate(${-trueWidth / 2}, ${ty})`);
+           }
+         }
+      }
+    });
+
+    svgEl.querySelectorAll('.cluster-label').forEach(cl => {
+      const fo = cl.querySelector('foreignObject');
+      if (!fo) return;
+      const div = fo.querySelector('div');
+      if (!div) return;
+      fo.style.overflow = 'visible';
+      
+      const bb = div.getBoundingClientRect();
+      const ctm = svgEl.getScreenCTM();
+      let trueWidth = ctm && ctm.a ? bb.width / ctm.a : div.scrollWidth;
+      if (trueWidth <= 0) trueWidth = div.scrollWidth;
+      
+      const currW = parseFloat(fo.getAttribute('width') || 0);
+      if (trueWidth > currW + 2) {
+         fo.setAttribute('width', trueWidth + 8);
+      }
+    });
+
+    if (anyChanged) {
+      try {
+        const bb = svgEl.getBBox();
+        if (bb && bb.width > 0) {
+          const pad = 120;
+          svgEl.setAttribute('viewBox', `${bb.x - pad} ${bb.y - pad} ${bb.width + pad * 2} ${bb.height + pad * 2}`);
+          svgEl.setAttribute('width', bb.width + pad * 2);
+          svgEl.setAttribute('height', bb.height + pad * 2);
+        }
+      } catch (_) {}
+    }
+  });
+}
+
+setInterval(nukeMermaidBugs, 800);
+
+const _mermaidFixObserver = new MutationObserver((mutations) => {
+  for (const m of mutations) {
+    for (const node of m.addedNodes) {
+      if (node.nodeType === 1 && (node.tagName === 'svg' || node.querySelector?.('svg'))) {
+        // Aguardar o Mermaid terminar o layout interno antes de corrigir
+        setTimeout(nukeMermaidBugs, 300);
+        return;
+      }
+    }
+  }
+});
+document.querySelectorAll('.pz-canvas').forEach(canvas => {
+  _mermaidFixObserver.observe(canvas, { childList: true, subtree: true });
+});
+
+// ========== PAN & ZOOM & FOCUS ENGINE ==========
+const pzState = {};
+
+function initPZ(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  if (pzState[wrapId]) delete pzState[wrapId];
+  
+  const canvas = wrap.querySelector('.pz-canvas');
+  if (!canvas) return;
+
+  const wrapRect = wrap.getBoundingClientRect();
+  const svgEl = canvas.querySelector('svg');
+  let initialScale = 0.35, initialX = 20, initialY = 20;
+  
+  if (svgEl) {
+    const w = parseFloat(svgEl.getAttribute('width')) || svgEl.getBoundingClientRect().width || 2000;
+    const h = parseFloat(svgEl.getAttribute('height')) || svgEl.getBoundingClientRect().height || 1500;
+    const scaleX = wrapRect.width / w;
+    const scaleY = wrapRect.height / h;
+    // No modal de tela cheia, usar 95% do espaço; no slide normal, 85%
+    const isModal = wrap.classList.contains('dm-body');
+    const fitFactor = isModal ? 0.95 : 0.85;
+    initialScale = Math.min(scaleX, scaleY) * fitFactor;
+    initialScale = Math.max(0.08, Math.min(5, initialScale));
+    initialX = (wrapRect.width - w * initialScale) / 2;
+    initialY = Math.max(10, (wrapRect.height - h * initialScale) / 4);
+  }
+
+  const st = { 
+    scale: initialScale, x: initialX, y: initialY, 
+    dragging: false, wasDragging: false, dragDist: 0,
+    sx: 0, sy: 0, ox: 0, oy: 0,
+    animating: false, targetScale: initialScale, targetX: initialX, targetY: initialY
+  };
+  pzState[wrapId] = st;
+  
+  const apply = () => { canvas.style.transform = 'translate(' + st.x + 'px,' + st.y + 'px) scale(' + st.scale + ')'; };
+  apply();
+
+  // Drag logic
+  wrap.addEventListener('mousedown', (e) => {
+    if (e.button !== 0 || st.animating) return;
+    st.dragging = true; st.wasDragging = false; st.dragDist = 0;
+    st.sx = e.clientX; st.sy = e.clientY; st.ox = st.x; st.oy = st.y;
+    wrap.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!st.dragging) return;
+    const dx = e.clientX - st.sx;
+    const dy = e.clientY - st.sy;
+    st.dragDist += Math.abs(dx) + Math.abs(dy);
+    if (st.dragDist > 10) st.wasDragging = true;
+    st.x = st.ox + dx; st.y = st.oy + dy; apply();
+  });
+  window.addEventListener('mouseup', () => { 
+    st.dragging = false; wrap.style.cursor = 'grab'; 
+    setTimeout(() => { st.wasDragging = false; }, 50);
+  });
+
+  // Scroll zoom
+  wrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if(st.animating) return;
+    const rect = wrap.getBoundingClientRect();
+    const mx = e.clientX - rect.left; const my = e.clientY - rect.top;
+    const factor = e.deltaY < 0 ? 1.15 : 0.87;
+    const newScale = Math.max(0.05, Math.min(5, st.scale * factor));
+    st.x = mx - (mx - st.x) * (newScale / st.scale);
+    st.y = my - (my - st.y) * (newScale / st.scale);
+    st.scale = newScale; apply();
+  }, { passive: false });
+}
+
+// Animation loop
+function animatePZ(wrapId) {
+  const st = pzState[wrapId];
+  if (!st || !st.animating) return;
+  const canvas = document.getElementById(wrapId)?.querySelector('.pz-canvas');
+  if (!canvas) return;
+  
+  const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
+  st.x = lerp(st.x, st.targetX, 0.12);
+  st.y = lerp(st.y, st.targetY, 0.12);
+  st.scale = lerp(st.scale, st.targetScale, 0.12);
+  
+  canvas.style.transform = 'translate(' + st.x + 'px,' + st.y + 'px) scale(' + st.scale + ')';
+  
+  if (Math.abs(st.x - st.targetX) < 0.5 && Math.abs(st.scale - st.targetScale) < 0.005) {
+    st.x = st.targetX; st.scale = st.targetScale; st.animating = false;
+    canvas.style.transform = 'translate(' + st.x + 'px,' + st.y + 'px) scale(' + st.scale + ')';
+  } else {
+    requestAnimationFrame(() => animatePZ(wrapId));
+  }
+}
+
+// Focus logic
+function focusNode(node, container) {
+  const canvas = container;
+  const wrap = container.closest('.pz-wrap, .dm-body');
+  if (!wrap) return;
+  
+  if (node.classList.contains('node-focused')) {
+    removeFocus(container);
+    return;
+  }
+  
+  canvas.querySelectorAll('.node-focused').forEach(n => n.classList.remove('node-focused'));
+  node.classList.add('node-focused');
+  canvas.classList.add('diagram-focused');
+  
+  const st = pzState[wrap.id];
+  if (!st) return;
+  
+  const bbox = node.getBBox();
+  const wrapRect = wrap.getBoundingClientRect();
+  
+  let desiredScale = (wrapRect.height * 0.6) / bbox.height;
+  desiredScale = Math.max(0.5, Math.min(5, desiredScale));
+  
+  const nodeCenterX = bbox.x + (bbox.width / 2);
+  const nodeCenterY = bbox.y + (bbox.height / 2);
+  
+  st.targetX = (wrapRect.width / 2) - (nodeCenterX * desiredScale);
+  st.targetY = (wrapRect.height / 2) - (nodeCenterY * desiredScale);
+  st.targetScale = desiredScale;
+  st.animating = true;
+  animatePZ(wrap.id);
+}
+
+function removeFocus(container) {
+  if (!container.classList.contains('diagram-focused')) return;
+  container.classList.remove('diagram-focused');
+  container.querySelectorAll('.node-focused').forEach(n => n.classList.remove('node-focused'));
+  const wrap = container.closest('.pz-wrap, .dm-body');
+  if (wrap) pzReset(wrap.id);
+}
+
+function pzBtn(wrapId, factor) {
+  const st = pzState[wrapId]; if (!st) return;
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  const rect = wrap.getBoundingClientRect();
+  const cx = rect.width / 2;
+  const cy = rect.height / 2;
+  const newScale = Math.max(0.05, Math.min(5, st.scale * factor));
+  st.x = cx - (cx - st.x) * (newScale / st.scale);
+  st.y = cy - (cy - st.y) * (newScale / st.scale);
+  st.scale = newScale;
+  st.animating = false; 
+  const canvas = wrap.querySelector('.pz-canvas');
+  if (canvas) canvas.style.transform = 'translate(' + st.x + 'px,' + st.y + 'px) scale(' + st.scale + ')';
+}
+
+function pzReset(wrapId) {
+  const st = pzState[wrapId]; if (!st) return;
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  const canvas = wrap.querySelector('.pz-canvas');
+  if (!canvas) return;
+  const svgEl = canvas.querySelector('svg');
+  const wrapRect = wrap.getBoundingClientRect();
+  let newScale = 0.35, newX = 20, newY = 20;
+  if (svgEl) {
+    const w = parseFloat(svgEl.getAttribute('width')) || svgEl.getBoundingClientRect().width || 2000;
+    const h = parseFloat(svgEl.getAttribute('height')) || svgEl.getBoundingClientRect().height || 1500;
+    const sx = wrapRect.width / w;
+    const sy = wrapRect.height / h;
+    const isModal = wrap.classList.contains('dm-body');
+    const fitFactor = isModal ? 0.95 : 0.85;
+    newScale = Math.min(sx, sy) * fitFactor;
+    newScale = Math.max(0.08, Math.min(5, newScale));
+    newX = (wrapRect.width - w * newScale) / 2;
+    newY = Math.max(10, (wrapRect.height - h * newScale) / 4);
+  }
+  
+  st.targetScale = newScale;
+  st.targetX = newX;
+  st.targetY = newY;
+  st.animating = true;
+  animatePZ(wrapId);
+}
+
+// ========== FILTER VIEW ==========
+let currentViews = { 'class': 'all', 'db': 'all' };
+async function setView(type, mode, btn) {
+  if (currentViews[type] === mode) return;
+  currentViews[type] = mode;
+  const allBtns = document.querySelectorAll('.filter-btn');
+  allBtns.forEach(b => {
+    const oc = b.getAttribute('onclick') || '';
+    if (oc.includes("'" + type + "'")) {
+      b.classList.remove('active');
+      if (oc.includes("'" + mode + "'")) b.classList.add('active');
+    }
+  });
+  const code = type === 'class' ? (mode === 'all' ? CLASS_ALL : CLASS_ESS) : (mode === 'all' ? DB_ALL : DB_ESS);
+  const slideId = type === 'class' ? 'class-canvas' : 'db-canvas';
+  const modalId = type === 'class' ? 'class-modal-canvas' : 'db-modal-canvas';
+  
+  document.getElementById(slideId).classList.remove('diagram-focused');
+  document.getElementById(modalId).classList.remove('diagram-focused');
+  
+  await renderMermaid(slideId, code, type + '-slide-' + mode);
+  await renderMermaid(modalId, code, type + '-modal-' + mode);
+  
+  const slidePz = type === 'class' ? 'class-pz' : 'db-pz';
+  const modalPz = type === 'class' ? 'class-modal-body' : 'db-modal-body';
+  setTimeout(() => { initPZ(slidePz); initPZ(modalPz); }, 200);
+}
+
+// ========== MODALS ==========
+function openModal(type) {
+  const modal = document.getElementById(type + '-modal');
+  modal.classList.add('on');
+  const mode = currentViews[type] || 'all';
+  const code = type === 'class' ? (mode === 'all' ? CLASS_ALL : CLASS_ESS) : (mode === 'all' ? DB_ALL : DB_ESS);
+  const modalCanvas = type === 'class' ? 'class-modal-canvas' : 'db-modal-canvas';
+  const modalBody = type === 'class' ? 'class-modal-body' : 'db-modal-body';
+  renderMermaid(modalCanvas, code, type + '-modal-' + mode).then(() => {
+    setTimeout(() => {
+      if (typeof nukeMermaidBugs === 'function') nukeMermaidBugs();
+      initPZ(modalBody);
+    }, 300);
+    // Segunda passada para garantir centralização perfeita após o fix
+    setTimeout(() => {
+      if (typeof nukeMermaidBugs === 'function') nukeMermaidBugs();
+      pzReset(modalBody);
+    }, 700);
+  });
+  modal.querySelectorAll('.filter-btn').forEach(b => {
+    const oc = b.getAttribute('onclick') || '';
+    b.classList.remove('active');
+    if (oc.includes("'" + mode + "'")) b.classList.add('active');
+  });
+}
+function closeModal(type) {
+  document.getElementById(type + '-modal').classList.remove('on');
+}
+
+// ========== TRACE TABLE ==========
+function renderTrace() {
+  const w = document.getElementById('trace-wrapper');
+  if (!w) return;
+  let h = '<table class="trace-table"><thead><tr><th>RF</th><th>Descrição</th><th>Prioridade</th><th>Casos de Uso</th><th>Classes</th><th>Tabelas</th></tr></thead><tbody>';
+  TRACE.forEach(r => {
+    const bc = r.p === 'e' ? 'tb-e' : 'tb-i';
+    const bl = r.p === 'e' ? 'Essencial' : 'Importante';
+    h += '<tr><td class="trf">'+r.rf+'</td><td class="trd">'+r.d+'</td><td><span class="'+bc+'">'+bl+'</span></td><td class="trc">'+r.uc+'</td><td class="trc">'+r.cl+'</td><td class="trc">'+r.tb+'</td></tr>';
+  });
+  h += '</tbody></table>';
+  w.innerHTML = h;
+}
+
+// ========== INIT ALL ==========
+(async function() {
+  await renderMermaid('class-canvas', CLASS_ALL, 'class-slide-all');
+  await renderMermaid('db-canvas', DB_ALL, 'db-slide-all');
+  renderTrace();
+  setTimeout(() => { initPZ('class-pz'); initPZ('db-pz'); }, 500);
+  if(typeof feather !== 'undefined') feather.replace();
+})();
+go(0);
+</script>
+</body>
+</html>

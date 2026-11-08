@@ -1,0 +1,437 @@
+---
+config:
+  theme: mc
+---
+classDiagram
+    direction TB
+
+    class Usuario {
+        - nome: String
+        - email: String
+        - telefone: String
+        - senhaHash: String
+        - tipoRenda: String
+        - rendaMensal: double
+        - diaRecebimento: int
+        - temRendaExtra: boolean
+        - rendaExtra: double
+        - bancoPrincipal: String
+        - contas: List~Conta~
+        - registrosCaixaPreta: List~RegistroCaixaPreta~
+        - transacoes: List~Transacao~
+        - metas: List~Meta~
+        - notificacoes: List~Notificacao~
+
+        + Usuario(nome: String, email: String, senha: String)
+        + getNome(): String
+        + setNome(nome: String): void
+        + getEmail(): String
+        + getRendaMensal(): double
+        + setRendaMensal(valor: double): void
+        + getRendaTotal(): double
+        + autenticar(email: String, senha: String): boolean
+        + adicionarConta(conta: Conta): void
+        + registrarTransacao(transacao: Transacao): void
+    }
+
+    class SessaoToken {
+        - token: String
+        - expiraEm: Date
+        - ativo: boolean
+
+        + SessaoToken(usuario: Usuario)
+        + getToken(): String
+        + isValido(): boolean
+        + revogar(): void
+    }
+
+    class RegistroCaixaPreta {
+        - tituloCifrado: String
+        - valorCifrado: String
+        - contaCifrada: String
+        - data: Date
+        - bloqueado: boolean
+
+        + RegistroCaixaPreta(titulo: String, valor: double, conta: String)
+        + getTituloCifrado(): String
+        + getValorCifrado(): String
+        + isBloqueado(): boolean
+        + setBloqueado(valor: boolean): void
+        - criptografar(dado: String): String
+        + descriptografar(chave: String): String
+    }
+
+    class Conta {
+        - nome: String
+        - tipo: String
+        - saldo: double
+        - comprometido: double
+        - funcao: String
+        - objetivo: String
+        - cor: String
+        - chavePix: String
+        - limite: double
+        - usado: double
+        - vencimentoFatura: int
+
+        + Conta(nome: String, tipo: String, saldoInicial: double)
+        + getNome(): String
+        + getTipo(): String
+        + getSaldo(): double
+        + getSaldoLivre(): double
+        + depositar(valor: double): void
+        + sacar(valor: double): boolean
+        + getComprometido(): double
+        + setComprometido(valor: double): void
+    }
+
+    class Categoria {
+        - nome: String
+        - emoji: String
+        - cor: String
+        - sistema: boolean
+
+        + Categoria(nome: String, emoji: String, cor: String)
+        + getNome(): String
+        + getEmoji(): String
+        + isSistema(): boolean
+    }
+
+    class Transacao {
+        - titulo: String
+        - emoji: String
+        - valor: double
+        - tipo: String
+        - data: Date
+        - visibilidade: String
+        - conta: Conta
+        - categoria: Categoria
+
+        + Transacao(titulo: String, valor: double, tipo: String, conta: Conta)
+        + getTitulo(): String
+        + getValor(): double
+        + getTipo(): String
+        + getVisibilidade(): String
+        + setVisibilidade(vis: String): void
+        + getConta(): Conta
+        + getCategoria(): Categoria
+        + setCategoria(cat: Categoria): void
+    }
+
+    class Lar {
+        - nome: String
+        - emoji: String
+        - membros: List~LarMembro~
+        - despesas: List~DespesaLar~
+        - acordos: List~Acordo~
+        - propostas: List~Proposta~
+        - metas: List~Meta~
+        - projetos: List~Projeto~
+        - cobrancas: List~Cobranca~
+
+        + Lar(nome: String, fundador: Usuario)
+        + getNome(): String
+        + setNome(nome: String): void
+        + adicionarMembro(usuario: Usuario, papel: String): void
+        + removerMembro(usuario: Usuario): void
+        + registrarDespesa(despesa: DespesaLar): void
+        + getCustoTotal(): double
+        + getRendaConjunta(): double
+    }
+
+    class LarMembro {
+        - usuario: Usuario
+        - papel: String
+        - rendaDeclarada: double
+        - percentualContribuicao: double
+
+        + LarMembro(usuario: Usuario, papel: String)
+        + getUsuario(): Usuario
+        + getPapel(): String
+        + setPapel(papel: String): void
+        + getRendaDeclarada(): double
+        + setRendaDeclarada(renda: double): void
+        + getPercentualContribuicao(): double
+        + calcularParte(despesaTotal: double): double
+    }
+
+    class ConviteLar {
+        - emailConvidado: String
+        - tokenConvite: String
+        - status: String
+        - expiraEm: Date
+
+        + ConviteLar(lar: Lar, email: String)
+        + getStatus(): String
+        + aceitar(usuario: Usuario): LarMembro
+        + expirar(): void
+        + isExpirado(): boolean
+    }
+
+    class Notificacao {
+        - texto: String
+        - tipo: String
+        - lida: boolean
+
+        + Notificacao(texto: String, tipo: String)
+        + getTexto(): String
+        + getTipo(): String
+        + isLida(): boolean
+        + marcarComoLida(): void
+    }
+
+    class Cobranca {
+        - titulo: String
+        - valor: double
+        - destinatario: Usuario
+        - vencimento: Date
+        - mensagem: String
+        - estado: String
+        - canal: String
+        - antecedencia: String
+
+        + Cobranca(titulo: String, valor: double, destinatario: Usuario)
+        + getTitulo(): String
+        + getValor(): double
+        + getDestinatario(): Usuario
+        + getEstado(): String
+        + enviar(): void
+        + confirmarRecebimento(): void
+    }
+
+    class RegraDivisao {
+        - tipo: String
+        - ativa: boolean
+        - detalhes: List~RegraDivisaoDetalhe~
+
+        + RegraDivisao(tipo: String)
+        + getTipo(): String
+        + isAtiva(): boolean
+        + setAtiva(ativa: boolean): void
+        + aplicar(despesa: DespesaLar): List~ParticipacaoDespesa~
+    }
+
+    class RegraDivisaoDetalhe {
+        - membro: LarMembro
+        - percentual: double
+
+        + RegraDivisaoDetalhe(membro: LarMembro, percentual: double)
+        + getMembro(): LarMembro
+        + getPercentual(): double
+        + setPercentual(pct: double): void
+    }
+
+    class DespesaLar {
+        - titulo: String
+        - emoji: String
+        - valor: double
+        - tipoDespesa: String
+        - divisaoLabel: String
+        - status: String
+        - dataVencimento: Date
+        - comprovante: boolean
+        - participacoes: List~ParticipacaoDespesa~
+
+        + DespesaLar(titulo: String, valor: double, tipo: String)
+        + getTitulo(): String
+        + getValor(): double
+        + getStatus(): String
+        + setStatus(status: String): void
+        + isPaga(): boolean
+        + temComprovante(): boolean
+    }
+
+    class ParticipacaoDespesa {
+        - membro: LarMembro
+        - valorParte: double
+        - pago: boolean
+        - transacaoQuitacao: Transacao
+
+        + ParticipacaoDespesa(membro: LarMembro, valorParte: double)
+        + getMembro(): LarMembro
+        + getValorParte(): double
+        + isPago(): boolean
+        + confirmarPagamento(transacao: Transacao): void
+    }
+
+    class Acordo {
+        - tipo: String
+        - titulo: String
+        - imagem: String
+        - valorTotal: double
+        - guardado: double
+        - divisaoLabel: String
+        - valorMes: double
+        - contaDestino: String
+        - vencimento: Date
+        - parcelasTotal: int
+        - parcelasPagas: int
+        - status: String
+        - participantes: List~AcordoParticipante~
+        - historico: List~AcordoHistorico~
+
+        + Acordo(titulo: String, valorTotal: double, tipo: String)
+        + getTitulo(): String
+        + getValorTotal(): double
+        + getGuardado(): double
+        + getProgresso(): int
+        + getStatus(): String
+        + contribuir(valor: double): void
+        + atualizarProgresso(): void
+        + isFinalizado(): boolean
+    }
+
+    class AcordoParticipante {
+        - membro: LarMembro
+        - parteMensal: double
+
+        + AcordoParticipante(membro: LarMembro, parteMensal: double)
+        + getMembro(): LarMembro
+        + getParteMensal(): double
+        + setParteMensal(valor: double): void
+    }
+
+    class AcordoHistorico {
+        - descricao: String
+        - estado: String
+
+        + AcordoHistorico(descricao: String, estado: String)
+        + getDescricao(): String
+        + getEstado(): String
+    }
+
+    class Proposta {
+        - tipo: String
+        - titulo: String
+        - imagem: String
+        - link: String
+        - valorTotal: double
+        - divisaoLabel: String
+        - valorMesPorPessoa: double
+        - parcelasTotal: int
+        - prazoMeses: int
+        - mensagem: String
+        - status: String
+        - rodadas: List~NegociacaoRodada~
+
+        + Proposta(titulo: String, valorTotal: double, tipo: String)
+        + getTitulo(): String
+        + getValorTotal(): double
+        + getStatus(): String
+        + aceitar(): Acordo
+        + recusar(): void
+        + contrapropor(novoValor: double): NegociacaoRodada
+    }
+
+    class NegociacaoRodada {
+        - autor: Usuario
+        - valorProposto: double
+
+        + NegociacaoRodada(autor: Usuario, valor: double)
+        + getAutor(): Usuario
+        + getValorProposto(): double
+    }
+
+    class Meta {
+        - titulo: String
+        - emoji: String
+        - categoria: String
+        - valorAlvo: double
+        - valorAtual: double
+        - prazo: Date
+        - compartilhada: boolean
+        - contaGuardando: String
+        - contribuicaoMensal: double
+        - imagem: String
+
+        + Meta(titulo: String, valorAlvo: double, categoria: String)
+        + getTitulo(): String
+        + getValorAlvo(): double
+        + getValorAtual(): double
+        + getProgresso(): int
+        + isCompartilhada(): boolean
+        + contribuir(valor: double): void
+        + isAlcancada(): boolean
+    }
+
+    class Projeto {
+        - nome: String
+        - descricao: String
+        - orcamentoEstimado: double
+        - gastoAtual: double
+        - status: String
+        - itens: List~ProjetoItem~
+
+        + Projeto(nome: String, orcamento: double)
+        + getNome(): String
+        + getOrcamentoEstimado(): double
+        + getGastoAtual(): double
+        + getProgresso(): int
+        + getStatus(): String
+        + adicionarItem(item: ProjetoItem): void
+    }
+
+    class ProjetoItem {
+        - nome: String
+        - categoria: Categoria
+        - valorEstimado: double
+        - valorReal: double
+        - adquirido: boolean
+
+        + ProjetoItem(nome: String, valorEstimado: double)
+        + getNome(): String
+        + getValorEstimado(): double
+        + getValorReal(): double
+        + isAdquirido(): boolean
+        + marcarAdquirido(valorReal: double): void
+    }
+
+    class ProdutoWatchlist {
+        - nome: String
+        - emoji: String
+        - preco: double
+        - loja: String
+        - imagem: String
+
+        + ProdutoWatchlist(nome: String, preco: double, loja: String)
+        + getNome(): String
+        + getPreco(): double
+        + getLoja(): String
+    }
+
+    Usuario "1" *-- "0..*" SessaoToken : possui
+    Usuario "1" *-- "0..*" Conta : possui
+    Usuario "1" *-- "0..*" RegistroCaixaPreta : protege
+    Usuario "1" *-- "0..*" Transacao : registra
+    Usuario "1" *-- "0..*" Notificacao : recebe
+    Usuario "1" *-- "0..*" ProdutoWatchlist : observa
+
+    Lar "1" *-- "1..*" LarMembro : compõe
+    Lar "1" *-- "0..*" ConviteLar : emite
+    Lar "1" *-- "0..*" DespesaLar : possui
+    Lar "1" *-- "0..*" Acordo : gerencia
+    Lar "1" *-- "0..*" Proposta : recebe
+    Lar "1" *-- "0..*" Cobranca : gera
+
+    RegraDivisao "1" *-- "1..*" RegraDivisaoDetalhe : detalha
+    DespesaLar "1" *-- "1..*" ParticipacaoDespesa : divide em
+    Acordo "1" *-- "1..*" AcordoParticipante : envolve
+    Acordo "1" *-- "0..*" AcordoHistorico : registra
+    Proposta "1" *-- "0..*" NegociacaoRodada : negocia
+    Projeto "1" *-- "0..*" ProjetoItem : contém
+
+    Lar "1" o-- "0..*" RegraDivisao : define
+    Lar "1" o-- "0..*" Meta : compartilha
+    Lar "1" o-- "0..*" Projeto : compartilha
+    Usuario "1" o-- "0..*" Meta : cria
+    Usuario "1" o-- "0..*" Projeto : cria
+
+    LarMembro "0..*" --> "1" Usuario : referencia
+    Transacao "0..*" --> "1" Conta : sai de
+    Transacao "0..*" --> "1" Categoria : classificada por
+    ProjetoItem "0..*" --> "0..1" Categoria : classificado por
+    Cobranca "0..*" --> "1" Usuario : destinado a
+    RegraDivisao "1" --> "0..*" DespesaLar : aplicada a
+
+    Proposta "1" ..> "0..1" Acordo : origina
+    ParticipacaoDespesa "0..1" ..> "0..1" Transacao : quitada por

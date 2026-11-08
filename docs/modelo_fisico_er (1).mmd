@@ -1,0 +1,362 @@
+%% ═══════════════════════════════════════════════════════════════════
+%%  SEIVA — Modelo Físico ER (Mermaid)
+%%  Compatível com MySQL 8 e convenções Laravel (id, created_at, FKs)
+%% ═══════════════════════════════════════════════════════════════════
+
+erDiagram
+    usuarios ||--o{ contas : possui
+    usuarios ||--o{ transacoes : registra
+    usuarios ||--o{ lar_membros : participa
+    usuarios ||--o{ registros_caixa_preta : mantem
+    usuarios ||--o{ metas : "cria (pessoal)"
+    usuarios ||--o{ projetos : "cria (pessoal)"
+    usuarios ||--o{ notificacoes : recebe
+    usuarios ||--o{ cobrancas : "destinatario/criador"
+    usuarios ||--o{ produtos_watchlist : vigia
+    usuarios ||--o{ acordos : "acordo_privado"
+
+    lares ||--o{ lar_membros : possui
+    lares ||--o{ regras_divisao : possui
+    lares ||--o{ despesas_lares : "contas conjuntas"
+    lares ||--o{ acordos : "metas/dividas conjuntas"
+    lares ||--o{ propostas : recebe
+    lares ||--o{ transacoes : "movimentacoes do lar"
+    lares ||--o{ convites_lar : emite
+    lares ||--o{ metas : "meta compartilhada"
+    lares ||--o{ projetos : "projeto compartilhado"
+
+    contas ||--o{ transacoes : gera
+
+    categorias ||--o{ transacoes : classifica
+    categorias ||--o{ projeto_itens : classifica
+
+    transacoes |o--o| participacoes_despesas : quita
+
+    regras_divisao ||--o{ regras_divisao_detalhes : compoe
+    regras_divisao ||--o{ despesas_lares : base_para
+
+    despesas_lares ||--o{ participacoes_despesas : dividida_em
+
+    acordos ||--o{ acordo_participantes : envolve
+    acordos ||--o{ acordo_historicos : possui
+    propostas ||--o{ negociacao_rodadas : possui
+    propostas |o--o| acordos : origina
+
+    projetos ||--o{ projeto_itens : contem
+
+    %% ───────────────────────────────────────────────────────────────
+    %%  TABELAS
+    %% ───────────────────────────────────────────────────────────────
+
+    usuarios {
+        bigint id_usuario PK
+        varchar nome
+        varchar email "UNIQUE"
+        varchar telefone
+        varchar senha_hash
+        enum tipo_renda "clt, pj, autonomo, outro"
+        decimal renda_mensal
+        int dia_recebimento
+        boolean tem_renda_extra
+        decimal renda_extra
+        varchar banco_principal
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    sessao_tokens {
+        bigint id_sessao_token PK
+        bigint usuario_id FK
+        varchar token "UNIQUE"
+        timestamp expira_em
+        timestamp created_at
+    }
+
+    contas {
+        bigint id_conta PK
+        bigint usuario_id FK
+        varchar nome
+        enum tipo "corrente, poupanca, cartao, carteira"
+        decimal saldo
+        decimal comprometido
+        enum funcao "gasto, reserva, carteira"
+        varchar objetivo
+        varchar cor
+        varchar chave_pix
+        decimal limite
+        decimal usado
+        varchar vencimento_fatura
+        timestamp atualizado_em
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    categorias {
+        bigint id_categoria PK
+        varchar nome
+        varchar emoji
+        varchar cor
+        boolean sistema "true=padrao para todos"
+        bigint usuario_id FK "null se sistema"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    transacoes {
+        bigint id_transacao PK
+        bigint usuario_id FK
+        bigint conta_id FK
+        bigint categoria_id FK
+        bigint lar_id FK "null se transacao pessoal"
+        varchar titulo
+        varchar emoji
+        decimal valor
+        enum tipo "entrada, saida"
+        date data
+        enum visibilidade "pessoal, privado, compartilhado, lar"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    registros_caixa_preta {
+        bigint id_registro_caixa_preta PK
+        bigint usuario_id FK
+        text titulo_cifrado "Crypted via Laravel"
+        text valor_cifrado "Crypted via Laravel"
+        text conta_cifrada "Crypted via Laravel"
+        date data
+        boolean bloqueado
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    lares {
+        bigint id_lar PK
+        varchar nome
+        varchar emoji
+        bigint criado_por FK "usuario_id"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    lar_membros {
+        bigint id_lar_membro PK
+        bigint lar_id FK
+        bigint usuario_id FK
+        enum papel "administrador, membro"
+        decimal renda_declarada
+        decimal percentual_contribuicao
+        timestamp aceito_em
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    convites_lar {
+        bigint id_convite_lar PK
+        bigint lar_id FK
+        bigint convidado_por FK "usuario_id"
+        varchar email_convidado
+        varchar token_convite "UNIQUE"
+        enum status "pendente, aceito, expirado"
+        timestamp expira_em
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    regras_divisao {
+        bigint id_regra_divisao PK
+        bigint lar_id FK
+        enum tipo "igualitaria, proporcional, customizada"
+        boolean ativa "Apenas 1 ativa por lar por vez"
+        timestamp vigente_desde
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    regras_divisao_detalhes {
+        bigint id_regra_divisao_detalhe PK
+        bigint regra_divisao_id FK
+        bigint usuario_id FK
+        decimal percentual
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    despesas_lares {
+        bigint id_lar PK
+        bigint lar_id FK
+        bigint regra_divisao_id FK
+        bigint registrada_por FK "usuario_id"
+        varchar titulo
+        varchar emoji
+        decimal valor
+        enum tipo_despesa "fixa, variavel, emergencia"
+        varchar divisao_label
+        enum status "pago, pendente"
+        date data_vencimento
+        boolean comprovante
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    participacoes_despesas {
+        bigint id_participacao_despesa PK
+        bigint despesa_lar_id FK
+        bigint usuario_id FK
+        bigint transacao_id FK "null se pendente"
+        decimal valor_parte
+        boolean pago
+        timestamp pago_em
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    acordos {
+        bigint id_acordo PK
+        bigint lar_id FK "null se pessoal"
+        bigint usuario_id FK "null se do lar"
+        enum tipo "meta, divida"
+        varchar titulo
+        varchar imagem
+        decimal valor_total
+        decimal guardado
+        int progresso
+        varchar divisao_label
+        decimal valor_mes
+        varchar conta_destino
+        varchar vencimento
+        int parcelas_total
+        int parcelas_pagas
+        enum status "ativo, em_negociacao"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    acordo_participantes {
+        bigint id_acordo_participante PK
+        bigint acordo_id FK
+        bigint usuario_id FK
+        decimal parte_mensal
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    acordo_historicos {
+        bigint id_acordo_historico PK
+        bigint acordo_id FK
+        varchar descricao
+        enum estado "pago, pendente"
+        timestamp created_at
+    }
+
+    propostas {
+        bigint id_proposta PK
+        bigint lar_id FK "null se pessoal"
+        bigint autor_id FK "usuario_id"
+        enum tipo "meta, divida"
+        varchar titulo
+        varchar imagem
+        varchar link
+        decimal valor_total
+        varchar divisao_label
+        decimal valor_mes_por_pessoa
+        int parcelas_total
+        int prazo_meses
+        text mensagem
+        enum status "pendente, aceita, recusada, contraproposta"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    negociacao_rodadas {
+        bigint id_negociacao_rodada PK
+        bigint proposta_id FK
+        bigint autor_id FK "usuario_id"
+        decimal valor_proposto
+        timestamp created_at
+    }
+
+    metas {
+        bigint id_meta PK
+        bigint usuario_id FK "null se meta do lar"
+        bigint lar_id FK "null se meta pessoal"
+        varchar titulo
+        varchar emoji
+        enum categoria "produto, viagem, poupanca, reserva, curso"
+        decimal valor_alvo
+        decimal valor_atual
+        varchar prazo
+        boolean compartilhada
+        varchar conta_guardando
+        varchar pix_destino
+        bigint responsavel_usuario_id FK
+        decimal contribuicao_mensal
+        varchar imagem
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    projetos {
+        bigint id_projeto PK
+        bigint usuario_id FK "null se projeto do lar"
+        bigint lar_id FK "null se projeto pessoal"
+        varchar nome
+        text descricao
+        decimal orcamento_estimado
+        decimal gasto_atual
+        enum status "planejado, em_andamento, concluido"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    projeto_itens {
+        bigint id_projeto_item PK
+        bigint projeto_id FK
+        bigint categoria_id FK
+        varchar nome
+        decimal valor_estimado
+        decimal valor_real
+        boolean adquirido
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    produtos_watchlist {
+        bigint id_produto_watchlist PK
+        bigint usuario_id FK
+        varchar nome
+        varchar emoji
+        decimal preco
+        varchar loja
+        varchar imagem
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    notificacoes {
+        bigint id_notificacao PK
+        bigint usuario_id FK "destinatario"
+        bigint lar_id FK "null se pessoal"
+        varchar texto
+        enum tipo "sucesso, atencao, lar, info"
+        boolean lida
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    cobrancas {
+        bigint id_cobranca PK
+        bigint lar_id FK
+        bigint criada_por FK "usuario_id"
+        bigint destinatario_id FK "usuario_id"
+        varchar titulo
+        decimal valor
+        varchar vencimento
+        text mensagem
+        enum estado "pendente, enviada, agendada"
+        enum canal "app, email, whatsapp"
+        enum antecedencia "1_dia, 2_dias, 3_dias, 1_semana"
+        timestamp enviada_em
+        timestamp created_at
+        timestamp updated_at
+    }
