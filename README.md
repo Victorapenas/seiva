@@ -34,15 +34,44 @@ Abra seu navegador em:
 
 ---
 
-## 🧪 Modo de Avaliação para Testes da Banca
-No topo da tela você encontrará o menu suspenso **🧪 Modo Avaliação**:
-- **Limpar Banco (Zero):** Deixa o banco de dados completamente vazio para testar o fluxo de criação de conta nova, cadastro de rendas e configuração inicial do Lar.
-- **Carregar Duda & Ian (Demo):** Popula instantaneamente todas as contas, o Lar "Nosso Cantinho", rateios de aluguel/luz, acordos e metas com os dados reais apresentados nos slides.
+## ✨ Funcionalidades Principais do Sistema
+
+1. **Autenticação & Segurança (RF001):**
+   - Cadastro e login com fluxo fluido em página dedicada.
+   - Políticas de senha forte e proteção de sessão com tokens.
+
+2. **Caixa Preta Privada (RF002):**
+   - Espaço seguro para gastos e economias pessoais individuais protegido por PIN numérico.
+   - Total privacidade de itens individuais em relação aos outros membros do lar.
+
+3. **Gestão do Lar & Rateio Inteligente (RF004, RF010):**
+   - Criação de lares e gestão de participantes via convite.
+   - Cálculo automático de rateio proporcional com base na renda cadastrada de cada membro.
+
+4. **Mesa de Acordos & Votação (RF006, RF007):**
+   - Criação de combinados financeiros do casal/república com status de negociação e histórico.
+
+5. **Metas & Projetos Compartilhados (RF008):**
+   - Metas de economia conjuntas e projetos com acompanhamento de progresso.
+
+6. **Cobrador Diplomata (RF009):**
+   - Sistema de lembretes amigáveis e avisos de pendências financeiras.
+
+7. **Transparência & LGPD (RF011):**
+   - Painel de privacidade, exportação de dados em JSON e revogação de permissões.
 
 ---
 
-## 📂 Estrutura de Documentação
-- `docs/apresentacao-pi.html` — Slides oficiais da apresentação.
-- `docs/RELATO_DE_CONDUCAO.md` — Relato de condução com a tabela comparativa (Previsto x Realizado).
-- `docs/BAREMA_PI_ENTREGA_2.md` — Mapeamento de conformidade com os critérios do Barema.
-- `banco-de-dados/` — Scripts SQL físicos, diagramas ER e modelos do Workbench.
+## 🛠️ Tecnologias Utilizadas
+- **Backend:** PHP 8.2+ / Laravel 12
+- **Banco de Dados:** SQLite (com suporte a MySQL/PostgreSQL via migrations)
+- **Frontend:** Blade Templates com Tailwind CSS e componentes dinâmicos
+- **Design System:** Estética SEIVA (paleta orgânica `#2e6b4f` / `#faf9f5`, tipografia limpa, transições fluidas)
+
+---
+
+## 📂 Estrutura de Documentação & Avaliação do PI
+- `docs/apresentacao-pi.html` — Slides oficiais da apresentação acadêmica do projeto.
+- `docs/RELATO_DE_CONDUCAO.md` — Relato de condução com a tabela comparativa (Previsto x Realizado) e distribuição das responsabilidades por membro.
+- `docs/BAREMA_PI_ENTREGA_2.md` — Mapeamento detalhado de conformidade com todos os critérios do Barema de Avaliação.
+- `banco-de-dados/` — Scripts SQL físicos, modelo relacional e diagramas conceituais/lógicos.
