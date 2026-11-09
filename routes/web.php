@@ -12,7 +12,6 @@ use App\Http\Controllers\MetaController;
 use App\Http\Controllers\ProjetoController;
 use App\Http\Controllers\CobrancaController;
 use App\Http\Controllers\LgpdController;
-use App\Http\Controllers\DemoController;
 
 // Rota principal da aplicação SEIVA
 Route::get('/', function () {
@@ -25,10 +24,6 @@ Route::prefix('api')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
-
-    // Demonstração da Banca / Testes Rápidos
-    Route::post('/demo/popular', [DemoController::class, 'seedDemo']);
-    Route::post('/demo/limpar', [DemoController::class, 'clearDemo']);
 
     // Categorias padrão
     Route::get('/categorias', [TransacaoController::class, 'categorias']);
