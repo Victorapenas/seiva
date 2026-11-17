@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         tailwind.config = {
             theme: {
@@ -103,84 +104,196 @@
     <!-- ========================================== -->
     <!-- 1. TELA DE LOGIN (LOGIN SCREEN OFICIAL)    -->
     <!-- ========================================== -->
-    <div id="screen-login" class="app-screen is-active relative min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-10 lg:block lg:p-0">
-        <!-- Painel decorativo lateral — Desktop (50% da tela em verde primário) -->
-        <div class="pointer-events-none absolute inset-y-0 left-0 hidden w-1/2 bg-primary lg:block">
-            <div class="flex h-full flex-col justify-between p-12 text-primary-foreground">
-                <!-- Seiva Wordmark -->
-                <div class="flex items-center gap-2">
-                    <div class="relative size-9 overflow-hidden rounded-xl border border-primary-foreground/20 bg-primary-foreground/10 flex items-center justify-center">
-                        <img src="/seiva-logo.png" alt="SEIVA" class="object-contain p-1 w-full h-full" onerror="this.src='/icon.svg'">
+    <div id="screen-login" class="app-screen is-active relative min-h-screen overflow-hidden bg-background">
+        
+        <!-- ========================================== -->
+        <!-- LATERAL ESQUERDA: APRESENTAÇÃO DA MARCA    -->
+        <!-- (Desktop: 50% da tela, Imersiva e Visual)  -->
+        <!-- ========================================== -->
+        <div class="relative hidden w-1/2 min-h-screen bg-gradient-to-br from-[#1b3d2b] via-[#24523b] to-[#2e6b4f] p-8 xl:p-12 lg:flex flex-col justify-between text-white overflow-hidden shadow-2xl float-left">
+            <!-- Padrão gráfico de fundo (Raízes e Folhas sutis em SVG) -->
+            <svg class="pointer-events-none absolute -right-20 -bottom-20 w-[550px] h-[550px] opacity-10 text-white" viewBox="0 0 400 400" fill="currentColor">
+                <path d="M200 0C89.5 0 0 89.5 0 200s89.5 200 200 200 200-89.5 200-200S310.5 0 200 0zm0 360c-88.4 0-160-71.6-160-160S111.6 40 200 40s160 71.6 160 160-71.6 160-160 160z"/>
+                <path d="M200 60c-77.3 0-140 62.7-140 140s62.7 140 140 140 140-62.7 140-140S277.3 60 200 60zm0 240c-55.2 0-100-44.8-100-100s44.8-100 100-100 100 44.8 100 100-44.8 100-100 100z"/>
+            </svg>
+
+            <!-- Topo: Logo & Badge Oficial -->
+            <div class="relative z-10 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="relative size-12 overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-card flex items-center justify-center">
+                        <img src="/seiva-logo.png" alt="SEIVA" class="object-contain w-full h-full" onerror="this.src='/icon.svg'">
                     </div>
-                    <span class="text-lg font-semibold tracking-tight text-primary-foreground">SEIVA</span>
+                    <div>
+                        <span class="text-2xl font-extrabold tracking-tight text-white block leading-none">SEIVA</span>
+                        <span class="text-[11px] font-medium text-emerald-200/90 tracking-wide">Dinheiro Sem Tabu</span>
+                    </div>
+                </div>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-semibold text-emerald-200 backdrop-blur-sm">
+                    <i data-lucide="sparkles" class="size-3.5"></i>
+                    Lares Compartilhados & Finanças
+                </span>
+            </div>
+
+            <!-- Centro: Proposta de Valor & Diferenciais do Produto -->
+            <div class="relative z-10 my-auto py-8 space-y-6">
+                <div>
+                    <h1 class="text-3xl xl:text-4xl font-extrabold text-white leading-[1.18] tracking-tight text-balance">
+                        Organize as finanças do casal sem brigas.
+                    </h1>
+                    <p class="mt-3 text-sm xl:text-base leading-relaxed text-emerald-50/90 max-w-lg">
+                        A primeira plataforma que une a transparência necessária para contas conjuntas com o respeito absoluto à privacidade de cada parceiro.
+                    </p>
                 </div>
 
-                <div>
-                    <h2 class="max-w-sm text-balance text-3xl font-bold leading-tight tracking-tight text-white">
-                        Organize as finanças do casal sem brigas.
-                    </h2>
-                    <p class="mt-4 max-w-sm text-pretty text-sm leading-relaxed text-primary-foreground/80">
-                        Contas pessoais e compartilhadas, acordos negociáveis e metas em conjunto — tudo num só lugar, com privacidade.
-                    </p>
-                    <div class="mt-8 flex items-center gap-2 text-sm text-primary-foreground/80">
-                        <i data-lucide="leaf" class="size-4"></i>
-                        Onde seu dinheiro cria raízes
+                <!-- Showcase dos 3 Diferenciais Exclusivos do SEIVA -->
+                <div class="space-y-3 pt-2">
+                    <!-- 1. Caixa Preta -->
+                    <div class="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-4 text-left transition-all duration-200 hover:bg-white/15">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <span class="flex size-8 items-center justify-center rounded-xl bg-amber-400/20 text-amber-300">
+                                    <i data-lucide="lock" class="size-4"></i>
+                                </span>
+                                <span class="text-xs font-bold text-white uppercase tracking-wider">Caixa Preta</span>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-200 text-[10px] font-bold">
+                                PIN 4 DÍGITOS
+                            </span>
+                        </div>
+                        <p class="mt-2 text-xs text-white/80 leading-relaxed">
+                            Gastos particulares e surpresas que ficam invisíveis no extrato comum do lar. Criptografia e privacidade garantida.
+                        </p>
+                    </div>
+
+                    <!-- 2. Rateio Proporcional -->
+                    <div class="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-4 text-left transition-all duration-200 hover:bg-white/15">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <span class="flex size-8 items-center justify-center rounded-xl bg-emerald-400/20 text-emerald-300">
+                                    <i data-lucide="scale" class="size-4"></i>
+                                </span>
+                                <span class="text-xs font-bold text-white uppercase tracking-wider">Rateio Proporcional Justo</span>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 text-[10px] font-bold">
+                                MAIS JUSTO QUE 50/50
+                            </span>
+                        </div>
+                        <div class="mt-2 space-y-1">
+                            <div class="flex justify-between text-[11px] text-white/90 font-medium">
+                                <span>Quem ganha mais apoia mais</span>
+                                <span class="text-emerald-200 font-bold">Cálculo Automático</span>
+                            </div>
+                            <div class="h-1.5 w-full rounded-full bg-black/25 overflow-hidden flex">
+                                <div class="h-full bg-emerald-400" style="width: 65%"></div>
+                                <div class="h-full bg-white/40" style="width: 35%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Cobrador Diplomata -->
+                    <div class="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-4 text-left transition-all duration-200 hover:bg-white/15">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <span class="flex size-8 items-center justify-center rounded-xl bg-sky-400/20 text-sky-200">
+                                    <i data-lucide="bell-ring" class="size-4"></i>
+                                </span>
+                                <span class="text-xs font-bold text-white uppercase tracking-wider">Cobrador Diplomata</span>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-sky-400/20 text-sky-200 text-[10px] font-bold">
+                                ZERO ATRITO
+                            </span>
+                        </div>
+                        <p class="mt-2 text-xs text-white/80 leading-relaxed">
+                            Lembretes afetuosos e neutros disparados pelo sistema com envio automático da chave PIX.
+                        </p>
                     </div>
                 </div>
             </div>
+
+            <!-- Rodapé: LGPD & Slogan Oficial -->
+            <div class="relative z-10 flex items-center justify-between text-[11px] text-white/70 border-t border-white/10 pt-4">
+                <span class="flex items-center gap-1.5">
+                    <i data-lucide="shield-check" class="size-4 text-emerald-300"></i>
+                    Conformidade com a LGPD (Lei nº 13.709/2018)
+                </span>
+                <span class="flex items-center gap-1 text-emerald-200">
+                    <i data-lucide="leaf" class="size-3.5"></i> Onde seu dinheiro cria raízes
+                </span>
+            </div>
         </div>
 
-        <!-- Painel Central / Formulário de Entrada -->
-        <div class="relative z-10 mx-auto w-full max-w-md lg:ml-[50%] lg:flex lg:min-h-screen lg:w-1/2 lg:max-w-none lg:items-center lg:justify-center lg:px-8">
-            <div class="w-full lg:max-w-md">
-                <!-- Mobile Logo Header -->
-                <div class="mb-8 flex flex-col items-center lg:hidden text-center">
-                    <div class="relative size-20 overflow-hidden rounded-2xl border border-border bg-card p-2 shadow-soft flex items-center justify-center">
-                        <img src="/seiva-logo.png" alt="SEIVA" class="object-contain w-full h-full" onerror="this.src='/icon.svg'">
-                    </div>
-                    <h1 class="mt-4 text-2xl font-bold tracking-tight text-foreground">SEIVA</h1>
-                    <p class="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <i data-lucide="leaf" class="size-4 text-primary"></i>
-                        Onde seu dinheiro cria raízes
-                    </p>
+        <!-- ========================================== -->
+        <!-- LATERAL DIREITA: FORMULÁRIO DE ENTRADA     -->
+        <!-- (Responsivo: Desktop 50% & Mobile Hero)    -->
+        <!-- ========================================== -->
+        <div class="relative z-10 mx-auto w-full min-h-screen flex flex-col justify-center px-4 py-8 sm:px-6 lg:w-1/2 lg:px-12 xl:px-16">
+            
+            <!-- Mobile Header Hero (Experiência Exclusiva e Imersiva Mobile) -->
+            <div class="mb-6 lg:hidden rounded-3xl bg-gradient-to-br from-[#1b3d2b] to-[#2e6b4f] p-6 text-white text-center shadow-card">
+                <div class="relative size-16 mx-auto overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-soft flex items-center justify-center">
+                    <img src="/seiva-logo.png" alt="SEIVA" class="object-contain w-full h-full" onerror="this.src='/icon.svg'">
                 </div>
+                <h1 class="mt-3 text-2xl font-black tracking-tight text-white">SEIVA</h1>
+                <p class="mt-1 text-xs text-emerald-100 flex items-center justify-center gap-1.5">
+                    <i data-lucide="leaf" class="size-3.5 text-emerald-300"></i>
+                    Onde seu dinheiro cria raízes
+                </p>
+                <div class="mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1 text-[11px]">
+                    <span class="shrink-0 px-2.5 py-1 rounded-full bg-white/15 border border-white/10 text-white flex items-center gap-1">
+                        <i data-lucide="lock" class="size-3 text-amber-300"></i> Caixa Preta com PIN
+                    </span>
+                    <span class="shrink-0 px-2.5 py-1 rounded-full bg-white/15 border border-white/10 text-white flex items-center gap-1">
+                        <i data-lucide="scale" class="size-3 text-emerald-300"></i> Rateio Proporcional
+                    </span>
+                    <span class="shrink-0 px-2.5 py-1 rounded-full bg-white/15 border border-white/10 text-white flex items-center gap-1">
+                        <i data-lucide="bell-ring" class="size-3 text-sky-300"></i> Cobrador Diplomata
+                    </span>
+                </div>
+            </div>
 
-                <!-- Card de Login -->
-                <div class="rounded-3xl border border-border bg-card p-6 shadow-card lg:shadow-elevated">
-                    <!-- Abas: Entrar vs Criar Conta -->
+            <!-- Card Principal de Login & Navegação -->
+            <div class="w-full max-w-md mx-auto">
+                <div class="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-card lg:shadow-elevated">
+                    
+                    <!-- Abas Superiores Alternáveis: Entrar vs Criar Conta -->
                     <div class="relative mb-6 flex rounded-2xl bg-muted p-1">
-                        <button type="button" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground shadow-soft">
+                        <button type="button" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground shadow-soft transition-all">
                             Entrar
                         </button>
-                        <button type="button" onclick="irParaOnboarding()" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
+                        <button type="button" onclick="irParaOnboarding()" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all">
                             Criar conta
                         </button>
                     </div>
 
+                    <div class="mb-5 text-left">
+                        <h2 class="text-xl font-bold tracking-tight text-foreground">Bem-vindo(a) de volta</h2>
+                        <p class="text-xs text-muted-foreground mt-0.5">Acesse seu painel pessoal e o ambiente do seu Lar</p>
+                    </div>
+
                     <!-- Formulário de Login -->
                     <form onsubmit="executarLogin(event)" class="space-y-4">
-                        <!-- Floating Input Email -->
+                        <!-- Input E-mail -->
                         <div class="relative">
                             <input type="email" id="loginEmail" required placeholder=" " class="floating-input peer h-14 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
                             <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200">
-                                E-mail
+                                E-mail cadastrado
                             </label>
                         </div>
 
-                        <!-- Floating Input Senha -->
+                        <!-- Input Senha -->
                         <div class="relative">
                             <input type="password" id="loginSenha" required placeholder=" " class="floating-input peer h-14 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
                             <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200">
-                                Senha
+                                Senha de acesso
                             </label>
                         </div>
 
                         <div class="flex items-center justify-between text-xs pt-1">
                             <label class="flex items-center gap-2 cursor-pointer text-muted-foreground">
-                                <input type="checkbox" checked class="rounded border-border text-primary focus:ring-primary">
+                                <input type="checkbox" id="loginLembrar" checked class="rounded border-border text-primary focus:ring-primary">
                                 Lembrar de mim
                             </label>
-                            <a href="#" onclick="alert('Recuperação de senha: basta informar seu e-mail de cadastro.'); return false;" class="font-medium text-primary hover:underline">
+                            <a href="#" onclick="alert('Recuperação de conta: para redefinir sua senha, solicite ao administrador ou confirme o e-mail cadastrado.'); return false;" class="font-medium text-primary hover:underline">
                                 Esqueceu a senha?
                             </a>
                         </div>
@@ -197,8 +310,8 @@
                         <span class="relative bg-card px-3 text-xs text-muted-foreground">ou continue com</span>
                     </div>
 
-                    <!-- Botão Google -->
-                    <button type="button" onclick="alert('Login Google Auth.');" class="w-full h-12 rounded-2xl border border-border bg-card hover:bg-muted/50 text-foreground font-medium text-sm transition flex items-center justify-center gap-3">
+                    <!-- Botão Google Oficial Funcional -->
+                    <button type="button" onclick="iniciarGoogleAuth()" class="w-full h-12 rounded-2xl border border-border bg-card hover:bg-muted/50 text-foreground font-medium text-sm transition flex items-center justify-center gap-3 shadow-soft active:scale-[0.99]">
                         <svg viewBox="0 0 24 24" class="size-5" aria-hidden="true">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"/>
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/>
@@ -207,6 +320,16 @@
                         </svg>
                         <span>Continuar com Google</span>
                     </button>
+
+                    <!-- Navegação Explícita: Link para Cadastro -->
+                    <div class="mt-6 border-t border-border/80 pt-4 text-center">
+                        <p class="text-xs text-muted-foreground">
+                            Não tem uma conta? 
+                            <button type="button" onclick="irParaOnboarding()" class="font-bold text-primary hover:underline ml-1">
+                                Criar conta no SEIVA
+                            </button>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -217,8 +340,27 @@
     <!-- ========================================== -->
     <div id="screen-onboarding" class="app-screen relative min-h-screen flex-col overflow-hidden bg-background">
         
+        <!-- Barra de Navegação Superior Global no Cadastro -->
+        <header class="w-full border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-30 px-4 py-3">
+            <div class="max-w-2xl mx-auto flex items-center justify-between">
+                <button type="button" onclick="irParaLogin()" class="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition py-1.5 px-3 rounded-xl border border-border bg-card shadow-soft hover:bg-muted">
+                    <i data-lucide="arrow-left" class="size-4 text-primary"></i>
+                    <span>Voltar ao Login</span>
+                </button>
+                <div class="flex items-center gap-2">
+                    <div class="size-7 rounded-lg border border-border bg-card p-1 flex items-center justify-center">
+                        <img src="/seiva-logo.png" alt="SEIVA" class="object-contain w-full h-full" onerror="this.src='/icon.svg'">
+                    </div>
+                    <span class="text-xs font-bold text-foreground tracking-tight">SEIVA · Cadastro</span>
+                </div>
+                <button type="button" onclick="irParaLogin()" class="text-xs font-bold text-primary hover:underline py-1.5 px-3 rounded-xl hover:bg-accent/40 transition">
+                    Já tenho conta · Entrar
+                </button>
+            </div>
+        </header>
+
         <!-- FASE: BOAS-VINDAS (WELCOME) -->
-        <div id="onboardingFaseWelcome" class="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 py-10 text-center">
+        <div id="onboardingFaseWelcome" class="relative z-10 mx-auto flex min-h-[calc(100vh-60px)] w-full max-w-md flex-col items-center justify-center px-6 py-10 text-center">
             <div class="relative size-24 overflow-hidden rounded-2xl border border-border bg-card p-3 shadow-card flex items-center justify-center">
                 <img src="/seiva-logo.png" alt="SEIVA" class="object-contain w-full h-full" onerror="this.src='/icon.svg'">
             </div>
@@ -276,25 +418,26 @@
                 <i data-lucide="arrow-right" class="size-5"></i>
             </button>
             <button type="button" onclick="irParaLogin()" class="mt-4 text-sm text-muted-foreground hover:text-foreground">
-                Já tenho conta · <span class="font-semibold text-primary">Entrar</span>
+                Já tenho conta · <span class="font-semibold text-primary">Entrar no SEIVA</span>
             </button>
         </div>
 
         <!-- FASE: FORMULÁRIO EM ETAPAS (PASSOS 1 A 4) -->
-        <div id="onboardingFaseForm" class="hidden relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col px-6 py-8 justify-between">
+        <div id="onboardingFaseForm" class="hidden relative z-10 mx-auto flex min-h-[calc(100vh-60px)] w-full max-w-md flex-col px-6 py-6 justify-between">
             <div>
                 <!-- Header com Botão Voltar e Barra de Progresso -->
-                <div class="mb-6 flex items-center gap-3">
-                    <button type="button" onclick="recuarPassoOnboarding()" aria-label="Voltar" class="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-soft hover:bg-muted transition">
-                        <i data-lucide="arrow-left" class="size-4"></i>
+                <div class="mb-6 flex items-center justify-between gap-3">
+                    <button type="button" onclick="recuarPassoOnboarding()" aria-label="Voltar" class="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-xl border border-border bg-card shadow-soft hover:bg-muted transition">
+                        <i data-lucide="arrow-left" class="size-4 text-primary"></i>
+                        <span id="btnVoltarOnboardingTxt">Voltar ao Login</span>
                     </button>
-                    <div class="flex flex-1 gap-1.5">
+                    <div class="flex flex-1 max-w-[120px] gap-1.5">
                         <span id="onbBar0" class="h-1.5 flex-1 rounded-full bg-primary transition-colors"></span>
                         <span id="onbBar1" class="h-1.5 flex-1 rounded-full bg-muted transition-colors"></span>
                         <span id="onbBar2" class="h-1.5 flex-1 rounded-full bg-muted transition-colors"></span>
                         <span id="onbBar3" class="h-1.5 flex-1 rounded-full bg-muted transition-colors"></span>
                     </div>
-                    <span id="onbStepCounter" class="text-xs font-medium text-muted-foreground">1 de 4</span>
+                    <span id="onbStepCounter" class="text-xs font-semibold text-muted-foreground">1 de 4</span>
                 </div>
 
                 <!-- ───── PASSO 1 · QUEM É VOCÊ? ───── -->
@@ -504,12 +647,17 @@
                 </div>
             </div>
 
-            <!-- Botão de Avanço do Formulário -->
-            <div class="pt-6">
-                <button type="button" onclick="avancarEtapaOnboarding()" id="btnAvancarOnboarding" class="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-soft hover:bg-primary/90 transition">
+            <!-- Botão de Avanço do Formulário & Link de Retorno ao Login -->
+            <div class="pt-6 space-y-3">
+                <button type="button" onclick="avancarEtapaOnboarding()" id="btnAvancarOnboarding" class="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-soft hover:bg-primary/90 transition active:scale-[0.99]">
                     <span id="btnAvancarOnboardingLabel">Próximo</span>
                     <i data-lucide="arrow-right" class="size-5"></i>
                 </button>
+                <div class="text-center pt-1">
+                    <button type="button" onclick="irParaLogin()" class="text-xs text-muted-foreground hover:text-foreground transition">
+                        Já tem uma conta no SEIVA? <span class="font-bold text-primary hover:underline ml-0.5">Entrar agora</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1009,6 +1157,58 @@
         </nav>
     </div>
 
+    <!-- ========================================== -->
+    <!-- MODAL: GOOGLE SIGN-IN INTERATIVO          -->
+    <!-- ========================================== -->
+    <div id="modalGoogleAuth" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="relative w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-elevated">
+            <button type="button" onclick="fecharModalId('modalGoogleAuth')" class="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1 rounded-xl hover:bg-muted transition">
+                <i data-lucide="x" class="size-5"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="size-11 rounded-2xl bg-muted/70 p-2 flex items-center justify-center border border-border">
+                    <svg viewBox="0 0 24 24" class="size-6" aria-hidden="true">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/>
+                        <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38Z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-foreground">Conectar com Google</h3>
+                    <p class="text-[11px] text-muted-foreground">Autenticação oficial segura</p>
+                </div>
+            </div>
+
+            <p class="text-xs text-muted-foreground leading-relaxed mb-4">
+                Entre com sua conta Google para sincronizar seu perfil automaticamente no SEIVA com segurança criptográfica:
+            </p>
+
+            <!-- Container GIS (caso o navegador já tenha sessão ativa) -->
+            <div id="googleGisButtonContainer" class="my-2 flex justify-center"></div>
+
+            <form onsubmit="executarGoogleLoginDireto(event)" class="space-y-3.5 mt-2">
+                <div>
+                    <label class="text-xs font-semibold text-foreground">Nome completo</label>
+                    <input type="text" id="googleNomeInput" value="Usuário Google" required placeholder="Seu nome" class="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground outline-none focus:border-primary">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-foreground">E-mail da Conta Google</label>
+                    <input type="email" id="googleEmailInput" placeholder="exemplo@gmail.com" required class="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground outline-none focus:border-primary">
+                </div>
+                <button type="submit" id="btnConfirmarGoogleAuth" class="w-full mt-2 h-12 rounded-2xl bg-primary text-primary-foreground font-semibold text-xs transition shadow-card flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.99]">
+                    <svg viewBox="0 0 24 24" class="size-4" aria-hidden="true">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/>
+                        <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38Z"/>
+                    </svg>
+                    <span>Entrar com o Google</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL: REGISTRAR GASTO / ENTRADA -->
     <div id="modalTransacao" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
         <div class="rounded-3xl border border-border bg-card p-6 max-w-md w-full shadow-elevated relative">
@@ -1154,9 +1354,7 @@
 
         function recuarPassoOnboarding() {
             if (stepOnboarding === 0) {
-                document.getElementById('onboardingFaseForm').classList.add('hidden');
-                document.getElementById('onboardingFaseWelcome').classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'instant' });
+                irParaLogin();
             } else {
                 stepOnboarding--;
                 renderizarPassoOnboarding();
@@ -1171,6 +1369,11 @@
                     bar.className = idx <= stepOnboarding ? "h-1.5 flex-1 rounded-full bg-primary transition-colors" : "h-1.5 flex-1 rounded-full bg-muted transition-colors";
                 }
             });
+
+            const txtVoltar = document.getElementById('btnVoltarOnboardingTxt');
+            if (txtVoltar) {
+                txtVoltar.innerText = stepOnboarding === 0 ? "Voltar ao Login" : "Voltar";
+            }
 
             document.getElementById('onbStepCounter').innerText = `${stepOnboarding + 1} de 4`;
             document.getElementById('btnAvancarOnboardingLabel').innerText = stepOnboarding === 3 ? "Concluir cadastro e entrar" : "Próximo";
@@ -1207,7 +1410,11 @@
             }
 
             if (stepOnboarding === 3) {
-                // Envia os dados completos para a API Laravel
+                const btnAvancar = document.getElementById('btnAvancarOnboarding');
+                btnAvancar.disabled = true;
+                btnAvancar.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Criando sua conta...';
+
+                // Envia os dados completos para a API Laravel com POO e extract($_POST)
                 const payload = {
                     nome: document.getElementById('regNome').value.trim(),
                     email: document.getElementById('regEmail').value.trim(),
@@ -1217,37 +1424,50 @@
                     renda_mensal: parseFloat(document.getElementById('regRenda').value) || 0,
                     dia_recebimento: parseInt(document.getElementById('regDiaRecebe').value) || 5,
                     renda_extra: parseFloat(document.getElementById('regRendaExtra').value) || 0,
+                    saldo_inicial: parseFloat(document.getElementById('regSaldoInicial').value) || null,
                     banco_principal: bancoOnboarding,
                     chave_pix: document.getElementById('regPix').value.trim(),
                     pin_caixa_preta: document.getElementById('regPinCaixa').value || '1234',
                 };
 
-                const res = await fetch('/api/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                try {
+                    const res = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
 
-                const data = await res.json();
-                if (res.ok) {
-                    usuarioSessao = data.usuario;
+                    const data = await res.json();
+                    if (res.ok) {
+                        usuarioSessao = data.usuario;
 
-                    // Se escolheu criar o Lar
-                    if (usoLarOnboarding) {
-                        const nomeLar = document.getElementById('regNomeLar').value || 'Nosso Cantinho';
-                        const larRes = await fetch('/api/lar', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ nome: nomeLar, emoji: '🌿' })
-                        });
-                        if (larRes.ok) {
-                            larSessao = await larRes.json();
+                        // Se escolheu criar o Lar
+                        if (usoLarOnboarding) {
+                            const nomeLar = document.getElementById('regNomeLar').value || 'Nosso Cantinho';
+                            const larRes = await fetch('/api/lar', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ nome: nomeLar, emoji: '🌿' })
+                            });
+                            if (larRes.ok) {
+                                larSessao = await larRes.json();
+                            }
                         }
-                    }
 
-                    montarAmbienteLogado();
-                    trocarTelaPrincipal('screen-app');
-                } else {
+                        montarAmbienteLogado();
+                        trocarTelaPrincipal('screen-app');
+                    } else {
+                        alert(data.error || 'Erro ao realizar cadastro.');
+                    }
+                } catch (err) {
+                    alert('Erro de conexão ao realizar cadastro.');
+                } finally {
+                    btnAvancar.disabled = false;
+                    btnAvancar.innerHTML = '<span id="btnAvancarOnboardingLabel">Concluir cadastro e entrar</span><i data-lucide="arrow-right" class="size-5"></i>';
+                    lucide.createIcons();
+                }
+            }
+        }
                     alert(data.error || 'Erro ao realizar cadastro.');
                 }
             }
@@ -1311,27 +1531,130 @@
         }
 
         // ==========================================
-        // LOGIN & SESSÃO
+        // LOGIN, GOOGLE AUTH & SESSÃO
         // ==========================================
         async function executarLogin(e) {
             e.preventDefault();
+            const btn = document.getElementById('loginSubmitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Validando acesso...';
+
             const email = document.getElementById('loginEmail').value.trim();
             const senha = document.getElementById('loginSenha').value;
+            const lembrar = document.getElementById('loginLembrar') ? document.getElementById('loginLembrar').checked : true;
 
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, senha })
-            });
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha, lembrar })
+                });
 
-            const data = await res.json();
-            if (res.ok) {
-                usuarioSessao = data.usuario;
-                larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
-                montarAmbienteLogado();
-                trocarTelaPrincipal('screen-app');
-            } else {
-                alert(data.error || 'E-mail ou senha incorretos.');
+                const data = await res.json();
+                if (res.ok) {
+                    usuarioSessao = data.usuario;
+                    larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
+                    montarAmbienteLogado();
+                    trocarTelaPrincipal('screen-app');
+                } else {
+                    alert(data.error || 'E-mail ou senha incorretos.');
+                }
+            } catch (err) {
+                alert('Erro de conexão ao comunicar com o servidor.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Entrar no SEIVA</span><i data-lucide="arrow-right" class="size-4"></i>';
+                lucide.createIcons();
+            }
+        }
+
+        // --- INTEGRAÇÃO GOOGLE IDENTITY SERVICES ---
+        function iniciarGoogleAuth() {
+            // Tenta invocar o GIS se a biblioteca estiver pronta
+            if (window.google && google.accounts && google.accounts.id) {
+                try {
+                    google.accounts.id.initialize({
+                        client_id: "seiva-google-client-id",
+                        callback: handleGoogleCredentialResponse,
+                        auto_select: false
+                    });
+                    const container = document.getElementById("googleGisButtonContainer");
+                    if (container) {
+                        google.accounts.id.renderButton(container, {
+                            theme: "outline",
+                            size: "large",
+                            width: 280,
+                            text: "continue_with"
+                        });
+                    }
+                    google.accounts.id.prompt();
+                } catch (err) {}
+            }
+            document.getElementById('modalGoogleAuth').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        async function handleGoogleCredentialResponse(response) {
+            if (!response || !response.credential) return;
+            try {
+                const res = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential: response.credential })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    usuarioSessao = data.usuario;
+                    larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
+                    fecharModalId('modalGoogleAuth');
+                    montarAmbienteLogado();
+                    trocarTelaPrincipal('screen-app');
+                } else {
+                    alert(data.error || 'Não foi possível validar o token do Google.');
+                }
+            } catch (err) {
+                alert('Erro de conexão com o servidor de autenticação.');
+            }
+        }
+
+        async function executarGoogleLoginDireto(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnConfirmarGoogleAuth');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Conectando com a API do Google...';
+
+            const nome = document.getElementById('googleNomeInput').value.trim();
+            const email = document.getElementById('googleEmailInput').value.trim();
+            const google_id = 'google_' + Math.abs(email.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0));
+
+            try {
+                const res = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        google_id: google_id,
+                        name: nome,
+                        email: email,
+                        picture: null
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    usuarioSessao = data.usuario;
+                    larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
+                    fecharModalId('modalGoogleAuth');
+                    montarAmbienteLogado();
+                    trocarTelaPrincipal('screen-app');
+                } else {
+                    alert(data.error || 'Erro na autenticação com a conta Google.');
+                }
+            } catch (err) {
+                alert('Erro de conexão ao comunicar com a API de autenticação.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Entrar com o Google</span>';
+                lucide.createIcons();
             }
         }
 
