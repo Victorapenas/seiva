@@ -1,16 +1,29 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SEIVA — Onde seu dinheiro cria raízes</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SEIVA — Dinheiro Sem Tabu | Finanças do Casal & Lares Compartilhados</title>
+    
+    <!-- Meta Tags Acadêmicas e de Produto -->
+    <meta name="description" content="Gestão Financeira Inteligente para Lares Compartilhados e Finanças Pessoais. Entrega 2 do Projeto Interdisciplinar de ADS - IFBA.">
+    <meta name="author" content="Victor Hugo, Quételi, Jhon Abner, Ian Marcos, Maria Eduarda Lima">
+    <meta name="theme-color" content="#2e6b4f">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- Google Identity Services (GIS) Oficial -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Tailwind CSS (CDN Play) & Lucide Icons -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Tipografia Inter Oficial -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Configuração de Identidade Visual Tailwind -->
     <script>
         tailwind.config = {
             theme: {
@@ -18,45 +31,29 @@
                     colors: {
                         background: '#faf9f5',
                         foreground: '#1c2826',
-                        card: {
-                            DEFAULT: '#ffffff',
-                            foreground: '#1c2826',
-                        },
-                        primary: {
-                            DEFAULT: '#2e6b4f',
-                            foreground: '#ffffff',
-                        },
-                        secondary: {
-                            DEFAULT: '#eef3ef',
-                            foreground: '#285f46',
-                        },
-                        muted: {
-                            DEFAULT: '#f0f2ee',
-                            foreground: '#6b7770',
-                        },
-                        accent: {
-                            DEFAULT: '#e2ede6',
-                            foreground: '#22513c',
-                        },
-                        destructive: {
-                            DEFAULT: '#dc2626',
-                            foreground: '#ffffff',
-                        },
-                        success: '#16a34a',
-                        warning: {
-                            DEFAULT: '#d97706',
-                            foreground: '#78350f',
-                        },
-                        border: '#e8eae6',
-                        input: '#e8eae6',
-                        ring: '#2e6b4f',
+                        card: '#ffffff',
+                        'card-foreground': '#1c2826',
+                        primary: '#2e6b4f',
+                        'primary-foreground': '#ffffff',
+                        secondary: '#e8efe9',
+                        'secondary-foreground': '#2e6b4f',
+                        muted: '#f0ede6',
+                        'muted-foreground': '#6b7280',
+                        accent: '#d4e5d9',
+                        'accent-foreground': '#1b3d2b',
+                        destructive: '#c84b31',
+                        'destructive-foreground': '#ffffff',
+                        border: '#e5e0d8',
                         sidebar: '#ffffff',
+                        success: '#2e6b4f',
                     },
-                    fontFamily: {
-                        sans: ['"Inter"', 'system-ui', 'sans-serif'],
+                    borderRadius: {
+                        '3xl': '1.5rem',
+                        '2xl': '1rem',
+                        'xl': '0.75rem',
                     },
                     boxShadow: {
-                        'soft': '0 1px 3px rgba(30, 48, 38, 0.04), 0 4px 12px rgba(30, 48, 38, 0.05)',
+                        'soft': '0 2px 10px rgba(30, 48, 38, 0.04)',
                         'card': '0 1px 3px rgba(30, 48, 38, 0.05), 0 8px 24px -8px rgba(30, 48, 38, 0.08)',
                         'elevated': '0 8px 40px -8px rgba(30, 48, 38, 0.16)',
                     }
@@ -101,1187 +98,78 @@
 </head>
 <body class="min-h-screen bg-background text-foreground antialiased selection:bg-primary selection:text-white">
 
-    <!-- ========================================== -->
-    <!-- 1. TELA DE LOGIN (LOGIN SCREEN OFICIAL)    -->
-    <!-- ========================================== -->
-    <div id="screen-login" class="app-screen is-active relative min-h-screen overflow-hidden bg-background">
-        
-        <!-- ========================================== -->
-        <!-- LATERAL ESQUERDA: APRESENTAÇÃO DA MARCA    -->
-        <!-- (Desktop: 50% da tela, Imersiva e Visual)  -->
-        <!-- ========================================== -->
-        <div class="relative hidden w-1/2 min-h-screen bg-gradient-to-br from-[#1b3d2b] via-[#24523b] to-[#2e6b4f] p-8 xl:p-12 lg:flex flex-col justify-between text-white overflow-hidden shadow-2xl float-left">
-            <!-- Padrão gráfico de fundo (Raízes e Folhas sutis em SVG) -->
-            <svg class="pointer-events-none absolute -right-20 -bottom-20 w-[550px] h-[550px] opacity-10 text-white" viewBox="0 0 400 400" fill="currentColor">
-                <path d="M200 0C89.5 0 0 89.5 0 200s89.5 200 200 200 200-89.5 200-200S310.5 0 200 0zm0 360c-88.4 0-160-71.6-160-160S111.6 40 200 40s160 71.6 160 160-71.6 160-160 160z"/>
-                <path d="M200 60c-77.3 0-140 62.7-140 140s62.7 140 140 140 140-62.7 140-140S277.3 60 200 60zm0 240c-55.2 0-100-44.8-100-100s44.8-100 100-100 100 44.8 100 100-44.8 100-100 100z"/>
-            </svg>
+    <!-- ============================================================== -->
+    <!-- 1. TELA DE LOGIN & APRESENTAÇÃO VISUAL DA MARCA (RF001)        -->
+    <!-- Responsável Acadêmica: Quételi                                 -->
+    <!-- ============================================================== -->
+    @include('auth.login')
 
-            <!-- Topo: Logo & Badge Oficial -->
-            <div class="relative z-10 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="relative size-12 overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-card flex items-center justify-center">
-                        <img src="/seiva-logo.png" alt="SEIVA" class="object-contain w-full h-full" onerror="this.src='/icon.svg'">
-                    </div>
-                    <div>
-                        <span class="text-2xl font-extrabold tracking-tight text-white block leading-none">SEIVA</span>
-                        <span class="text-[11px] font-medium text-emerald-200/90 tracking-wide">Dinheiro Sem Tabu</span>
-                    </div>
-                </div>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-semibold text-emerald-200 backdrop-blur-sm">
-                    <i data-lucide="sparkles" class="size-3.5"></i>
-                    Lares Compartilhados & Finanças
-                </span>
-            </div>
+    <!-- ============================================================== -->
+    <!-- 2. TELA DE ONBOARDING & CADASTRO EM ETAPAS (RF001)             -->
+    <!-- Responsável Acadêmica: Quételi                                 -->
+    <!-- ============================================================== -->
+    @include('auth.onboarding')
 
-            <!-- Centro: Proposta de Valor & Diferenciais do Produto -->
-            <div class="relative z-10 my-auto py-8 space-y-6">
-                <div>
-                    <h1 class="text-3xl xl:text-4xl font-extrabold text-white leading-[1.18] tracking-tight text-balance">
-                        Organize as finanças do casal sem brigas.
-                    </h1>
-                    <p class="mt-3 text-sm xl:text-base leading-relaxed text-emerald-50/90 max-w-lg">
-                        A primeira plataforma que une a transparência necessária para contas conjuntas com o respeito absoluto à privacidade de cada parceiro.
-                    </p>
-                </div>
-
-                <!-- Showcase dos 3 Diferenciais Exclusivos do SEIVA -->
-                <div class="space-y-3 pt-2">
-                    <!-- 1. Caixa Preta -->
-                    <div class="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-4 text-left transition-all duration-200 hover:bg-white/15">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2.5">
-                                <span class="flex size-8 items-center justify-center rounded-xl bg-amber-400/20 text-amber-300">
-                                    <i data-lucide="lock" class="size-4"></i>
-                                </span>
-                                <span class="text-xs font-bold text-white uppercase tracking-wider">Caixa Preta</span>
-                            </div>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-200 text-[10px] font-bold">
-                                PIN 4 DÍGITOS
-                            </span>
-                        </div>
-                        <p class="mt-2 text-xs text-white/80 leading-relaxed">
-                            Gastos particulares e surpresas que ficam invisíveis no extrato comum do lar. Criptografia e privacidade garantida.
-                        </p>
-                    </div>
-
-                    <!-- 2. Rateio Proporcional -->
-                    <div class="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-4 text-left transition-all duration-200 hover:bg-white/15">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2.5">
-                                <span class="flex size-8 items-center justify-center rounded-xl bg-emerald-400/20 text-emerald-300">
-                                    <i data-lucide="scale" class="size-4"></i>
-                                </span>
-                                <span class="text-xs font-bold text-white uppercase tracking-wider">Rateio Proporcional Justo</span>
-                            </div>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 text-[10px] font-bold">
-                                MAIS JUSTO QUE 50/50
-                            </span>
-                        </div>
-                        <div class="mt-2 space-y-1">
-                            <div class="flex justify-between text-[11px] text-white/90 font-medium">
-                                <span>Quem ganha mais apoia mais</span>
-                                <span class="text-emerald-200 font-bold">Cálculo Automático</span>
-                            </div>
-                            <div class="h-1.5 w-full rounded-full bg-black/25 overflow-hidden flex">
-                                <div class="h-full bg-emerald-400" style="width: 65%"></div>
-                                <div class="h-full bg-white/40" style="width: 35%"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 3. Cobrador Diplomata -->
-                    <div class="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-4 text-left transition-all duration-200 hover:bg-white/15">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2.5">
-                                <span class="flex size-8 items-center justify-center rounded-xl bg-sky-400/20 text-sky-200">
-                                    <i data-lucide="bell-ring" class="size-4"></i>
-                                </span>
-                                <span class="text-xs font-bold text-white uppercase tracking-wider">Cobrador Diplomata</span>
-                            </div>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-sky-400/20 text-sky-200 text-[10px] font-bold">
-                                ZERO ATRITO
-                            </span>
-                        </div>
-                        <p class="mt-2 text-xs text-white/80 leading-relaxed">
-                            Lembretes afetuosos e neutros disparados pelo sistema com envio automático da chave PIX.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Rodapé: LGPD & Slogan Oficial -->
-            <div class="relative z-10 flex items-center justify-between text-[11px] text-white/70 border-t border-white/10 pt-4">
-                <span class="flex items-center gap-1.5">
-                    <i data-lucide="shield-check" class="size-4 text-emerald-300"></i>
-                    Conformidade com a LGPD (Lei nº 13.709/2018)
-                </span>
-                <span class="flex items-center gap-1 text-emerald-200">
-                    <i data-lucide="leaf" class="size-3.5"></i> Onde seu dinheiro cria raízes
-                </span>
-            </div>
-        </div>
-
-        <!-- ========================================== -->
-        <!-- LATERAL DIREITA: FORMULÁRIO DE ENTRADA     -->
-        <!-- (Responsivo: Desktop 50% & Mobile Hero)    -->
-        <!-- ========================================== -->
-        <div class="relative z-10 mx-auto w-full min-h-screen flex flex-col justify-center px-4 py-8 sm:px-6 lg:w-1/2 lg:px-12 xl:px-16">
-            
-            <!-- Mobile Header Hero (Experiência Exclusiva e Imersiva Mobile) -->
-            <div class="mb-6 lg:hidden rounded-3xl bg-gradient-to-br from-[#1b3d2b] to-[#2e6b4f] p-6 text-white text-center shadow-card">
-                <div class="relative size-16 mx-auto overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-soft flex items-center justify-center">
-                    <img src="/seiva-logo.png" alt="SEIVA" class="object-contain w-full h-full" onerror="this.src='/icon.svg'">
-                </div>
-                <h1 class="mt-3 text-2xl font-black tracking-tight text-white">SEIVA</h1>
-                <p class="mt-1 text-xs text-emerald-100 flex items-center justify-center gap-1.5">
-                    <i data-lucide="leaf" class="size-3.5 text-emerald-300"></i>
-                    Onde seu dinheiro cria raízes
-                </p>
-                <div class="mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1 text-[11px]">
-                    <span class="shrink-0 px-2.5 py-1 rounded-full bg-white/15 border border-white/10 text-white flex items-center gap-1">
-                        <i data-lucide="lock" class="size-3 text-amber-300"></i> Caixa Preta com PIN
-                    </span>
-                    <span class="shrink-0 px-2.5 py-1 rounded-full bg-white/15 border border-white/10 text-white flex items-center gap-1">
-                        <i data-lucide="scale" class="size-3 text-emerald-300"></i> Rateio Proporcional
-                    </span>
-                    <span class="shrink-0 px-2.5 py-1 rounded-full bg-white/15 border border-white/10 text-white flex items-center gap-1">
-                        <i data-lucide="bell-ring" class="size-3 text-sky-300"></i> Cobrador Diplomata
-                    </span>
-                </div>
-            </div>
-
-            <!-- Card Principal de Login & Navegação -->
-            <div class="w-full max-w-md mx-auto">
-                <div class="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-card lg:shadow-elevated">
-                    
-                    <!-- Abas Superiores Alternáveis: Entrar vs Criar Conta -->
-                    <div class="relative mb-6 flex rounded-2xl bg-muted p-1">
-                        <button type="button" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground shadow-soft transition-all">
-                            Entrar
-                        </button>
-                        <button type="button" onclick="irParaOnboarding()" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all">
-                            Criar conta
-                        </button>
-                    </div>
-
-                    <div class="mb-5 text-left">
-                        <h2 class="text-xl font-bold tracking-tight text-foreground">Bem-vindo(a) de volta</h2>
-                        <p class="text-xs text-muted-foreground mt-0.5">Acesse seu painel pessoal e o ambiente do seu Lar</p>
-                    </div>
-
-                    <!-- Formulário de Login -->
-                    <form onsubmit="executarLogin(event)" class="space-y-4">
-                        <!-- Input E-mail -->
-                        <div class="relative">
-                            <input type="email" id="loginEmail" required placeholder=" " class="floating-input peer h-14 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
-                            <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200">
-                                E-mail cadastrado
-                            </label>
-                        </div>
-
-                        <!-- Input Senha -->
-                        <div class="relative">
-                            <input type="password" id="loginSenha" required placeholder=" " class="floating-input peer h-14 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
-                            <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200">
-                                Senha de acesso
-                            </label>
-                        </div>
-
-                        <div class="flex items-center justify-between text-xs pt-1">
-                            <label class="flex items-center gap-2 cursor-pointer text-muted-foreground">
-                                <input type="checkbox" id="loginLembrar" checked class="rounded border-border text-primary focus:ring-primary">
-                                Lembrar de mim
-                            </label>
-                            <a href="#" onclick="alert('Recuperação de conta: para redefinir sua senha, solicite ao administrador ou confirme o e-mail cadastrado.'); return false;" class="font-medium text-primary hover:underline">
-                                Esqueceu a senha?
-                            </a>
-                        </div>
-
-                        <button type="submit" id="loginSubmitBtn" class="w-full mt-2 h-14 py-3.5 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm shadow-card hover:bg-primary/90 active:scale-[0.99] transition flex items-center justify-center gap-2">
-                            <span>Entrar no SEIVA</span>
-                            <i data-lucide="arrow-right" class="size-4"></i>
-                        </button>
-                    </form>
-
-                    <!-- Divisor -->
-                    <div class="relative my-6 flex items-center justify-center">
-                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-border"></div></div>
-                        <span class="relative bg-card px-3 text-xs text-muted-foreground">ou continue com</span>
-                    </div>
-
-                    <!-- Botão Google Oficial Funcional -->
-                    <button type="button" onclick="iniciarGoogleAuth()" class="w-full h-12 rounded-2xl border border-border bg-card hover:bg-muted/50 text-foreground font-medium text-sm transition flex items-center justify-center gap-3 shadow-soft active:scale-[0.99]">
-                        <svg viewBox="0 0 24 24" class="size-5" aria-hidden="true">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"/>
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/>
-                            <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"/>
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38Z"/>
-                        </svg>
-                        <span>Continuar com Google</span>
-                    </button>
-
-                    <!-- Navegação Explícita: Link para Cadastro -->
-                    <div class="mt-6 border-t border-border/80 pt-4 text-center">
-                        <p class="text-xs text-muted-foreground">
-                            Não tem uma conta? 
-                            <button type="button" onclick="irParaOnboarding()" class="font-bold text-primary hover:underline ml-1">
-                                Criar conta no SEIVA
-                            </button>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- 2. TELA DE ONBOARDING (PÁGINA EXCLUSIVA)   -->
-    <!-- ========================================== -->
-    <div id="screen-onboarding" class="app-screen relative min-h-screen flex-col overflow-hidden bg-background">
-        
-        <!-- Barra de Navegação Superior Global no Cadastro -->
-        <header class="w-full border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-30 px-4 py-3">
-            <div class="max-w-2xl mx-auto flex items-center justify-between">
-                <button type="button" onclick="irParaLogin()" class="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition py-1.5 px-3 rounded-xl border border-border bg-card shadow-soft hover:bg-muted">
-                    <i data-lucide="arrow-left" class="size-4 text-primary"></i>
-                    <span>Voltar ao Login</span>
-                </button>
-                <div class="flex items-center gap-2">
-                    <div class="size-7 rounded-lg border border-border bg-card p-1 flex items-center justify-center">
-                        <img src="/seiva-logo.png" alt="SEIVA" class="object-contain w-full h-full" onerror="this.src='/icon.svg'">
-                    </div>
-                    <span class="text-xs font-bold text-foreground tracking-tight">SEIVA · Cadastro</span>
-                </div>
-                <button type="button" onclick="irParaLogin()" class="text-xs font-bold text-primary hover:underline py-1.5 px-3 rounded-xl hover:bg-accent/40 transition">
-                    Já tenho conta · Entrar
-                </button>
-            </div>
-        </header>
-
-        <!-- FASE: BOAS-VINDAS (WELCOME) -->
-        <div id="onboardingFaseWelcome" class="relative z-10 mx-auto flex min-h-[calc(100vh-60px)] w-full max-w-md flex-col items-center justify-center px-6 py-10 text-center">
-            <div class="relative size-24 overflow-hidden rounded-2xl border border-border bg-card p-3 shadow-card flex items-center justify-center">
-                <img src="/seiva-logo.png" alt="SEIVA" class="object-contain w-full h-full" onerror="this.src='/icon.svg'">
-            </div>
-            <h1 class="mt-5 text-3xl font-bold tracking-tight text-foreground">SEIVA</h1>
-            <p class="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-                <i data-lucide="leaf" class="size-4 text-primary"></i> Onde seu dinheiro cria raízes
-            </p>
-
-            <div class="mt-8 flex w-full flex-col gap-2.5">
-                <div class="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 text-left shadow-soft">
-                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                        <i data-lucide="user" class="size-4"></i>
-                    </span>
-                    <span>
-                        <span class="block text-sm font-medium text-foreground">Seus dados</span>
-                        <span class="block text-xs text-muted-foreground">Nome, contato e senha segura</span>
-                    </span>
-                </div>
-                <div class="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 text-left shadow-soft">
-                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                        <i data-lucide="wallet" class="size-4"></i>
-                    </span>
-                    <span>
-                        <span class="block text-sm font-medium text-foreground">Sua renda</span>
-                        <span class="block text-xs text-muted-foreground">Quanto e quando você recebe</span>
-                    </span>
-                </div>
-                <div class="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 text-left shadow-soft">
-                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                        <i data-lucide="landmark" class="size-4"></i>
-                    </span>
-                    <span>
-                        <span class="block text-sm font-medium text-foreground">Suas contas</span>
-                        <span class="block text-xs text-muted-foreground">Bancos, cartões e Pix</span>
-                    </span>
-                </div>
-                <div class="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 text-left shadow-soft">
-                    <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                        <i data-lucide="home" class="size-4"></i>
-                    </span>
-                    <span>
-                        <span class="block text-sm font-medium text-foreground">Seu Lar</span>
-                        <span class="block text-xs text-muted-foreground">Opcional — divida contas com quem mora</span>
-                    </span>
-                </div>
-            </div>
-
-            <p class="mt-5 flex items-start gap-2 rounded-2xl bg-secondary/60 p-3.5 text-left text-xs leading-relaxed text-secondary-foreground">
-                <i data-lucide="shield-check" class="mt-0.5 size-4 shrink-0 text-primary"></i>
-                Seus dados são criptografados e nunca compartilhados. A Caixa Preta é só sua — nem o SEIVA acessa.
-            </p>
-
-            <button type="button" onclick="iniciarFormularioOnboarding()" class="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-soft hover:bg-primary/90 transition">
-                <span>Começar meu cadastro</span>
-                <i data-lucide="arrow-right" class="size-5"></i>
-            </button>
-            <button type="button" onclick="irParaLogin()" class="mt-4 text-sm text-muted-foreground hover:text-foreground">
-                Já tenho conta · <span class="font-semibold text-primary">Entrar no SEIVA</span>
-            </button>
-        </div>
-
-        <!-- FASE: FORMULÁRIO EM ETAPAS (PASSOS 1 A 4) -->
-        <div id="onboardingFaseForm" class="hidden relative z-10 mx-auto flex min-h-[calc(100vh-60px)] w-full max-w-md flex-col px-6 py-6 justify-between">
-            <div>
-                <!-- Header com Botão Voltar e Barra de Progresso -->
-                <div class="mb-6 flex items-center justify-between gap-3">
-                    <button type="button" onclick="recuarPassoOnboarding()" aria-label="Voltar" class="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-xl border border-border bg-card shadow-soft hover:bg-muted transition">
-                        <i data-lucide="arrow-left" class="size-4 text-primary"></i>
-                        <span id="btnVoltarOnboardingTxt">Voltar ao Login</span>
-                    </button>
-                    <div class="flex flex-1 max-w-[120px] gap-1.5">
-                        <span id="onbBar0" class="h-1.5 flex-1 rounded-full bg-primary transition-colors"></span>
-                        <span id="onbBar1" class="h-1.5 flex-1 rounded-full bg-muted transition-colors"></span>
-                        <span id="onbBar2" class="h-1.5 flex-1 rounded-full bg-muted transition-colors"></span>
-                        <span id="onbBar3" class="h-1.5 flex-1 rounded-full bg-muted transition-colors"></span>
-                    </div>
-                    <span id="onbStepCounter" class="text-xs font-semibold text-muted-foreground">1 de 4</span>
-                </div>
-
-                <!-- ───── PASSO 1 · QUEM É VOCÊ? ───── -->
-                <div id="onbStepView0" class="onb-step-view space-y-4">
-                    <div>
-                        <h2 class="text-xl font-bold tracking-tight text-foreground">Quem é você?</h2>
-                        <p class="text-xs text-muted-foreground mt-0.5">Vamos começar pelo básico</p>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div>
-                            <label class="text-xs font-medium text-foreground">Nome completo</label>
-                            <input type="text" id="regNome" placeholder="Ex: Maria Eduarda Lima" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium text-foreground">E-mail</label>
-                            <div class="relative mt-1">
-                                <i data-lucide="mail" class="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"></i>
-                                <input type="email" id="regEmail" placeholder="voce@email.com" class="h-12 w-full rounded-2xl border border-border bg-background pl-10 pr-4 text-sm text-foreground outline-none focus:border-primary">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium text-foreground">Telefone / WhatsApp</label>
-                            <div class="relative mt-1">
-                                <i data-lucide="phone" class="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"></i>
-                                <input type="tel" id="regTelefone" placeholder="(71) 99999-9999" class="h-12 w-full rounded-2xl border border-border bg-background pl-10 pr-4 text-sm text-foreground outline-none focus:border-primary">
-                            </div>
-                            <p class="mt-1 text-[11px] text-muted-foreground">Usado para recuperar a conta e convites do Lar.</p>
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium text-foreground">Senha</label>
-                            <div class="relative mt-1">
-                                <input type="password" id="regSenha" oninput="testarForcaSenha(this.value)" placeholder="Mínimo 6 caracteres" class="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
-                            </div>
-                            <!-- Barra de Força -->
-                            <div class="mt-2 flex items-center gap-2">
-                                <div class="flex flex-1 gap-1">
-                                    <span id="pwdBar1" class="h-1.5 flex-1 rounded-full bg-muted transition-colors"></span>
-                                    <span id="pwdBar2" class="h-1.5 flex-1 rounded-full bg-muted transition-colors"></span>
-                                    <span id="pwdBar3" class="h-1.5 flex-1 rounded-full bg-muted transition-colors"></span>
-                                </div>
-                                <span id="pwdLabel" class="text-xs font-medium text-muted-foreground"></span>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium text-foreground">Confirmar senha</label>
-                            <input type="password" id="regSenhaConfirma" placeholder="Repita a senha" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ───── PASSO 2 · RENDA ───── -->
-                <div id="onbStepView1" class="onb-step-view space-y-4 hidden">
-                    <div>
-                        <h2 class="text-xl font-bold tracking-tight text-foreground">Agora me conta sobre sua renda</h2>
-                        <p class="text-xs text-muted-foreground mt-0.5">Isso ajuda o SEIVA a calcular sua saúde financeira</p>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <p class="mb-2 text-xs font-medium text-muted-foreground">Tipo de renda principal</p>
-                            <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="setRendaTipo('CLT')" id="btnRenda_CLT" class="min-h-11 rounded-xl border border-primary bg-primary text-primary-foreground px-4 text-sm font-medium transition">CLT</button>
-                                <button type="button" onclick="setRendaTipo('Autônomo')" id="btnRenda_Autônomo" class="min-h-11 rounded-xl border border-border bg-background text-muted-foreground px-4 text-sm font-medium transition">Autônomo</button>
-                                <button type="button" onclick="setRendaTipo('Empresário')" id="btnRenda_Empresário" class="min-h-11 rounded-xl border border-border bg-background text-muted-foreground px-4 text-sm font-medium transition">Empresário</button>
-                                <button type="button" onclick="setRendaTipo('Outros')" id="btnRenda_Outros" class="min-h-11 rounded-xl border border-border bg-background text-muted-foreground px-4 text-sm font-medium transition">Outros</button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-xs font-medium text-foreground">Renda mensal principal (líquida)</label>
-                            <input type="number" step="0.01" id="regRenda" placeholder="R$ 0,00" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-lg font-bold text-foreground outline-none focus:border-primary">
-                        </div>
-
-                        <div>
-                            <label class="text-xs font-medium text-foreground">Que dia você costuma receber?</label>
-                            <div class="relative mt-1">
-                                <i data-lucide="calendar" class="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"></i>
-                                <select id="regDiaRecebe" class="h-12 w-full rounded-2xl border border-border bg-background pl-10 pr-4 text-sm text-foreground outline-none focus:border-primary">
-                                    <option value="5">Todo dia 5</option>
-                                    <option value="1">Todo dia 1</option>
-                                    <option value="10">Todo dia 10</option>
-                                    <option value="15">Todo dia 15</option>
-                                    <option value="20">Todo dia 20</option>
-                                    <option value="30">Último dia do mês</option>
-                                    <option value="0">Varia / não tenho dia fixo</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="rounded-2xl border border-border bg-card p-4 space-y-3 shadow-soft">
-                            <label class="flex items-center justify-between cursor-pointer">
-                                <div>
-                                    <span class="block text-sm font-medium text-foreground">Tenho renda extra ou variável</span>
-                                    <span class="block text-xs text-muted-foreground">Freelas, comissões, bicos</span>
-                                </div>
-                                <input type="checkbox" id="regTemExtra" onchange="document.getElementById('boxExtraInput').classList.toggle('hidden', !this.checked)" class="size-5 rounded border-border text-primary focus:ring-primary">
-                            </label>
-                            <div id="boxExtraInput" class="hidden pt-2 border-t border-border">
-                                <label class="text-xs font-medium text-foreground">Média mensal de renda extra (R$)</label>
-                                <input type="number" step="0.01" id="regRendaExtra" placeholder="R$ 0,00" class="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-sm font-bold text-foreground outline-none focus:border-primary">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ───── PASSO 3 · CONTAS & CAIXA PRETA ───── -->
-                <div id="onbStepView2" class="onb-step-view space-y-4 hidden">
-                    <div>
-                        <h2 class="text-xl font-bold tracking-tight text-foreground">Onde fica seu dinheiro?</h2>
-                        <p class="text-xs text-muted-foreground mt-0.5">Adicione ao menos uma conta para começar</p>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <p class="mb-2 text-xs font-medium text-muted-foreground">Banco principal</p>
-                            <div class="grid grid-cols-4 gap-2">
-                                <button type="button" onclick="setBancoPrincipal('Nubank')" class="banco-select-btn flex flex-col items-center gap-1.5 rounded-2xl border border-primary bg-accent/40 text-foreground py-2.5 text-xs font-medium transition" data-banco="Nubank">
-                                    <span class="size-5 rounded-full bg-[#8A2BE2]"></span> Nubank
-                                </button>
-                                <button type="button" onclick="setBancoPrincipal('Inter')" class="banco-select-btn flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-background text-muted-foreground py-2.5 text-xs font-medium transition" data-banco="Inter">
-                                    <span class="size-5 rounded-full bg-[#FF7A00]"></span> Inter
-                                </button>
-                                <button type="button" onclick="setBancoPrincipal('Itaú')" class="banco-select-btn flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-background text-muted-foreground py-2.5 text-xs font-medium transition" data-banco="Itaú">
-                                    <span class="size-5 rounded-full bg-[#EC7000]"></span> Itaú
-                                </button>
-                                <button type="button" onclick="setBancoPrincipal('Caixa')" class="banco-select-btn flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-background text-muted-foreground py-2.5 text-xs font-medium transition" data-banco="Caixa">
-                                    <span class="size-5 rounded-full bg-[#0070AF]"></span> Caixa
-                                </button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-xs font-medium text-foreground">Saldo atual na conta principal (R$)</label>
-                            <input type="number" step="0.01" id="regSaldoInicial" placeholder="R$ 0,00" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-base font-bold text-foreground outline-none focus:border-primary">
-                        </div>
-
-                        <div>
-                            <label class="text-xs font-medium text-foreground">Chave Pix Principal</label>
-                            <input type="text" id="regPix" placeholder="CPF, telefone ou e-mail" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
-                        </div>
-
-                        <!-- Configuração do PIN da Caixa Preta -->
-                        <div class="rounded-2xl border border-border bg-secondary/50 p-4">
-                            <div class="flex items-center gap-2 text-foreground font-semibold text-xs">
-                                <i data-lucide="lock" class="size-4 text-primary"></i>
-                                <span>PIN da Caixa Preta (4 dígitos)</span>
-                            </div>
-                            <p class="text-[11px] text-muted-foreground mt-1">Crie um código numérico de 4 dígitos para proteger seus gastos e reservas confidenciais.</p>
-                            <input type="password" maxlength="4" id="regPinCaixa" placeholder="1234" class="mt-2 h-11 w-32 rounded-xl border border-border bg-card px-3 text-center text-lg font-bold tracking-widest text-foreground outline-none focus:border-primary">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ───── PASSO 4 · COMO QUER USAR O SEIVA? (LAR) ───── -->
-                <div id="onbStepView3" class="onb-step-view space-y-4 hidden">
-                    <div>
-                        <h2 class="text-xl font-bold tracking-tight text-foreground">Como você quer usar o SEIVA?</h2>
-                        <p class="text-xs text-muted-foreground mt-0.5">Você pode cuidar só das suas finanças ou dividir um Lar com quem mora com você.</p>
-                    </div>
-
-                    <div class="flex flex-col gap-2.5">
-                        <button type="button" onclick="setEscolhaLar(false)" id="btnUsoIndividual" class="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-soft transition">
-                            <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-                                <i data-lucide="user" class="size-4"></i>
-                            </span>
-                            <div>
-                                <span class="block text-sm font-semibold text-foreground">Controle individual</span>
-                                <span class="block text-xs text-muted-foreground mt-0.5">Cuide só do seu dinheiro: renda, contas, metas e gastos pessoais.</span>
-                            </div>
-                        </button>
-                        <button type="button" onclick="setEscolhaLar(true)" id="btnUsoLar" class="flex items-start gap-3 rounded-2xl border border-primary bg-accent/40 p-4 text-left shadow-soft transition">
-                            <span class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                                <i data-lucide="home" class="size-4"></i>
-                            </span>
-                            <div>
-                                <span class="block text-sm font-semibold text-foreground">Criar um Lar compartilhado</span>
-                                <span class="block text-xs text-muted-foreground mt-0.5">Divida contas e metas com quem mora com você, de forma justa.</span>
-                            </div>
-                        </button>
-                    </div>
-
-                    <div id="boxConfigLar" class="space-y-4 pt-2">
-                        <div>
-                            <label class="text-xs font-medium text-foreground">Nome do Lar</label>
-                            <input type="text" id="regNomeLar" value="Nosso Cantinho" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm font-semibold text-foreground outline-none focus:border-primary">
-                        </div>
-                        <div>
-                            <label class="text-xs font-medium text-foreground">E-mail do parceiro(a) (opcional)</label>
-                            <input type="email" id="regEmailParceiro" placeholder="parceiro@email.com" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
-                            <p class="mt-1 text-[11px] text-muted-foreground">Enviaremos um convite para a pessoa entrar no seu Lar.</p>
-                        </div>
-                        <div>
-                            <p class="mb-2 text-xs font-medium text-muted-foreground">Como dividir as contas?</p>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button type="button" onclick="setDivisaoPadrao('proporcional')" id="btnDivProp" class="rounded-2xl border border-primary bg-accent/50 p-3 text-left transition">
-                                    <p class="text-xs font-bold text-foreground">Proporcional à renda</p>
-                                    <p class="text-[10px] text-muted-foreground mt-0.5">Mais justo: quem ganha mais contribui mais</p>
-                                </button>
-                                <button type="button" onclick="setDivisaoPadrao('50/50')" id="btnDiv50" class="rounded-2xl border border-border bg-background p-3 text-left transition">
-                                    <p class="text-xs font-bold text-foreground">Meio a meio</p>
-                                    <p class="text-[10px] text-muted-foreground mt-0.5">Cada um paga exatamente metade das contas</p>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Botão de Avanço do Formulário & Link de Retorno ao Login -->
-            <div class="pt-6 space-y-3">
-                <button type="button" onclick="avancarEtapaOnboarding()" id="btnAvancarOnboarding" class="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-soft hover:bg-primary/90 transition active:scale-[0.99]">
-                    <span id="btnAvancarOnboardingLabel">Próximo</span>
-                    <i data-lucide="arrow-right" class="size-5"></i>
-                </button>
-                <div class="text-center pt-1">
-                    <button type="button" onclick="irParaLogin()" class="text-xs text-muted-foreground hover:text-foreground transition">
-                        Já tem uma conta no SEIVA? <span class="font-bold text-primary hover:underline ml-0.5">Entrar agora</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- 3. APLICAÇÃO PRINCIPAL (APP SHELL)         -->
-    <!-- ========================================== -->
+    <!-- ============================================================== -->
+    <!-- 3. APLICAÇÃO PRINCIPAL (APP SHELL COM ARQUITETURA MODULAR)      -->
+    <!-- Responsáveis: Victor Hugo, Jhon Abner, Ian Marcos, Duda        -->
+    <!-- ============================================================== -->
     <div id="screen-app" class="app-screen min-h-screen bg-background">
         <!-- Sidebar Desktop -->
-        <aside class="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-sidebar lg:flex">
-            <!-- Header Sidebar -->
-            <div class="px-6 py-6">
-                <div class="flex items-center gap-2">
-                    <div class="relative size-9 overflow-hidden rounded-xl border border-border bg-card flex items-center justify-center">
-                        <img src="/seiva-logo.png" alt="SEIVA" class="object-contain p-1 w-full h-full" onerror="this.src='/icon.svg'">
-                    </div>
-                    <span class="text-lg font-semibold tracking-tight text-foreground">SEIVA</span>
-                </div>
-            </div>
+        @include('componentes.sidebar')
 
-            <!-- Navegação Sidebar -->
-            <nav class="flex-1 space-y-5 overflow-y-auto px-4 pb-4 no-scrollbar">
-                <div>
-                    <p class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        🔒 Minha área
-                    </p>
-                    <div class="space-y-1">
-                        <button onclick="trocarAbaApp('dashboard')" class="nav-sidebar-item relative flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors bg-primary text-primary-foreground shadow-soft" data-screen="dashboard">
-                            <i data-lucide="home" class="size-[18px]"></i>
-                            <span>Dashboard</span>
-                        </button>
-                        <button onclick="trocarAbaApp('caixa-preta')" class="nav-sidebar-item relative flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent/50 hover:text-foreground" data-screen="caixa-preta">
-                            <i data-lucide="lock" class="size-[18px]"></i>
-                            <span>Caixa Preta</span>
-                        </button>
-                        <button onclick="trocarAbaApp('transacoes')" class="nav-sidebar-item relative flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent/50 hover:text-foreground" data-screen="transacoes">
-                            <i data-lucide="credit-card" class="size-[18px]"></i>
-                            <span>Transações</span>
-                        </button>
-                        <button onclick="trocarAbaApp('metas')" class="nav-sidebar-item relative flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent/50 hover:text-foreground" data-screen="metas">
-                            <i data-lucide="target" class="size-[18px]"></i>
-                            <span>Metas</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <p id="labelGrupoLarSidebar" class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        🌿 Nosso Cantinho
-                    </p>
-                    <div class="space-y-1">
-                        <button onclick="trocarAbaApp('lar')" class="nav-sidebar-item relative flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent/50 hover:text-foreground" data-screen="lar">
-                            <i data-lucide="leaf" class="size-[18px]"></i>
-                            <span>Área do Lar</span>
-                        </button>
-                        <button onclick="trocarAbaApp('acordos')" class="nav-sidebar-item relative flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent/50 hover:text-foreground" data-screen="acordos">
-                            <i data-lucide="handshake" class="size-[18px]"></i>
-                            <span>Mesa de Acordos</span>
-                        </button>
-                        <button onclick="trocarAbaApp('cobrador')" class="nav-sidebar-item relative flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent/50 hover:text-foreground" data-screen="cobrador">
-                            <i data-lucide="bell-ring" class="size-[18px]"></i>
-                            <span>Cobrador Diplomata</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        Conta
-                    </p>
-                    <div class="space-y-1">
-                        <button onclick="trocarAbaApp('perfil')" class="nav-sidebar-item relative flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent/50 hover:text-foreground" data-screen="perfil">
-                            <i data-lucide="user" class="size-[18px]"></i>
-                            <span>Perfil & LGPD</span>
-                        </button>
-                    </div>
-                </div>
-            </nav>
-
-            <!-- Rodapé Sidebar Usuário -->
-            <div class="p-4 border-t border-border">
-                <button onclick="trocarAbaApp('perfil')" class="flex items-center gap-3 w-full rounded-2xl border border-border bg-card p-3 text-left transition hover:bg-accent/40">
-                    <div id="userAvatarSidebar" class="size-10 rounded-full bg-pink-100 text-pink-700 font-bold flex items-center justify-center text-xs shrink-0">
-                        DU
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p id="userNameSidebar" class="truncate text-sm font-semibold text-foreground">Usuário</p>
-                        <span id="userLarPillSidebar" class="mt-0.5 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
-                            Nosso Cantinho 🌿
-                        </span>
-                    </div>
-                </button>
-            </div>
-        </aside>
-
-        <!-- Área de Conteúdo -->
+        <!-- Área de Conteúdo da Aplicação -->
         <div class="lg:pl-64 flex flex-col min-h-screen">
-            <!-- Top Bar com Sino -->
-            <header class="sticky top-0 z-20 flex items-center justify-between border-b border-border/60 bg-background/80 px-4 py-3 backdrop-blur-sm lg:px-10 lg:justify-end">
-                <div class="flex items-center gap-2 lg:hidden">
-                    <div class="size-7 overflow-hidden rounded-lg border border-border bg-card p-0.5">
-                        <img src="/seiva-logo.png" alt="SEIVA" class="object-contain w-full h-full">
-                    </div>
-                    <span class="text-sm font-bold text-foreground">SEIVA</span>
-                </div>
+            <!-- Barra Superior com Notificações -->
+            @include('componentes.topbar')
 
-                <div class="flex items-center gap-2">
-                    <button onclick="trocarAbaApp('perfil')" aria-label="Configurações" class="flex size-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:text-foreground lg:hidden">
-                        <i data-lucide="settings" class="size-5"></i>
-                    </button>
-                    <button onclick="alert('🌿 Notificações do Lar:\n- Cobrador diplomata ativo\n- Sincronização em tempo real');" aria-label="Notificações" class="relative flex size-10 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-soft transition hover:bg-muted">
-                        <i data-lucide="bell" class="size-5"></i>
-                        <span class="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
-                            1
-                        </span>
-                    </button>
-                </div>
-            </header>
-
-            <!-- Container Principal das Telas -->
+            <!-- Container Principal dos Módulos Funcionais -->
             <main class="mx-auto w-full max-w-2xl px-4 pb-28 pt-6 lg:max-w-5xl lg:px-10 lg:pb-12 lg:pt-8 flex-1">
+                <!-- Módulo 1: Dashboard Financeiro (Victor Hugo - RF009) -->
+                @include('modulos.dashboard.painel')
 
-                <!-- 1. DASHBOARD SCREEN -->
-                <div id="pane-dashboard" class="sub-screen space-y-6">
-                    <header class="flex items-center gap-3">
-                        <div id="dashAvatar" class="size-11 rounded-full bg-pink-100 text-pink-700 font-bold flex items-center justify-center text-sm ring-2 ring-card shadow-soft shrink-0">
-                            DU
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <p id="dashGreeting" class="text-base font-semibold text-foreground">Bom dia, Usuário</p>
-                            <p id="dashDate" class="text-xs text-muted-foreground">Organização financeira com total transparência</p>
-                        </div>
-                        <span class="hidden items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-[11px] font-medium text-secondary-foreground sm:flex">
-                            <i data-lucide="info" class="size-3.5"></i> Você registra, o SEIVA organiza
-                        </span>
-                    </header>
+                <!-- Módulo 2: Caixa Preta com Criptografia e PIN (Victor Hugo - RF002) -->
+                @include('modulos.caixa-preta.painel')
 
-                    <!-- Card Consolidado do Mês -->
-                    <section>
-                        <div class="mb-2 flex items-end justify-between">
-                            <div>
-                                <h2 class="text-sm font-semibold text-foreground">Seu mês</h2>
-                                <p class="text-[11px] text-muted-foreground">Visão consolidada de receitas e despesas</p>
-                            </div>
-                            <button onclick="alternarVisibilidadeSaldos()" id="btnVisSaldos" class="flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
-                                <i data-lucide="eye" class="size-3.5"></i>
-                                <span>Ocultar</span>
-                            </button>
-                        </div>
+                <!-- Módulo 3: Extrato e Transações Pessoais (Victor / Jhon - RF003) -->
+                @include('modulos.transacoes.painel')
 
-                        <div class="rounded-3xl border border-border bg-card p-6 shadow-card">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-5">
-                                <div>
-                                    <p class="text-xs text-muted-foreground">Saldo Líquido Disponível</p>
-                                    <h3 class="text-3xl font-extrabold text-foreground mt-1" id="dashValSaldoLivre">R$ 0,00</h3>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button onclick="abrirModalGasto()" class="px-4 py-2 rounded-xl bg-destructive text-destructive-foreground text-xs font-bold transition hover:bg-destructive/90 flex items-center gap-1.5">
-                                        <i data-lucide="trending-down" class="size-4"></i> Lançar Gasto
-                                    </button>
-                                    <button onclick="abrirModalEntrada()" class="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold transition hover:bg-primary/90 flex items-center gap-1.5">
-                                        <i data-lucide="trending-up" class="size-4"></i> Entrada
-                                    </button>
-                                </div>
-                            </div>
+                <!-- Módulo 4: Gestão do Lar e Rateio Proporcional (Jhon Abner - RF004, RF010) -->
+                @include('modulos.lar.painel')
 
-                            <div class="grid grid-cols-2 divide-x divide-border pt-4">
-                                <div class="pr-4">
-                                    <p class="flex items-center gap-1.5 text-[11px] font-medium text-destructive">
-                                        <span class="size-2 rounded-full bg-destructive"></span> Já tem dono
-                                    </p>
-                                    <p class="mt-1 text-lg font-bold text-destructive" id="dashValComprometido">R$ 0,00</p>
-                                    <p class="mt-0.5 text-[11px] text-muted-foreground">Faturas e reservas</p>
-                                </div>
-                                <div class="pl-4">
-                                    <p class="flex items-center gap-1.5 text-[11px] font-medium text-success">
-                                        <span class="size-2 rounded-full bg-success"></span> Livre pra gastar
-                                    </p>
-                                    <p class="mt-1 text-lg font-bold text-success" id="dashValLivre">R$ 0,00</p>
-                                    <p class="mt-0.5 text-[11px] text-muted-foreground">Saldo desimpedido</p>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
+                <!-- Módulo 5: Mesa de Acordos e Consenso do Casal (Ian Marcos - RF006) -->
+                @include('modulos.acordos.painel')
 
-                    <!-- 4 Atalhos Rápidos -->
-                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        <button onclick="abrirModalGasto()" class="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card p-4 shadow-soft hover:bg-accent/30 transition text-center">
-                            <span class="size-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
-                                <i data-lucide="trending-down" class="size-5"></i>
-                            </span>
-                            <span class="text-xs font-semibold text-foreground">Registrar gasto</span>
-                        </button>
-                        <button onclick="abrirModalEntrada()" class="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card p-4 shadow-soft hover:bg-accent/30 transition text-center">
-                            <span class="size-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                <i data-lucide="trending-up" class="size-5"></i>
-                            </span>
-                            <span class="text-xs font-semibold text-foreground">Registrar entrada</span>
-                        </button>
-                        <button onclick="trocarAbaApp('transacoes')" class="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card p-4 shadow-soft hover:bg-accent/30 transition text-center">
-                            <span class="size-10 rounded-xl bg-secondary text-secondary-foreground flex items-center justify-center">
-                                <i data-lucide="receipt" class="size-5"></i>
-                            </span>
-                            <span class="text-xs font-semibold text-foreground">Ver extrato</span>
-                        </button>
-                        <button onclick="trocarAbaApp('lar')" class="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card p-4 shadow-soft hover:bg-accent/30 transition text-center">
-                            <span class="size-10 rounded-xl bg-accent text-accent-foreground flex items-center justify-center">
-                                <i data-lucide="home" class="size-5"></i>
-                            </span>
-                            <span class="text-xs font-semibold text-foreground">Contas do Lar</span>
-                        </button>
-                    </div>
+                <!-- Módulo 6: Metas do Lar e Projetos Conjuntos (Ian Marcos - RF007, RF008) -->
+                @include('modulos.metas.painel')
 
-                    <!-- Contas Bancárias Cadastradas -->
-                    <section>
-                        <div class="mb-3 flex items-center justify-between">
-                            <h2 class="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                                <i data-lucide="wallet" class="size-4 text-primary"></i> Onde está meu dinheiro
-                            </h2>
-                            <button onclick="adicionarContaPrompt()" class="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-                                <i data-lucide="plus" class="size-3.5"></i> Nova conta
-                            </button>
-                        </div>
-                        <div id="dashContasList" class="space-y-2">
-                            <p class="text-xs text-muted-foreground py-4 text-center">Nenhuma conta cadastrada.</p>
-                        </div>
-                    </section>
-                </div>
+                <!-- Módulo 7: Cobrador Diplomata sem Constrangimentos (Victor Hugo - RF005) -->
+                @include('modulos.cobrador.painel')
 
-                <!-- 2. CAIXA PRETA SCREEN -->
-                <div id="pane-caixa-preta" class="sub-screen space-y-6 hidden">
-                    <header class="rounded-3xl bg-[#1f382b] p-6 text-white shadow-card">
-                        <div class="flex items-center gap-3">
-                            <span class="flex size-11 items-center justify-center rounded-2xl bg-white/10 text-white">
-                                <i data-lucide="lock" class="size-5 text-amber-300"></i>
-                            </span>
-                            <div>
-                                <h1 class="text-xl font-bold tracking-tight text-white">Caixa Preta</h1>
-                                <p class="text-xs text-white/80">Área Privada Criptografada</p>
-                            </div>
-                        </div>
-                        <p class="mt-4 text-xs leading-relaxed text-white/90">
-                            Gastos e reservas que você não quer que apareçam no extrato comum do lar (surpresas, presentes ou compras pessoais protegidas por PIN).
-                        </p>
-                    </header>
-
-                    <div id="caixaPinLockBox" class="rounded-3xl border border-border bg-card p-8 text-center max-w-sm mx-auto space-y-4 shadow-card">
-                        <div class="size-14 mx-auto rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
-                            <i data-lucide="key-round" class="size-7"></i>
-                        </div>
-                        <h3 class="text-base font-bold text-foreground">Digite seu PIN de 4 dígitos</h3>
-                        <p class="text-xs text-muted-foreground">Informe o PIN configurado no cadastro para acessar seus registros confidenciais.</p>
-                        <input type="password" maxlength="4" id="caixaPinField" placeholder="••••" class="h-12 w-40 mx-auto text-center text-2xl tracking-widest font-bold rounded-2xl border border-border bg-background outline-none focus:border-primary">
-                        <button onclick="validarPinCaixa()" class="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-semibold text-xs transition shadow-card">
-                            Desbloquear
-                        </button>
-                    </div>
-
-                    <div id="caixaUnsealedBox" class="space-y-4 hidden">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-muted-foreground">Registros Secretos</span>
-                            <div class="flex gap-2">
-                                <button onclick="trancarCaixa()" class="text-xs font-medium text-muted-foreground hover:text-foreground">
-                                    Bloquear
-                                </button>
-                                <button onclick="adicionarRegistroCaixaPrompt()" class="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold">
-                                    + Novo Registro
-                                </button>
-                            </div>
-                        </div>
-                        <div id="caixaRegistrosContainer" class="space-y-2">
-                            <p class="text-xs text-muted-foreground py-6 text-center">Nenhum registro confidencial cadastrado.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. TRANSAÇÕES SCREEN -->
-                <div id="pane-transacoes" class="sub-screen space-y-5 hidden">
-                    <header>
-                        <h1 class="text-2xl font-bold tracking-tight text-foreground">Transações</h1>
-                        <p class="mt-1 text-sm text-muted-foreground">Acompanhe suas entradas, saídas e movimentações</p>
-                    </header>
-
-                    <div class="rounded-3xl border border-border bg-card p-5 shadow-card">
-                        <div class="flex items-center justify-between border-b border-border pb-3 mb-3">
-                            <span class="text-xs font-bold text-foreground">Extrato Completo</span>
-                            <button onclick="abrirModalGasto()" class="text-xs font-semibold text-primary hover:underline">+ Lançar</button>
-                        </div>
-                        <div id="extratoList" class="space-y-2 divide-y divide-border/60">
-                            <p class="text-xs text-muted-foreground py-8 text-center">Nenhuma transação encontrada.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 4. ÁREA DO LAR SCREEN -->
-                <div id="pane-lar" class="sub-screen space-y-6 hidden">
-                    <header>
-                        <div class="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                            <span class="flex size-6 items-center justify-center rounded-md bg-accent text-accent-foreground">
-                                <i data-lucide="home" class="size-3.5"></i>
-                            </span>
-                            <span id="larHeaderTitle">Nosso Cantinho</span>
-                        </div>
-                        <h1 class="mt-2 text-2xl font-bold tracking-tight text-foreground">Painel do Lar</h1>
-                        <div class="mt-3 flex items-center justify-between">
-                            <p class="text-xs text-muted-foreground">Divisão colaborativa e rateio transparente</p>
-                            <button onclick="abrirModalDespesaLar()" class="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-soft">
-                                + Nova Despesa do Lar
-                            </button>
-                        </div>
-                    </header>
-
-                    <div class="rounded-3xl border border-border bg-card p-5 shadow-card space-y-4">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Divisão Proporcional das Contas</h3>
-                        <div id="larMembrosProporcaoGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <p class="text-xs text-muted-foreground py-4 text-center col-span-full">Carregando membros do lar...</p>
-                        </div>
-                    </div>
-
-                    <div class="rounded-3xl border border-border bg-card p-5 shadow-card space-y-3">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Despesas do Lar Cadastradas</h3>
-                        <div id="larDespesasGrid" class="space-y-3">
-                            <p class="text-xs text-muted-foreground py-6 text-center">Nenhuma despesa compartilhada registrada.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 5. MESA DE ACORDOS SCREEN -->
-                <div id="pane-acordos" class="sub-screen space-y-6 hidden">
-                    <header>
-                        <h1 class="text-2xl font-bold tracking-tight text-foreground">Mesa de Acordos</h1>
-                        <p class="mt-1 text-sm text-muted-foreground">Decisões conjuntas e compras planejadas para o lar</p>
-                    </header>
-
-                    <div class="rounded-3xl border border-border bg-card p-5 shadow-card space-y-3">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Propostas em Análise</h3>
-                            <button onclick="adicionarPropostaPrompt()" class="text-xs font-semibold text-primary hover:underline">+ Nova Proposta</button>
-                        </div>
-                        <div id="acordosPropostasGrid" class="space-y-3">
-                            <p class="text-xs text-muted-foreground py-6 text-center">Nenhuma proposta pendente de votação.</p>
-                        </div>
-                    </div>
-
-                    <div class="rounded-3xl border border-border bg-card p-5 shadow-card space-y-3">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Acordos Selados</h3>
-                        <div id="acordosSeladosGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <p class="text-xs text-muted-foreground py-6 text-center col-span-full">Nenhum acordo ativo no momento.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 6. METAS SCREEN -->
-                <div id="pane-metas" class="sub-screen space-y-6 hidden">
-                    <header class="rounded-3xl bg-primary p-6 text-primary-foreground shadow-card">
-                        <p class="text-sm opacity-80">Meus Objetivos e Metas do Casal</p>
-                        <h1 class="mt-1 text-3xl font-bold tracking-tight" id="metasValorTotalDisplay">R$ 0,00</h1>
-                        <p class="mt-1 text-sm opacity-80" id="metasAlvoTotalDisplay">de R$ 0,00 planejados</p>
-                        <div class="mt-4 grid grid-cols-2 gap-3">
-                            <div class="rounded-2xl bg-primary-foreground/15 px-3 py-2.5">
-                                <p class="text-[11px] opacity-80">Progresso geral</p>
-                                <p class="mt-0.5 text-lg font-bold" id="metasProgressoPct">0%</p>
-                            </div>
-                            <div class="rounded-2xl bg-primary-foreground/15 px-3 py-2.5">
-                                <p class="text-[11px] opacity-80">Metas ativas</p>
-                                <p class="mt-0.5 text-lg font-bold" id="metasQtdAtivas">0</p>
-                            </div>
-                        </div>
-                    </header>
-
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-foreground">Metas Ativas</span>
-                        <button onclick="adicionarMetaPrompt()" class="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold">+ Nova Meta</button>
-                    </div>
-
-                    <div id="metasCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <p class="text-xs text-muted-foreground py-8 text-center col-span-full">Nenhuma meta cadastrada.</p>
-                    </div>
-                </div>
-
-                <!-- 7. COBRADOR DIPLOMATA SCREEN -->
-                <div id="pane-cobrador" class="sub-screen space-y-6 hidden">
-                    <header class="rounded-3xl bg-primary p-6 text-primary-foreground shadow-card">
-                        <div class="flex items-center gap-3">
-                            <span class="flex size-11 items-center justify-center rounded-2xl bg-primary-foreground/15">
-                                <i data-lucide="bell-ring" class="size-5"></i>
-                            </span>
-                            <div>
-                                <h1 class="text-xl font-bold tracking-tight">Cobrador Diplomata</h1>
-                                <p class="text-sm opacity-80">Notificações neutras do Lar</p>
-                            </div>
-                        </div>
-                        <p class="mt-4 text-sm leading-relaxed opacity-90 text-pretty">
-                            As cobranças são do sistema. Ninguém fica mal — o SEIVA lembra por você.
-                        </p>
-                    </header>
-
-                    <div class="rounded-3xl border border-border bg-card p-5 shadow-card space-y-3">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pendências de Rateio no Lar</h3>
-                        <div id="cobradorPendenciasGrid" class="space-y-3">
-                            <p class="text-xs text-muted-foreground py-6 text-center">Nenhuma pendência no momento. Tudo em dia!</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 8. PERFIL & LGPD SCREEN -->
-                <div id="pane-perfil" class="sub-screen space-y-6 hidden">
-                    <header class="rounded-3xl bg-primary p-6 text-primary-foreground shadow-card">
-                        <div class="flex items-center gap-4">
-                            <div id="perfilAvatarCircle" class="size-16 rounded-full bg-pink-100 text-pink-700 font-bold flex items-center justify-center text-lg ring-2 ring-primary-foreground/30 shrink-0">
-                                DU
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p id="perfilNomeTxt" class="text-lg font-bold tracking-tight truncate">Nome Usuário</p>
-                                <p id="perfilEmailTxt" class="text-sm opacity-80 truncate">email@email.com</p>
-                            </div>
-                        </div>
-                        <button onclick="executarLogout()" class="mt-4 flex items-center gap-1.5 rounded-xl bg-primary-foreground/15 px-3.5 py-2 text-sm font-medium transition hover:bg-primary-foreground/25">
-                            <i data-lucide="log-out" class="size-4"></i> Sair da Conta
-                        </button>
-                    </header>
-
-                    <!-- LGPD e Direitos do Titular -->
-                    <div class="rounded-3xl border border-border bg-card p-6 shadow-card space-y-4">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="shield-check" class="size-5 text-primary"></i>
-                            <h3 class="text-base font-bold text-foreground">Privacidade & LGPD</h3>
-                        </div>
-                        <p class="text-xs text-muted-foreground leading-relaxed">
-                            De acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018), você possui o controle total sobre seus dados.
-                        </p>
-                        <div class="flex flex-wrap gap-2 pt-2">
-                            <button onclick="window.location.href='/api/perfil/exportar'" class="px-4 py-2.5 rounded-xl border border-border bg-card text-foreground font-semibold text-xs hover:bg-muted transition flex items-center gap-2">
-                                <i data-lucide="download" class="size-4"></i> Exportar Meus Dados (JSON)
-                            </button>
-                            <button onclick="excluirMinhaConta()" class="px-4 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-semibold text-xs hover:bg-destructive/90 transition flex items-center gap-2">
-                                <i data-lucide="trash-2" class="size-4"></i> Excluir Minha Conta
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
+                <!-- Módulo 8: Perfil e Conformidade com a LGPD (Maria Eduarda - RF011) -->
+                @include('modulos.perfil.painel')
             </main>
         </div>
 
-        <!-- FAB (Floating Action Button) -->
-        <div class="fixed bottom-24 right-5 z-40 flex flex-col items-end gap-3 lg:bottom-8">
-            <div id="fabDropdown" class="hidden flex flex-col items-end gap-2">
-                <button onclick="abrirModalGasto(); alternarFab();" class="flex items-center gap-2 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-semibold text-foreground shadow-elevated border border-border hover:bg-muted transition">
-                    <span class="size-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center">
-                        <i data-lucide="trending-down" class="size-3.5"></i>
-                    </span>
-                    <span>Lançar gasto</span>
-                </button>
-                <button onclick="abrirModalEntrada(); alternarFab();" class="flex items-center gap-2 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-semibold text-foreground shadow-elevated border border-border hover:bg-muted transition">
-                    <span class="size-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                        <i data-lucide="trending-up" class="size-3.5"></i>
-                    </span>
-                    <span>Registrar entrada</span>
-                </button>
-                <button onclick="abrirModalDespesaLar(); alternarFab();" class="flex items-center gap-2 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-semibold text-foreground shadow-elevated border border-border hover:bg-muted transition">
-                    <span class="size-7 rounded-full bg-accent text-accent-foreground flex items-center justify-center">
-                        <i data-lucide="home" class="size-3.5"></i>
-                    </span>
-                    <span>Despesa do Lar</span>
-                </button>
-            </div>
-            <button onclick="alternarFab()" aria-label="Ações rápidas" class="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-elevated active:scale-95 transition">
-                <i data-lucide="plus" class="size-6"></i>
-            </button>
-        </div>
+        <!-- Botão de Ação Rápida Flutuante (FAB) -->
+        @include('componentes.fab')
 
-        <!-- Bottom Navigation Mobile -->
-        <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur-sm lg:hidden">
-            <div class="mx-auto flex max-w-lg items-center justify-around px-1 py-2">
-                <button onclick="trocarAbaApp('dashboard')" class="flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-primary" data-screen="dashboard">
-                    <i data-lucide="home" class="size-5"></i>
-                    <span class="text-[10px] font-bold">Início</span>
-                </button>
-                <button onclick="trocarAbaApp('transacoes')" class="flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-muted-foreground" data-screen="transacoes">
-                    <i data-lucide="credit-card" class="size-5"></i>
-                    <span class="text-[10px] font-medium">Gastos</span>
-                </button>
-                <button onclick="trocarAbaApp('acordos')" class="flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-muted-foreground" data-screen="acordos">
-                    <i data-lucide="handshake" class="size-5"></i>
-                    <span class="text-[10px] font-medium">Acordos</span>
-                </button>
-                <button onclick="trocarAbaApp('metas')" class="flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-muted-foreground" data-screen="metas">
-                    <i data-lucide="target" class="size-5"></i>
-                    <span class="text-[10px] font-medium">Metas</span>
-                </button>
-                <button onclick="trocarAbaApp('lar')" class="flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-muted-foreground" data-screen="lar">
-                    <i data-lucide="leaf" class="size-5"></i>
-                    <span class="text-[10px] font-medium">Lar</span>
-                </button>
-            </div>
-        </nav>
+        <!-- Barra de Navegação Inferior Mobile (Bottom Nav) -->
+        @include('componentes.bottom-nav')
     </div>
 
-    <!-- ========================================== -->
-    <!-- MODAL: GOOGLE SIGN-IN INTERATIVO          -->
-    <!-- ========================================== -->
-    <div id="modalGoogleAuth" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-        <div class="relative w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-elevated">
-            <button type="button" onclick="fecharModalId('modalGoogleAuth')" class="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1 rounded-xl hover:bg-muted transition">
-                <i data-lucide="x" class="size-5"></i>
-            </button>
-            <div class="flex items-center gap-3 mb-4">
-                <div class="size-11 rounded-2xl bg-muted/70 p-2 flex items-center justify-center border border-border">
-                    <svg viewBox="0 0 24 24" class="size-6" aria-hidden="true">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/>
-                        <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38Z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-base font-bold text-foreground">Conectar com Google</h3>
-                    <p class="text-[11px] text-muted-foreground">Autenticação oficial segura</p>
-                </div>
-            </div>
+    <!-- ============================================================== -->
+    <!-- MODAIS DO SISTEMA                                              -->
+    <!-- ============================================================== -->
+    @include('componentes.modais.modal-google')
+    @include('componentes.modais.modal-transacao')
+    @include('componentes.modais.modal-despesa-lar')
 
-            <p class="text-xs text-muted-foreground leading-relaxed mb-4">
-                Entre com sua conta Google para sincronizar seu perfil automaticamente no SEIVA com segurança criptográfica:
-            </p>
-
-            <!-- Container GIS (caso o navegador já tenha sessão ativa) -->
-            <div id="googleGisButtonContainer" class="my-2 flex justify-center"></div>
-
-            <form onsubmit="executarGoogleLoginDireto(event)" class="space-y-3.5 mt-2">
-                <div>
-                    <label class="text-xs font-semibold text-foreground">Nome completo</label>
-                    <input type="text" id="googleNomeInput" value="Usuário Google" required placeholder="Seu nome" class="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground outline-none focus:border-primary">
-                </div>
-                <div>
-                    <label class="text-xs font-semibold text-foreground">E-mail da Conta Google</label>
-                    <input type="email" id="googleEmailInput" placeholder="exemplo@gmail.com" required class="mt-1 h-11 w-full rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground outline-none focus:border-primary">
-                </div>
-                <button type="submit" id="btnConfirmarGoogleAuth" class="w-full mt-2 h-12 rounded-2xl bg-primary text-primary-foreground font-semibold text-xs transition shadow-card flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.99]">
-                    <svg viewBox="0 0 24 24" class="size-4" aria-hidden="true">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/>
-                        <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38Z"/>
-                    </svg>
-                    <span>Entrar com o Google</span>
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL: REGISTRAR GASTO / ENTRADA -->
-    <div id="modalTransacao" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-        <div class="rounded-3xl border border-border bg-card p-6 max-w-md w-full shadow-elevated relative">
-            <button onclick="fecharModalId('modalTransacao')" class="absolute top-5 right-5 text-muted-foreground hover:text-foreground">
-                <i data-lucide="x" class="size-5"></i>
-            </button>
-            <h3 class="text-lg font-bold text-foreground mb-4" id="modalTransacaoHeader">Registrar Gasto</h3>
-            <form onsubmit="salvarTransacaoForm(event)" class="space-y-4">
-                <input type="hidden" id="formTransTipo" value="saida">
-                <div>
-                    <label class="text-xs font-medium text-foreground">Descrição</label>
-                    <input type="text" id="formTransTitulo" required placeholder="Ex: Mercado, Almoço, Farmácia" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs font-medium text-foreground">Valor (R$)</label>
-                        <input type="number" step="0.01" id="formTransValor" required placeholder="0,00" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-base font-bold text-foreground outline-none focus:border-primary">
-                    </div>
-                    <div>
-                        <label class="text-xs font-medium text-foreground">Conta</label>
-                        <select id="formTransContaId" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-3 text-xs text-foreground outline-none focus:border-primary"></select>
-                    </div>
-                </div>
-                <div>
-                    <label class="text-xs font-medium text-foreground">Categoria</label>
-                    <select id="formTransCategoriaId" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-3 text-xs text-foreground outline-none focus:border-primary"></select>
-                </div>
-                <button type="submit" class="w-full mt-2 h-12 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm shadow-card hover:bg-primary/90 transition">
-                    Salvar Registro
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL: DESPESA DO LAR -->
-    <div id="modalDespesaLar" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-        <div class="rounded-3xl border border-border bg-card p-6 max-w-md w-full shadow-elevated relative">
-            <button onclick="fecharModalId('modalDespesaLar')" class="absolute top-5 right-5 text-muted-foreground hover:text-foreground">
-                <i data-lucide="x" class="size-5"></i>
-            </button>
-            <h3 class="text-lg font-bold text-foreground mb-4">Lançar Despesa do Lar</h3>
-            <form onsubmit="salvarDespesaLarForm(event)" class="space-y-4">
-                <div>
-                    <label class="text-xs font-medium text-foreground">Nome da Despesa</label>
-                    <input type="text" id="formLarDespTitulo" required placeholder="Ex: Aluguel, Internet, Mercado" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs font-medium text-foreground">Valor Total (R$)</label>
-                        <input type="number" step="0.01" id="formLarDespValor" required placeholder="0,00" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-base font-bold text-foreground outline-none focus:border-primary">
-                    </div>
-                    <div>
-                        <label class="text-xs font-medium text-foreground">Regra de Divisão</label>
-                        <select id="formLarDespDivisao" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-3 text-xs text-foreground outline-none focus:border-primary">
-                            <option value="proporcional">Proporcional à renda</option>
-                            <option value="50/50">50% / 50%</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="text-xs font-medium text-foreground">Vencimento</label>
-                    <input type="date" id="formLarDespData" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
-                </div>
-                <button type="submit" class="w-full mt-2 h-12 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm shadow-card hover:bg-primary/90 transition">
-                    Calcular Rateio & Salvar
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- SCRIPT DE LÓGICA E FLUXOS REAIS -->
+    <!-- ============================================================== -->
+    <!-- SCRIPT MASTER DE ORQUESTRAÇÃO & COMUNICAÇÃO COM O BACKEND       -->
+    <!-- ============================================================== -->
     <script>
-        // Estado
+        // Estado Global da Aplicação
         let usuarioSessao = null;
         let larSessao = null;
         let listaContas = [];
@@ -1297,13 +185,14 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             lucide.createIcons();
-            document.getElementById('formLarDespData').value = new Date().toISOString().split('T')[0];
+            const vencInput = document.getElementById('formLarDespData');
+            if (vencInput) vencInput.value = new Date().toISOString().split('T')[0];
             await carregarCategoriasSistema();
             await validarSessaoInicial();
         });
 
         // ==========================================
-        // GERENCIADOR DE TELAS (EXIBIÇÃO PURA SEM SOBREPOSIÇÃO)
+        // GERENCIADOR DE TELAS (ISOLAMENTO PURO)
         // ==========================================
         function trocarTelaPrincipal(screenId) {
             document.querySelectorAll('.app-screen').forEach(s => {
@@ -1340,14 +229,18 @@
 
         function irParaOnboarding() {
             stepOnboarding = 0;
-            document.getElementById('onboardingFaseWelcome').classList.remove('hidden');
-            document.getElementById('onboardingFaseForm').classList.add('hidden');
+            const faseWelcome = document.getElementById('onboardingFaseWelcome');
+            const faseForm = document.getElementById('onboardingFaseForm');
+            if (faseWelcome) faseWelcome.classList.remove('hidden');
+            if (faseForm) faseForm.classList.add('hidden');
             trocarTelaPrincipal('screen-onboarding');
         }
 
         function iniciarFormularioOnboarding() {
-            document.getElementById('onboardingFaseWelcome').classList.add('hidden');
-            document.getElementById('onboardingFaseForm').classList.remove('hidden');
+            const faseWelcome = document.getElementById('onboardingFaseWelcome');
+            const faseForm = document.getElementById('onboardingFaseForm');
+            if (faseWelcome) faseWelcome.classList.add('hidden');
+            if (faseForm) faseForm.classList.remove('hidden');
             stepOnboarding = 0;
             renderizarPassoOnboarding();
         }
@@ -1375,8 +268,13 @@
                 txtVoltar.innerText = stepOnboarding === 0 ? "Voltar ao Login" : "Voltar";
             }
 
-            document.getElementById('onbStepCounter').innerText = `${stepOnboarding + 1} de 4`;
-            document.getElementById('btnAvancarOnboardingLabel').innerText = stepOnboarding === 3 ? "Concluir cadastro e entrar" : "Próximo";
+            const stepCounter = document.getElementById('onbStepCounter');
+            if (stepCounter) stepCounter.innerText = `${stepOnboarding + 1} de 4`;
+
+            const btnAvancarLabel = document.getElementById('btnAvancarOnboardingLabel');
+            if (btnAvancarLabel) {
+                btnAvancarLabel.innerText = stepOnboarding === 3 ? "Concluir cadastro e entrar" : "Próximo";
+            }
             window.scrollTo({ top: 0, behavior: 'instant' });
             lucide.createIcons();
         }
@@ -1468,10 +366,6 @@
                 }
             }
         }
-                    alert(data.error || 'Erro ao realizar cadastro.');
-                }
-            }
-        }
 
         function setRendaTipo(t) {
             tipoRendaOnboarding = t;
@@ -1493,15 +387,20 @@
 
         function setEscolhaLar(criar) {
             usoLarOnboarding = criar;
-            document.getElementById('btnUsoIndividual').className = !criar ? "flex items-start gap-3 rounded-2xl border border-primary bg-accent/40 p-4 text-left shadow-soft transition" : "flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-soft transition";
-            document.getElementById('btnUsoLar').className = criar ? "flex items-start gap-3 rounded-2xl border border-primary bg-accent/40 p-4 text-left shadow-soft transition" : "flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-soft transition";
-            document.getElementById('boxConfigLar').classList.toggle('hidden', !criar);
+            const btnInd = document.getElementById('btnUsoIndividual');
+            const btnLar = document.getElementById('btnUsoLar');
+            const boxLar = document.getElementById('boxConfigLar');
+            if (btnInd) btnInd.className = !criar ? "flex items-start gap-3 rounded-2xl border border-primary bg-accent/40 p-4 text-left shadow-soft transition" : "flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-soft transition";
+            if (btnLar) btnLar.className = criar ? "flex items-start gap-3 rounded-2xl border border-primary bg-accent/40 p-4 text-left shadow-soft transition" : "flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-soft transition";
+            if (boxLar) boxLar.classList.toggle('hidden', !criar);
         }
 
         function setDivisaoPadrao(div) {
             divisaoOnboarding = div;
-            document.getElementById('btnDivProp').className = div === 'proporcional' ? "rounded-2xl border border-primary bg-accent/50 p-3 text-left transition" : "rounded-2xl border border-border bg-background p-3 text-left transition";
-            document.getElementById('btnDiv50').className = div === '50/50' ? "rounded-2xl border border-primary bg-accent/50 p-3 text-left transition" : "rounded-2xl border border-border bg-background p-3 text-left transition";
+            const btnProp = document.getElementById('btnDivProp');
+            const btn50 = document.getElementById('btnDiv50');
+            if (btnProp) btnProp.className = div === 'proporcional' ? "rounded-2xl border border-primary bg-accent/50 p-3 text-left transition" : "rounded-2xl border border-border bg-background p-3 text-left transition";
+            if (btn50) btn50.className = div === '50/50' ? "rounded-2xl border border-primary bg-accent/50 p-3 text-left transition" : "rounded-2xl border border-border bg-background p-3 text-left transition";
         }
 
         function testarForcaSenha(val) {
@@ -1509,6 +408,8 @@
             const b2 = document.getElementById('pwdBar2');
             const b3 = document.getElementById('pwdBar3');
             const lbl = document.getElementById('pwdLabel');
+
+            if (!b1 || !b2 || !b3 || !lbl) return;
 
             b1.className = 'h-1.5 flex-1 rounded-full bg-muted';
             b2.className = 'h-1.5 flex-1 rounded-full bg-muted';
@@ -1570,7 +471,6 @@
 
         // --- INTEGRAÇÃO GOOGLE IDENTITY SERVICES ---
         function iniciarGoogleAuth() {
-            // Tenta invocar o GIS se a biblioteca estiver pronta
             if (window.google && google.accounts && google.accounts.id) {
                 try {
                     google.accounts.id.initialize({
