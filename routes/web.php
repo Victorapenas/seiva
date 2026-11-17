@@ -16,12 +16,13 @@ use App\Http\Controllers\LgpdController;
 // Rota principal da aplicação SEIVA
 Route::get('/', function () {
     return view('app');
-});
+})->name('login');
 
 // APIs Públicas / Auth (RF001)
 Route::prefix('api')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/auth/google', [AuthController::class, 'googleLogin']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
