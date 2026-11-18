@@ -217,14 +217,24 @@
             </div>
         </div>
 
-        <!-- CARD PRINCIPAL: APENAS LOGIN + GOOGLE (Criar conta vai direto ao onboarding) -->
+        <!-- CARD PRINCIPAL: LOGIN + GOOGLE COM ABAS SUPERIORES -->
         <div class="w-full max-w-md mx-auto">
             <div class="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-card lg:shadow-elevated">
 
-                <!-- Título fixo — só Entrar -->
-                <div class="mb-6 text-left">
-                    <h2 class="text-2xl font-bold tracking-tight text-foreground">Bem-vindo(a) de volta</h2>
-                    <p class="text-xs text-muted-foreground mt-1">Acesse seu painel pessoal e o ambiente do seu Lar</p>
+                <!-- Abas Superiores Alternáveis: [ Entrar | Criar conta ] -->
+                <div class="relative mb-6 flex rounded-2xl bg-muted p-1">
+                    <button type="button" id="tabAuthEntrar" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground shadow-soft transition-all">
+                        Entrar
+                    </button>
+                    <button type="button" id="tabAuthCadastro" onclick="irParaOnboarding()" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all">
+                        Criar conta
+                    </button>
+                </div>
+
+                <!-- Título e Subtítulo -->
+                <div class="mb-5 text-left">
+                    <h2 class="text-xl font-bold tracking-tight text-foreground">Bem-vindo(a) de volta</h2>
+                    <p class="text-xs text-muted-foreground mt-0.5">Acesse seu painel pessoal e o ambiente do seu Lar</p>
                 </div>
 
                 <!-- FORMULÁRIO DE LOGIN -->

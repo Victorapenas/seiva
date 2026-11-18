@@ -18,6 +18,11 @@ Route::get('/', function () {
     return view('app');
 })->name('login');
 
+// Janela Popup Oficial do Google OAuth2
+Route::get('/auth/google/popup', function () {
+    return view('auth.google-popup');
+});
+
 // APIs Públicas / Auth (RF001)
 Route::prefix('api')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);

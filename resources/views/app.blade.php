@@ -651,34 +651,36 @@
         }
 
         // --- INTEGRAÇÃO GOOGLE IDENTITY SERVICES ---
-        // Abre o Seletor Oficial Google (1 clique, zero digitação manual).
+        // Abre a janela POPUP OFICIAL DO GOOGLE (igual ao print de Escolha uma conta)
         // Se usuário existente -> Painel. Se novo -> Onboarding direto no passo do Lar!
         function iniciarGoogleAuth() {
-            const modal = document.getElementById('modalGoogleAuth');
-            if (modal) modal.classList.remove('hidden');
-            lucide.createIcons();
+            const width = 520;
+            const height = 640;
+            const left = Math.max(0, (window.screen.width / 2) - (width / 2));
+            const top = Math.max(0, (window.screen.height / 2) - (height / 2));
 
-            if (window.google && google.accounts && google.accounts.id) {
-                try {
-                    google.accounts.id.initialize({
-                        client_id: "{{ config('services.google.client_id', '467352153539-seiva-placeholder.apps.googleusercontent.com') }}",
-                        callback: handleGoogleCredentialResponse,
-                        auto_select: false,
-                    });
-                    const container = document.getElementById("googleGisButtonContainer");
-                    if (container) {
-                        google.accounts.id.renderButton(container, {
-                            theme: "outline",
-                            size: "large",
-                            width: 280,
-                            text: "continue_with"
-                        });
-                    }
-                } catch (err) {
-                    console.warn('GIS local warning:', err);
-                }
+            // Abre a janela popup oficial
+            const popup = window.open(
+                '/auth/google/popup',
+                'GoogleSignInPopup',
+                `width=${width},height=${height},top=${top},left=${left},status=no,menubar=no,toolbar=no,location=yes,resizable=yes`
+            );
+
+            // Fallback caso o navegador bloqueie popups automáticos
+            if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                const modal = document.getElementById('modalGoogleAuth');
+                if (modal) modal.classList.remove('hidden');
+                lucide.createIcons();
             }
         }
+
+        // Listener global para capturar a resposta enviada pela janela popup do Google
+        window.addEventListener('message', async (event) => {
+            if (event.data && event.data.tipo === 'SEIVA_GOOGLE_AUTH_SUCCESS') {
+                const payload = event.data.payload;
+                await _processarDadosGoogle(payload);
+            }
+        });
 
         async function conectarContaGoogleDireta(nome, email, googleId) {
             const status = document.getElementById('googleLoadingStatus');
