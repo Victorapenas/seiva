@@ -277,15 +277,9 @@
             const footerText = document.getElementById('authCardFooterText');
 
             if (aba === 'cadastro') {
-                if (btnEntrar) btnEntrar.className = "relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all";
-                if (btnCadastro) btnCadastro.className = "relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground shadow-soft transition-all";
-                if (formLogin) formLogin.classList.add('hidden');
-                if (formCadastro) formCadastro.classList.remove('hidden');
-                if (title) title.innerText = "Criar conta no SEIVA";
-                if (subtitle) subtitle.innerText = "Cadastre-se para organizar suas finanças e o seu lar a dois";
-                if (footerText) {
-                    footerText.innerHTML = 'Já tem uma conta? <button type="button" onclick="alternarAbaAuth(\'entrar\')" class="font-bold text-primary hover:underline ml-1">Fazer login</button>';
-                }
+                // ── CRIAR CONTA: vai direto para o onboarding passo a passo ──
+                irParaOnboarding();
+                return;
             } else {
                 if (btnEntrar) btnEntrar.className = "relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground shadow-soft transition-all";
                 if (btnCadastro) btnCadastro.className = "relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all";
@@ -602,28 +596,44 @@
         }
 
         // --- INTEGRAÇÃO GOOGLE IDENTITY SERVICES ---
+        // Sem modal, sem formulário manual. GIS real → se já tem conta entra no app,
+        // se é primeira vez vai para o onboarding com nome/e-mail pré-preenchidos.
         function iniciarGoogleAuth() {
             if (window.google && google.accounts && google.accounts.id) {
                 try {
                     google.accounts.id.initialize({
-                        client_id: "seiva-google-client-id",
+                        client_id: "{{ config('services.google.client_id', '467352153539-seiva-placeholder.apps.googleusercontent.com') }}",
                         callback: handleGoogleCredentialResponse,
-                        auto_select: false
+                        auto_select: false,
+                        cancel_on_tap_outside: true,
                     });
-                    const container = document.getElementById("googleGisButtonContainer");
-                    if (container) {
-                        google.accounts.id.renderButton(container, {
-                            theme: "outline",
-                            size: "large",
-                            width: 280,
-                            text: "continue_with"
-                        });
-                    }
-                    google.accounts.id.prompt();
-                } catch (err) {}
+                    // Tenta One Tap; se falhar (pop-up bloqueado etc.) não exibe nada extra
+                    google.accounts.id.prompt((notification) => {
+                        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                            // One Tap bloqueado → abre o fluxo de popup OAuth
+                            google.accounts.id.renderButton(
+                                document.getElementById('googleGisButtonContainer'),
+                                { theme: 'outline', size: 'large', width: 280, text: 'continue_with' }
+                            );
+                        }
+                    });
+                } catch (err) {
+                    console.warn('GIS inicialização falhou:', err);
+                    _googleAuthFallback();
+                }
+            } else {
+                // GIS não carregou (offline / bloqueado) — usa fluxo simplificado
+                _googleAuthFallback();
             }
-            document.getElementById('modalGoogleAuth').classList.remove('hidden');
-            lucide.createIcons();
+        }
+
+        // Fallback: simula resposta Google com e-mail de desenvolvimento
+        // (apenas para demo/apresentação quando o GIS real não está disponível)
+        function _googleAuthFallback() {
+            const email = prompt('⚠️ GIS indisponível (demo).\nDigite o e-mail Google para simular o acesso:');
+            if (!email) return;
+            const nome = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            _processarDadosGoogle({ google_id: 'google_demo_' + btoa(email), name: nome, email, picture: null });
         }
 
         async function handleGoogleCredentialResponse(response) {
@@ -638,9 +648,14 @@
                 if (res.ok) {
                     usuarioSessao = data.usuario;
                     larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
-                    fecharModalId('modalGoogleAuth');
-                    montarAmbienteLogado();
-                    trocarTelaPrincipal('screen-app');
+                    if (!larSessao) {
+                        // Primeira vez: vai para o onboarding configurar o Lar
+                        _preencherOnboardingComDadosGoogle(data.usuario);
+                        irParaOnboarding();
+                    } else {
+                        montarAmbienteLogado();
+                        trocarTelaPrincipal('screen-app');
+                    }
                 } else {
                     alert(data.error || 'Não foi possível validar o token do Google.');
                 }
@@ -649,15 +664,45 @@
             }
         }
 
-        async function executarGoogleLoginDireto(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btnConfirmarGoogleAuth');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Conectando com a API do Google...';
+        async function _processarDadosGoogle(payload) {
+            try {
+                const res = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    usuarioSessao = data.usuario;
+                    larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
+                    if (!larSessao) {
+                        _preencherOnboardingComDadosGoogle(data.usuario);
+                        irParaOnboarding();
+                    } else {
+                        montarAmbienteLogado();
+                        trocarTelaPrincipal('screen-app');
+                    }
+                } else {
+                    alert(data.error || 'Erro na autenticação com o Google.');
+                }
+            } catch (err) {
+                alert('Erro de conexão ao comunicar com a API.');
+            }
+        }
 
-            const nome = document.getElementById('googleNomeInput').value.trim();
-            const email = document.getElementById('googleEmailInput').value.trim();
-            const google_id = 'google_' + Math.abs(email.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0));
+        // Pré-preenche o onboarding com os dados vindos do Google
+        function _preencherOnboardingComDadosGoogle(usuario) {
+            const campoNome = document.getElementById('regNome');
+            const campoEmail = document.getElementById('regEmail');
+            const campoSenha = document.getElementById('regSenha');
+            const campoConf = document.getElementById('regSenhaConfirma');
+            if (campoNome) campoNome.value = usuario.nome || '';
+            if (campoEmail) { campoEmail.value = usuario.email || ''; campoEmail.readOnly = true; }
+            // Senha gerada automaticamente (via Google não precisa de senha manual)
+            const senhaAuto = 'google_' + Math.random().toString(36).slice(2, 10);
+            if (campoSenha) campoSenha.value = senhaAuto;
+            if (campoConf) campoConf.value = senhaAuto;
+        }
 
             try {
                 const res = await fetch('/api/auth/google', {

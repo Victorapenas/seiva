@@ -45,7 +45,7 @@
 
         <!-- ───── CENTRO: HERO MINIMALISTA — CASAL + CELULAR ───── -->
         {{-- max-w-sm = ~384px. Casal 240px + celular 175px = 415px → overlap ~31px = dedo toca o celular --}}
-        <div class="relative z-10 my-auto flex items-end justify-center w-full max-w-sm mx-auto" style="height: 420px;">
+        <div class="relative z-10 my-auto flex items-end justify-center w-full max-w-md mx-auto" style="height: 440px;">
 
             <!-- Círculos concêntricos sutis de fundo -->
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
@@ -56,7 +56,7 @@
 
             <!-- CASAL: posicionado à esquerda, o braço estendido da Duda aponta para o celular -->
             <div class="absolute bottom-0 left-0 z-10 select-none pointer-events-none"
-                 style="width: 240px;">
+                 style="width: 310px; margin-left: -20px;">
                 <img src="/casal-hero.png" alt="Duda e Ian"
                      class="w-full h-auto object-contain"
                      style="filter: drop-shadow(0 16px 32px rgba(0,0,0,0.4));">
