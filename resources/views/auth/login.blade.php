@@ -192,33 +192,69 @@
     <!-- ============================================================== -->
     <!-- LATERAL DIREITA: CARD DE LOGIN & CADASTRO (100% OPERACIONAL)   -->
     <!-- ============================================================== -->
-    <div class="relative z-10 mx-auto w-full min-h-screen flex flex-col justify-center px-4 py-8 sm:px-6 lg:w-1/2 lg:px-12 xl:px-16">
+    <div class="relative z-10 mx-auto w-full min-h-screen flex flex-col justify-start lg:justify-center p-0 lg:p-8 xl:p-12 lg:w-1/2">
         
-        <!-- Mobile Header Hero (Experiência Exclusiva e Imersiva para Celular) -->
-        <div class="mb-6 lg:hidden rounded-3xl bg-gradient-to-br from-[#0f291b] via-[#163826] to-[#204e35] p-6 text-white text-center shadow-card">
-            <div class="relative size-16 mx-auto overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-soft flex items-center justify-center">
-                <img src="/seiva-logo-white.png" alt="SEIVA" class="object-contain w-full h-full drop-shadow-sm">
+        <!-- ───── HERO MOBILE IMERSIVO (EXCLUSIVO PARA DISPOSITIVOS MÓVEIS) ───── -->
+        <div class="lg:hidden relative w-full bg-gradient-to-b from-[#0c2317] via-[#123623] to-[#1a4a31] text-white pt-8 pb-10 px-5 sm:px-8 overflow-hidden shadow-card">
+            
+            <!-- Marca d'água de fundo SEIVA -->
+            <div class="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden opacity-[0.06]">
+                <img src="/seiva-logo-white.png" alt="" class="w-72 h-72 object-contain select-none -rotate-12 translate-y-2">
             </div>
-            <h1 class="mt-3 text-2xl font-black tracking-tight text-white">SEIVA</h1>
-            <p class="mt-1 text-xs text-emerald-200 flex items-center justify-center gap-1.5 font-medium">
-                <i data-lucide="leaf" class="size-3.5 text-emerald-300"></i>
-                Finanças do Casal · Dinheiro Sem Tabu
-            </p>
-            <div class="mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1 text-[11px]">
-                <span class="shrink-0 px-2.5 py-1 rounded-full bg-white/15 border border-white/10 text-white flex items-center gap-1">
-                    <i data-lucide="lock" class="size-3 text-amber-300"></i> Caixa Preta com PIN
+
+            <!-- Topbar Mobile: Logo SEIVA + Tag Oficial -->
+            <div class="relative z-10 flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="size-11 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-soft flex items-center justify-center">
+                        <img src="/seiva-logo-white.png" alt="SEIVA" class="object-contain w-full h-full drop-shadow-sm">
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-2xl font-black tracking-tight text-white leading-none">SEIVA</span>
+                            <span class="px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 text-[10px] font-bold uppercase tracking-wider border border-emerald-300/25">
+                                Casal &amp; Lar
+                            </span>
+                        </div>
+                        <span class="text-[11px] font-semibold text-emerald-200/90 tracking-widest uppercase block mt-0.5">
+                            Dinheiro Sem Tabu
+                        </span>
+                    </div>
+                </div>
+
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-medium text-emerald-100 backdrop-blur-sm">
+                    <i data-lucide="leaf" class="size-3 text-emerald-300"></i>
+                    Gestão a Dois
                 </span>
-                <span class="shrink-0 px-2.5 py-1 rounded-full bg-white/15 border border-white/10 text-white flex items-center gap-1">
-                    <i data-lucide="scale" class="size-3 text-emerald-300"></i> Rateio Proporcional
-                </span>
-                <span class="shrink-0 px-2.5 py-1 rounded-full bg-white/15 border border-white/10 text-white flex items-center gap-1">
-                    <i data-lucide="bell-ring" class="size-3 text-sky-300"></i> Cobrador Diplomata
-                </span>
+            </div>
+
+            <!-- Apresentação do Lar com o Casal (Duda & Ian) no Mobile -->
+            <div class="relative z-10 flex items-end justify-between pt-2">
+                <div class="max-w-[210px] pb-1">
+                    <h1 class="text-lg sm:text-xl font-extrabold leading-tight text-white">
+                        Organize as finanças do casal sem brigas.
+                    </h1>
+                    <p class="text-[11px] sm:text-xs text-emerald-200/85 mt-1.5 leading-snug">
+                        Contas conjuntas, rateio justo e privacidade individual.
+                    </p>
+                    <div class="mt-3 flex flex-wrap gap-1.5 text-[10px]">
+                        <span class="px-2 py-0.5 rounded-full bg-white/15 border border-white/10 text-white font-medium flex items-center gap-1">
+                            <i data-lucide="scale" class="size-2.5 text-emerald-300"></i> Rateio Justo
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full bg-white/15 border border-white/10 text-white font-medium flex items-center gap-1">
+                            <i data-lucide="lock" class="size-2.5 text-amber-300"></i> Caixa Preta
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Casal no Mobile (Duda & Ian) -->
+                <div class="w-[145px] sm:w-[165px] shrink-0 -mr-2 select-none pointer-events-none">
+                    <img src="/casal-hero.png" alt="Duda & Ian" class="w-full h-auto object-contain drop-shadow-2xl">
+                </div>
             </div>
         </div>
 
-        <!-- CARD PRINCIPAL: LOGIN + GOOGLE COM ABAS SUPERIORES -->
-        <div class="w-full max-w-md mx-auto">
+        <!-- ───── CARD PRINCIPAL DE AUTENTICAÇÃO COM ABAS SUPERIORES ───── -->
+        <div class="relative z-20 -mt-6 lg:mt-0 w-full max-w-md mx-auto px-4 pb-8 sm:px-6 lg:px-0">
             <div class="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-card lg:shadow-elevated">
 
                 <!-- Abas Superiores Alternáveis: [ Entrar | Criar conta ] -->
@@ -298,6 +334,12 @@
                             Criar conta no SEIVA →
                         </button>
                     </p>
+                </div>
+
+                <!-- Selo de Privacidade Mobile -->
+                <div class="mt-4 pt-3 border-t border-border/40 text-center text-[10px] text-muted-foreground flex items-center justify-center gap-1.5">
+                    <i data-lucide="shield-check" class="size-3.5 text-primary"></i>
+                    <span>Privacidade &amp; Conformidade com a LGPD</span>
                 </div>
 
             </div>
