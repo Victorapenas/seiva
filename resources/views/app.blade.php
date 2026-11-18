@@ -357,9 +357,38 @@
             stepOnboarding = 0;
             const faseWelcome = document.getElementById('onboardingFaseWelcome');
             const faseForm = document.getElementById('onboardingFaseForm');
-            if (faseWelcome) faseWelcome.classList.remove('hidden');
-            if (faseForm) faseForm.classList.add('hidden');
+            // Vai DIRETO para o formulário detalhado em 4 etapas (sem tela intermediária de boas-vindas)
+            if (faseWelcome) faseWelcome.classList.add('hidden');
+            if (faseForm) faseForm.classList.remove('hidden');
             trocarTelaPrincipal('screen-onboarding');
+            renderizarPassoOnboarding();
+        }
+
+        // Fluxo especial quando autenticado pelo Google: pula a digitação de dados pessoais e vai direto para a configuração do Lar
+        function irParaOnboardingGoogle(usuario) {
+            usuarioSessao = usuario;
+            const faseWelcome = document.getElementById('onboardingFaseWelcome');
+            const faseForm = document.getElementById('onboardingFaseForm');
+            if (faseWelcome) faseWelcome.classList.add('hidden');
+            if (faseForm) faseForm.classList.remove('hidden');
+
+            // Preenche dados vindos do Google
+            const campoNome = document.getElementById('regNome');
+            const campoEmail = document.getElementById('regEmail');
+            const campoSenha = document.getElementById('regSenha');
+            const campoConf = document.getElementById('regSenhaConfirma');
+            if (campoNome) campoNome.value = usuario.nome || '';
+            if (campoEmail) {
+                campoEmail.value = usuario.email || '';
+                campoEmail.readOnly = true;
+            }
+            if (campoSenha) campoSenha.value = 'google_authenticated';
+            if (campoConf) campoConf.value = 'google_authenticated';
+
+            // Abre no passo 1 (Renda) ou passo 3 (Lar), pois nome e email já foram validados pelo Google
+            stepOnboarding = 1;
+            trocarTelaPrincipal('screen-onboarding');
+            renderizarPassoOnboarding();
         }
 
         function iniciarFormularioOnboarding() {
@@ -437,6 +466,32 @@
                 const btnAvancar = document.getElementById('btnAvancarOnboarding');
                 btnAvancar.disabled = true;
                 btnAvancar.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Criando sua conta...';
+
+                // Caso especial: Usuário já autenticado via Google (já cadastrado no banco)
+                if (usuarioSessao && usuarioSessao.id_usuario && (usuarioSessao.google_id || usuarioSessao.email.includes('google') || usuarioSessao.email.includes('gmail'))) {
+                    try {
+                        if (usoLarOnboarding) {
+                            const nomeLar = document.getElementById('regNomeLar').value || 'Nosso Cantinho';
+                            const larRes = await fetch('/api/lar', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ nome: nomeLar, emoji: '🌿' })
+                            });
+                            if (larRes.ok) {
+                                larSessao = await larRes.json();
+                            }
+                        }
+                        montarAmbienteLogado();
+                        trocarTelaPrincipal('screen-app');
+                        return;
+                    } catch (err) {
+                        console.error('Erro ao vincular Lar ao Google user:', err);
+                    } finally {
+                        btnAvancar.disabled = false;
+                        btnAvancar.innerHTML = '<span id="btnAvancarOnboardingLabel">Concluir cadastro e entrar</span><i data-lucide="arrow-right" class="size-5"></i>';
+                        lucide.createIcons();
+                    }
+                }
 
                 // Envia os dados completos para a API Laravel com POO e extract($_POST)
                 const payload = {
@@ -596,44 +651,47 @@
         }
 
         // --- INTEGRAÇÃO GOOGLE IDENTITY SERVICES ---
-        // Sem modal, sem formulário manual. GIS real → se já tem conta entra no app,
-        // se é primeira vez vai para o onboarding com nome/e-mail pré-preenchidos.
+        // Abre o Seletor Oficial Google (1 clique, zero digitação manual).
+        // Se usuário existente -> Painel. Se novo -> Onboarding direto no passo do Lar!
         function iniciarGoogleAuth() {
+            const modal = document.getElementById('modalGoogleAuth');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+
             if (window.google && google.accounts && google.accounts.id) {
                 try {
                     google.accounts.id.initialize({
                         client_id: "{{ config('services.google.client_id', '467352153539-seiva-placeholder.apps.googleusercontent.com') }}",
                         callback: handleGoogleCredentialResponse,
                         auto_select: false,
-                        cancel_on_tap_outside: true,
                     });
-                    // Tenta One Tap; se falhar (pop-up bloqueado etc.) não exibe nada extra
-                    google.accounts.id.prompt((notification) => {
-                        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                            // One Tap bloqueado → abre o fluxo de popup OAuth
-                            google.accounts.id.renderButton(
-                                document.getElementById('googleGisButtonContainer'),
-                                { theme: 'outline', size: 'large', width: 280, text: 'continue_with' }
-                            );
-                        }
-                    });
+                    const container = document.getElementById("googleGisButtonContainer");
+                    if (container) {
+                        google.accounts.id.renderButton(container, {
+                            theme: "outline",
+                            size: "large",
+                            width: 280,
+                            text: "continue_with"
+                        });
+                    }
                 } catch (err) {
-                    console.warn('GIS inicialização falhou:', err);
-                    _googleAuthFallback();
+                    console.warn('GIS local warning:', err);
                 }
-            } else {
-                // GIS não carregou (offline / bloqueado) — usa fluxo simplificado
-                _googleAuthFallback();
             }
         }
 
-        // Fallback: simula resposta Google com e-mail de desenvolvimento
-        // (apenas para demo/apresentação quando o GIS real não está disponível)
-        function _googleAuthFallback() {
-            const email = prompt('⚠️ GIS indisponível (demo).\nDigite o e-mail Google para simular o acesso:');
-            if (!email) return;
-            const nome = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            _processarDadosGoogle({ google_id: 'google_demo_' + btoa(email), name: nome, email, picture: null });
+        async function conectarContaGoogleDireta(nome, email, googleId) {
+            const status = document.getElementById('googleLoadingStatus');
+            if (status) status.classList.remove('hidden');
+
+            await _processarDadosGoogle({
+                google_id: googleId,
+                name: nome,
+                email: email,
+                picture: null
+            });
+
+            if (status) status.classList.add('hidden');
         }
 
         async function handleGoogleCredentialResponse(response) {
@@ -646,13 +704,15 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
+                    fecharModalId('modalGoogleAuth');
                     usuarioSessao = data.usuario;
                     larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
+
                     if (!larSessao) {
-                        // Primeira vez: vai para o onboarding configurar o Lar
-                        _preencherOnboardingComDadosGoogle(data.usuario);
-                        irParaOnboarding();
+                        // Primeira vez: vai direto para o onboarding passo a passo do Lar!
+                        irParaOnboardingGoogle(data.usuario);
                     } else {
+                        // Usuário já cadastrado com Lar: entra direto no sistema!
                         montarAmbienteLogado();
                         trocarTelaPrincipal('screen-app');
                     }
@@ -673,12 +733,15 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
+                    fecharModalId('modalGoogleAuth');
                     usuarioSessao = data.usuario;
                     larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
+
                     if (!larSessao) {
-                        _preencherOnboardingComDadosGoogle(data.usuario);
-                        irParaOnboarding();
+                        // Primeira vez: vai direto para o onboarding passo a passo do Lar!
+                        irParaOnboardingGoogle(data.usuario);
                     } else {
+                        // Usuário já cadastrado com Lar: entra direto no sistema!
                         montarAmbienteLogado();
                         trocarTelaPrincipal('screen-app');
                     }
@@ -686,8 +749,9 @@
                     alert(data.error || 'Erro na autenticação com o Google.');
                 }
             } catch (err) {
-                alert('Erro de conexão ao comunicar com a API.');
+                alert('Erro de conexão ao comunicar com a API do Google.');
             }
+        }
         }
 
         // Pré-preenche o onboarding com os dados vindos do Google

@@ -43,151 +43,136 @@
             </span>
         </div>
 
-        <!-- ───── CENTRO: HERO MINIMALISTA — CASAL + CELULAR ───── -->
-        {{-- max-w-sm = ~384px. Casal 240px + celular 175px = 415px → overlap ~31px = dedo toca o celular --}}
-        <div class="relative z-10 my-auto flex items-end justify-center w-full max-w-md mx-auto" style="height: 440px;">
+        <!-- ───── CENTRO: HERO MINIMALISTA — CASAL + CELULAR FLUTUANTE ───── -->
+        <div class="relative z-10 my-auto flex items-end justify-center w-full max-w-[460px] mx-auto" style="height: 460px;">
 
             <!-- Círculos concêntricos sutis de fundo -->
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-                <div class="absolute rounded-full border border-white/[0.06]" style="width:360px;height:360px;"></div>
-                <div class="absolute rounded-full border border-white/[0.05]" style="width:260px;height:260px;"></div>
-                <div class="absolute rounded-full border border-white/[0.04]" style="width:150px;height:150px;"></div>
+                <div class="absolute rounded-full border border-white/[0.05]" style="width:400px;height:400px;"></div>
+                <div class="absolute rounded-full border border-white/[0.04]" style="width:280px;height:280px;"></div>
+                <div class="absolute rounded-full border border-white/[0.03]" style="width:160px;height:160px;"></div>
             </div>
 
-            <!-- CASAL: posicionado à esquerda, o braço estendido da Duda aponta para o celular -->
-            <div class="absolute bottom-0 left-0 z-10 select-none pointer-events-none"
-                 style="width: 310px; margin-left: -20px;">
-                <img src="/casal-hero.png" alt="Duda e Ian"
+            <!-- CASAL: Duda & Ian apontando diretamente para o celular -->
+            <div class="absolute bottom-0 left-[-15px] z-10 select-none pointer-events-none"
+                 style="width: 295px;">
+                <img src="/casal-hero.png" alt="Duda e Ian apontando para o app SEIVA"
                      class="w-full h-auto object-contain"
-                     style="filter: drop-shadow(0 16px 32px rgba(0,0,0,0.4));">
+                     style="filter: drop-shadow(0 18px 36px rgba(0,0,0,0.45));">
             </div>
 
-            <!-- CELULAR: posicionado à direita, encostado na ponta do dedo do casal -->
+            <!-- CELULAR FLUTUANTE: Mockup moderno e proporcional de Fintech -->
             <div class="animate-float-slow absolute z-20"
-                 style="right: 0; top: 10px; width: 175px;">
+                 style="right: -5px; top: 15px; width: 215px;">
 
-                <!-- Corpo do celular — visual iPhone/Android moderno -->
-                <div class="relative rounded-[36px] bg-[#0c1f17] overflow-hidden"
-                     style="
-                        border: 7px solid #0c1f17;
-                        box-shadow:
-                            0 0 0 1px rgba(255,255,255,0.08),
-                            0 40px 80px -10px rgba(0,0,0,0.7),
-                            0 10px 30px rgba(0,0,0,0.4),
-                            inset 0 1px 0 rgba(255,255,255,0.1);
-                     ">
-
-                    <!-- Dynamic Island -->
-                    <div class="flex justify-center pt-3 pb-1">
-                        <div class="h-[18px] w-[60px] rounded-full bg-black"></div>
+                <!-- Frame moderno do smartphone (acabamento titânio escuro) -->
+                <div class="relative rounded-[38px] bg-[#091710] p-[5px] shadow-[0_25px_60px_-10px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.08)]">
+                    
+                    <!-- Dynamic Island no topo -->
+                    <div class="absolute top-2.5 left-1/2 -translate-x-1/2 z-30 h-4 w-16 rounded-full bg-black flex items-center justify-center">
+                        <span class="size-1.5 rounded-full bg-[#1c2b22]"></span>
                     </div>
 
-                    <!-- TELA DO APP -->
-                    <div class="rounded-[26px] overflow-hidden mx-[2px] mb-[2px]">
+                    <!-- Tela do Smartphone -->
+                    <div class="rounded-[32px] overflow-hidden bg-[#f6f8f6] shadow-inner select-none text-left">
 
-                        <!-- Header verde do app SEIVA -->
-                        <div class="bg-[#0f291b] px-3 pt-2 pb-3">
-                            <div class="flex items-center justify-between mb-1.5">
+                        <!-- Status bar e Header Verde Escuro SEIVA -->
+                        <div class="bg-gradient-to-b from-[#0c2417] to-[#123321] px-3.5 pt-2 pb-3 text-white">
+                            <!-- Status Bar -->
+                            <div class="flex items-center justify-between text-[8px] font-semibold text-white/70 mb-2">
+                                <span>09:41</span>
                                 <div class="flex items-center gap-1">
-                                    <div class="size-4 rounded-full bg-amber-400 flex items-center justify-center">
-                                        <span class="text-[6px] font-black text-emerald-900">S</span>
-                                    </div>
-                                    <span class="text-[8px] font-black text-white">SEIVA</span>
-                                </div>
-                                <div class="flex items-center gap-1.5">
-                                    <div class="relative">
-                                        <svg class="size-3 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                                        </svg>
-                                        <div class="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-amber-400"></div>
-                                    </div>
-                                    <div class="size-5 rounded-full bg-emerald-700 border border-emerald-500/40 flex items-center justify-center">
-                                        <span class="text-[6px] font-black text-white">DI</span>
+                                    <svg class="size-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.28 19.64 10.59 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9z"/></svg>
+                                    <div class="w-3.5 h-1.5 rounded-xs border border-white/60 p-[0.5px]">
+                                        <div class="h-full w-full bg-white rounded-2xs"></div>
                                     </div>
                                 </div>
                             </div>
-                            <p class="text-[7px] text-emerald-300/70">Nosso Cantinho 🌿</p>
-                            <p class="text-[10px] font-black text-white">Duda &amp; Ian</p>
+
+                            <!-- Header do Lar -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                    <div class="size-5 rounded-full bg-amber-400 flex items-center justify-center shadow-xs">
+                                        <i data-lucide="leaf" class="size-3 text-emerald-950"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-[9px] font-black text-white leading-tight">Nosso Cantinho 🌿</p>
+                                        <p class="text-[7.5px] font-semibold text-emerald-300/80 leading-none">Duda &amp; Ian</p>
+                                    </div>
+                                </div>
+                                <span class="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 text-[7px] font-bold border border-emerald-400/25">
+                                    Em dia
+                                </span>
+                            </div>
                         </div>
 
-                        <!-- Corpo do app: fundo cinza claríssimo -->
-                        <div class="bg-[#f4f6f4] px-2.5 py-2.5 space-y-2">
+                        <!-- Conteúdo Interno da Tela -->
+                        <div class="p-2.5 space-y-2">
 
-                            <!-- Card saldo -->
-                            <div class="bg-white rounded-2xl p-2.5 shadow-sm">
+                            <!-- Card de Saldo do Lar -->
+                            <div class="rounded-2xl bg-white p-2.5 shadow-sm border border-stone-100">
                                 <div class="flex items-start justify-between">
                                     <div>
-                                        <p class="text-[6.5px] text-stone-400 uppercase tracking-wider font-semibold">Saldo do Lar</p>
-                                        <p class="text-[15px] font-black text-stone-900 leading-none mt-0.5">R$&nbsp;12.450</p>
-                                        <p class="text-[6.5px] text-emerald-600 font-bold mt-1">↗ +R$ 2.100 este mês</p>
+                                        <p class="text-[7px] font-semibold text-stone-400 uppercase tracking-wider">Saldo do Lar</p>
+                                        <p class="text-[15px] font-black text-stone-900 leading-tight mt-0.5">R$ 14.850,00</p>
+                                        <p class="text-[7px] font-bold text-emerald-600 mt-0.5 flex items-center gap-0.5">
+                                            <span>↗ +R$ 2.450 este mês</span>
+                                        </p>
                                     </div>
-                                    <svg class="w-10 h-7 mt-0.5" viewBox="0 0 60 36" fill="none">
-                                        <path d="M0 28 C10 22,20 12,32 18 C44 24,50 6,60 3"
-                                              stroke="#2e7d5c" stroke-width="2" stroke-linecap="round"/>
-                                        <circle cx="60" cy="3" r="2.5" fill="#2e7d5c"/>
+                                    <!-- Sparkline Suave -->
+                                    <svg class="w-12 h-7" viewBox="0 0 80 40" fill="none">
+                                        <path d="M0 32 C 20 28, 35 15, 50 20 C 65 24, 70 8, 80 5" stroke="#2e6b4f" stroke-width="2.5" stroke-linecap="round"/>
+                                        <circle cx="80" cy="5" r="2.5" fill="#2e6b4f"/>
                                     </svg>
                                 </div>
                             </div>
 
-                            <!-- 3 atalhos -->
-                            <div class="grid grid-cols-3 gap-1.5">
-                                <div class="bg-white rounded-xl py-2 text-center shadow-sm flex flex-col items-center gap-0.5">
-                                    <div class="size-5 rounded-full bg-rose-50 flex items-center justify-center">
-                                        <svg class="size-2.5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5m-7 7l7-7 7 7"/></svg>
-                                    </div>
-                                    <span class="text-[6px] font-bold text-stone-600">Rateio</span>
+                            <!-- Atalhos Rápidos do Casal -->
+                            <div class="grid grid-cols-3 gap-1.5 text-center">
+                                <div class="rounded-xl bg-white p-1.5 shadow-2xs border border-stone-100 flex flex-col items-center">
+                                    <span class="size-5 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center text-[8px] font-bold mb-0.5">↑</span>
+                                    <span class="text-[7px] font-bold text-stone-700 leading-none">Rateio</span>
                                 </div>
-                                <div class="bg-white rounded-xl py-2 text-center shadow-sm flex flex-col items-center gap-0.5">
-                                    <div class="size-5 rounded-full bg-sky-50 flex items-center justify-center">
-                                        <svg class="size-2.5 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14m7-7l-7 7-7-7"/></svg>
-                                    </div>
-                                    <span class="text-[6px] font-bold text-stone-600">Receita</span>
+                                <div class="rounded-xl bg-white p-1.5 shadow-2xs border border-stone-100 flex flex-col items-center">
+                                    <span class="size-5 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center text-[8px] font-bold mb-0.5">↓</span>
+                                    <span class="text-[7px] font-bold text-stone-700 leading-none">Receita</span>
                                 </div>
-                                <div class="bg-white rounded-xl py-2 text-center shadow-sm flex flex-col items-center gap-0.5">
-                                    <div class="size-5 rounded-full bg-emerald-50 flex items-center justify-center">
-                                        <svg class="size-2.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 7h8M8 12h8M8 17h4"/></svg>
-                                    </div>
-                                    <span class="text-[6px] font-bold text-stone-600">Acordo</span>
+                                <div class="rounded-xl bg-white p-1.5 shadow-2xs border border-stone-100 flex flex-col items-center">
+                                    <span class="size-5 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center text-[8px] font-bold mb-0.5">⇄</span>
+                                    <span class="text-[7px] font-bold text-stone-700 leading-none">Acordo</span>
                                 </div>
                             </div>
 
-                            <!-- Este mês -->
-                            <div class="bg-white rounded-2xl p-2.5 shadow-sm">
-                                <p class="text-[6.5px] font-bold text-stone-700 mb-1.5">Este mês</p>
-                                <div class="grid grid-cols-2 gap-1">
-                                    <div class="rounded-xl bg-emerald-50 px-2 py-1.5">
-                                        <p class="text-[5.5px] text-stone-400 font-medium">Receitas</p>
-                                        <p class="text-[10px] font-black text-emerald-700">8.500</p>
-                                        <p class="text-[5.5px] text-emerald-600 font-bold">▲ 12%</p>
-                                    </div>
-                                    <div class="rounded-xl bg-rose-50 px-2 py-1.5">
-                                        <p class="text-[5.5px] text-stone-400 font-medium">Despesas</p>
-                                        <p class="text-[10px] font-black text-rose-600">4.900</p>
-                                        <p class="text-[5.5px] text-rose-500 font-bold">▲ 27%</p>
-                                    </div>
+                            <!-- Barra de Rateio Proporcional Justo -->
+                            <div class="rounded-xl bg-white p-2 shadow-sm border border-stone-100 space-y-1">
+                                <div class="flex items-center justify-between text-[7px]">
+                                    <span class="font-bold text-stone-800">Rateio Proporcional</span>
+                                    <span class="text-emerald-700 font-extrabold text-[6.5px] bg-emerald-50 px-1.5 py-0.2 rounded-full">
+                                        Mais justo que 50/50
+                                    </span>
+                                </div>
+                                <div class="h-2 w-full rounded-full bg-stone-100 overflow-hidden flex">
+                                    <div class="h-full bg-emerald-600 rounded-l-full" style="width: 55%"></div>
+                                    <div class="h-full bg-amber-400 rounded-r-full" style="width: 45%"></div>
+                                </div>
+                                <div class="flex justify-between text-[6.5px] text-stone-500 font-semibold">
+                                    <span>Ian: 55%</span>
+                                    <span>Duda: 45%</span>
                                 </div>
                             </div>
 
-                        </div><!-- /corpo app -->
-
-                        <!-- Home bar -->
-                        <div class="bg-[#f4f6f4] flex justify-center py-2">
-                            <div class="h-[3px] w-12 rounded-full bg-stone-300"></div>
                         </div>
 
-                    </div><!-- /tela -->
+                        <!-- Barra Inferior do Smartphone (Home Indicator) -->
+                        <div class="py-1.5 flex justify-center bg-[#f6f8f6]">
+                            <div class="h-1 w-14 rounded-full bg-stone-300"></div>
+                        </div>
 
-                    <!-- Botão power -->
-                    <div class="absolute -right-[6px] top-20 h-12 w-[4px] rounded-r-full bg-[#1a3828]"></div>
-                    <!-- Botões volume -->
-                    <div class="absolute -left-[6px] top-14 h-7 w-[4px] rounded-l-full bg-[#1a3828]"></div>
-                    <div class="absolute -left-[6px] top-24 h-7 w-[4px] rounded-l-full bg-[#1a3828]"></div>
-
+                    </div>
                 </div>
 
-                <!-- Reflexo/sombra no chão -->
-                <div class="mx-auto mt-3 rounded-full bg-black/20 blur-lg" style="height:10px;width:120px;"></div>
+                <!-- Sombra Suave sob o Celular Flutuante -->
+                <div class="mx-auto mt-2 h-3 w-32 rounded-full bg-black/25 blur-md"></div>
             </div>
 
         </div>
