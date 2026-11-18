@@ -704,37 +704,6 @@
             if (campoConf) campoConf.value = senhaAuto;
         }
 
-            try {
-                const res = await fetch('/api/auth/google', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        google_id: google_id,
-                        name: nome,
-                        email: email,
-                        picture: null
-                    })
-                });
-
-                const data = await res.json();
-                if (res.ok) {
-                    usuarioSessao = data.usuario;
-                    larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
-                    fecharModalId('modalGoogleAuth');
-                    montarAmbienteLogado();
-                    trocarTelaPrincipal('screen-app');
-                } else {
-                    alert(data.error || 'Erro na autenticação com a conta Google.');
-                }
-            } catch (err) {
-                alert('Erro de conexão ao comunicar com a API de autenticação.');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Entrar com o Google</span>';
-                lucide.createIcons();
-            }
-        }
-
         async function executarLogout() {
             await fetch('/api/logout', { method: 'POST' });
             usuarioSessao = null;
