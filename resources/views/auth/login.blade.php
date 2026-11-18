@@ -44,25 +44,27 @@
         </div>
 
         <!-- ───── CENTRO: HERO MINIMALISTA — CASAL + CELULAR ───── -->
-        <div class="relative z-10 my-auto flex items-end justify-center w-full" style="height: 440px;">
+        {{-- max-w-sm = ~384px. Casal 240px + celular 175px = 415px → overlap ~31px = dedo toca o celular --}}
+        <div class="relative z-10 my-auto flex items-end justify-center w-full max-w-sm mx-auto" style="height: 420px;">
 
             <!-- Círculos concêntricos sutis de fundo -->
             <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-                <div class="absolute rounded-full border border-white/[0.06]" style="width:420px;height:420px;"></div>
-                <div class="absolute rounded-full border border-white/[0.05]" style="width:300px;height:300px;"></div>
-                <div class="absolute rounded-full border border-white/[0.04]" style="width:180px;height:180px;"></div>
+                <div class="absolute rounded-full border border-white/[0.06]" style="width:360px;height:360px;"></div>
+                <div class="absolute rounded-full border border-white/[0.05]" style="width:260px;height:260px;"></div>
+                <div class="absolute rounded-full border border-white/[0.04]" style="width:150px;height:150px;"></div>
             </div>
 
-            <!-- IMAGEM DO CASAL (Duda & Ian — flat art, fundo transparente) -->
-            <div class="absolute bottom-0 left-0 z-10 select-none pointer-events-none" style="width: 260px;">
-                <img src="/casal-hero.png" alt="Duda e Ian" 
-                     class="w-full h-auto object-contain drop-shadow-2xl"
-                     style="filter: drop-shadow(0 20px 40px rgba(0,0,0,0.35));">
+            <!-- CASAL: posicionado à esquerda, o braço estendido da Duda aponta para o celular -->
+            <div class="absolute bottom-0 left-0 z-10 select-none pointer-events-none"
+                 style="width: 240px;">
+                <img src="/casal-hero.png" alt="Duda e Ian"
+                     class="w-full h-auto object-contain"
+                     style="filter: drop-shadow(0 16px 32px rgba(0,0,0,0.4));">
             </div>
 
-            <!-- CELULAR FLUTUANTE (mockup limpo e simples) -->
+            <!-- CELULAR: posicionado à direita, encostado na ponta do dedo do casal -->
             <div class="animate-float-slow absolute z-20"
-                 style="right: 10px; top: 20px; width: 185px;">
+                 style="right: 0; top: 10px; width: 175px;">
 
                 <!-- Corpo do celular — visual iPhone/Android moderno -->
                 <div class="relative rounded-[36px] bg-[#0c1f17] overflow-hidden"
