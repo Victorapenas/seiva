@@ -232,41 +232,29 @@
             </div>
         </div>
 
-        <!-- CARD PRINCIPAL DE AUTENTICAÇÃO COM SISTEMA DE ABAS REAIS -->
+        <!-- CARD PRINCIPAL: APENAS LOGIN + GOOGLE (Criar conta vai direto ao onboarding) -->
         <div class="w-full max-w-md mx-auto">
             <div class="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-card lg:shadow-elevated">
-                
-                <!-- Abas Superiores Alternáveis: [ Entrar | Criar conta ] (100% Funcional) -->
-                <div class="relative mb-6 flex rounded-2xl bg-muted p-1">
-                    <button type="button" id="tabAuthEntrar" onclick="alternarAbaAuth('entrar')" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground shadow-soft transition-all">
-                        Entrar
-                    </button>
-                    <button type="button" id="tabAuthCadastro" onclick="alternarAbaAuth('cadastro')" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all">
-                        Criar conta
-                    </button>
+
+                <!-- Título fixo — só Entrar -->
+                <div class="mb-6 text-left">
+                    <h2 class="text-2xl font-bold tracking-tight text-foreground">Bem-vindo(a) de volta</h2>
+                    <p class="text-xs text-muted-foreground mt-1">Acesse seu painel pessoal e o ambiente do seu Lar</p>
                 </div>
 
-                <!-- Título Dinâmico do Card -->
-                <div class="mb-5 text-left">
-                    <h2 id="authCardTitle" class="text-xl font-bold tracking-tight text-foreground">Bem-vindo(a) de volta</h2>
-                    <p id="authCardSubtitle" class="text-xs text-muted-foreground mt-0.5">Acesse seu painel pessoal e o ambiente do seu Lar</p>
-                </div>
-
-                <!-- ============================================== -->
-                <!-- 1. FORMULÁRIO DE LOGIN (ABA: ENTRAR)           -->
-                <!-- ============================================== -->
+                <!-- FORMULÁRIO DE LOGIN -->
                 <form id="formLoginCard" onsubmit="executarLogin(event)" class="space-y-4">
-                    <!-- Input E-mail -->
                     <div class="relative">
-                        <input type="email" id="loginEmail" required placeholder=" " class="floating-input peer h-14 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        <input type="email" id="loginEmail" required placeholder=" "
+                               class="floating-input peer h-14 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
                         <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200">
                             E-mail cadastrado
                         </label>
                     </div>
 
-                    <!-- Input Senha -->
                     <div class="relative">
-                        <input type="password" id="loginSenha" required placeholder=" " class="floating-input peer h-14 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        <input type="password" id="loginSenha" required placeholder=" "
+                               class="floating-input peer h-14 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
                         <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200">
                             Senha de acesso
                         </label>
@@ -277,87 +265,26 @@
                             <input type="checkbox" id="loginLembrar" checked class="rounded border-border text-primary focus:ring-primary">
                             Lembrar de mim
                         </label>
-                        <a href="#" onclick="alert('Recuperação de conta: para redefinir sua senha, solicite ao administrador ou confirme o e-mail cadastrado.'); return false;" class="font-medium text-primary hover:underline">
-                            Esqueceu a senha?
-                        </a>
+                        <a href="#" onclick="alert('Para redefinir sua senha, confirme o e-mail cadastrado.'); return false;"
+                           class="font-medium text-primary hover:underline">Esqueceu a senha?</a>
                     </div>
 
-                    <button type="submit" id="loginSubmitBtn" class="w-full mt-2 h-14 py-3.5 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm shadow-card hover:bg-primary/90 active:scale-[0.99] transition flex items-center justify-center gap-2">
+                    <button type="submit" id="loginSubmitBtn"
+                            class="w-full mt-2 h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm shadow-card hover:bg-primary/90 active:scale-[0.99] transition flex items-center justify-center gap-2">
                         <span>Entrar no SEIVA</span>
                         <i data-lucide="arrow-right" class="size-4"></i>
                     </button>
                 </form>
 
-                <!-- ============================================== -->
-                <!-- 2. FORMULÁRIO DE CADASTRO (ABA: CRIAR CONTA)   -->
-                <!-- ============================================== -->
-                <form id="formCadastroCard" onsubmit="executarCadastroCard(event)" class="space-y-3.5 hidden">
-                    <!-- Nome Completo -->
-                    <div class="relative">
-                        <input type="text" id="cardRegNome" required placeholder=" " class="floating-input peer h-13 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
-                        <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200">
-                            Nome completo
-                        </label>
-                    </div>
-
-                    <!-- E-mail -->
-                    <div class="relative">
-                        <input type="email" id="cardRegEmail" required placeholder=" " class="floating-input peer h-13 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
-                        <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200">
-                            E-mail principal
-                        </label>
-                    </div>
-
-                    <!-- Senha -->
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <div class="relative">
-                            <input type="password" id="cardRegSenha" required placeholder=" " class="floating-input peer h-13 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
-                            <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground transition-all duration-200">
-                                Senha (mín. 6)
-                            </label>
-                        </div>
-                        <div class="relative">
-                            <input type="password" id="cardRegSenhaConfirma" required placeholder=" " class="floating-input peer h-13 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
-                            <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground transition-all duration-200">
-                                Confirmar senha
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Renda Mensal (Para cálculo do rateio proporcional) -->
-                    <div class="relative">
-                        <input type="number" step="0.01" id="cardRegRenda" placeholder=" " class="floating-input peer h-13 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm font-semibold text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
-                        <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground transition-all duration-200">
-                            Sua renda mensal (R$) · Opcional para o rateio justo
-                        </label>
-                    </div>
-
-                    <p class="text-[11px] text-muted-foreground leading-relaxed">
-                        Ao criar sua conta, seus dados são protegidos por criptografia e pela LGPD.
-                    </p>
-
-                    <button type="submit" id="cardRegSubmitBtn" class="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm shadow-card hover:bg-primary/90 active:scale-[0.99] transition flex items-center justify-center gap-2">
-                        <span>Criar minha conta no SEIVA</span>
-                        <i data-lucide="arrow-right" class="size-4"></i>
-                    </button>
-
-                    <!-- Link para o Onboarding Passo a Passo Completo -->
-                    <div class="pt-1 text-center">
-                        <button type="button" onclick="irParaOnboarding()" class="text-xs font-semibold text-primary hover:underline flex items-center justify-center gap-1 mx-auto">
-                            <span>Prefere configurar o Lar passo a passo?</span>
-                            <span class="font-bold underline">Abrir Onboarding guiado →</span>
-                        </button>
-                    </div>
-                </form>
-
                 <!-- Divisor -->
-                <div class="relative my-6 flex items-center justify-center">
+                <div class="relative my-5 flex items-center justify-center">
                     <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-border"></div></div>
                     <span class="relative bg-card px-3 text-xs text-muted-foreground">ou continue com</span>
                 </div>
 
-                <!-- Botão Google Oficial Funcional -->
-                <button type="button" onclick="iniciarGoogleAuth()" class="w-full h-12 rounded-2xl border border-border bg-card hover:bg-muted/50 text-foreground font-medium text-sm transition flex items-center justify-center gap-3 shadow-soft active:scale-[0.99]">
+                <!-- Botão Google -->
+                <button type="button" onclick="iniciarGoogleAuth()"
+                        class="w-full h-12 rounded-2xl border border-border bg-card hover:bg-muted/50 text-foreground font-medium text-sm transition flex items-center justify-center gap-3 shadow-soft active:scale-[0.99]">
                     <svg viewBox="0 0 24 24" class="size-5" aria-hidden="true">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"/>
                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/>
@@ -367,15 +294,17 @@
                     <span>Continuar com Google</span>
                 </button>
 
-                <!-- Rodapé de Alternância Rápida -->
-                <div class="mt-6 border-t border-border/80 pt-4 text-center">
-                    <p id="authCardFooterText" class="text-xs text-muted-foreground">
-                        Não tem uma conta? 
-                        <button type="button" onclick="alternarAbaAuth('cadastro')" class="font-bold text-primary hover:underline ml-1">
-                            Criar conta no SEIVA
+                <!-- Rodapé: link para criar conta (vai ao onboarding) -->
+                <div class="mt-5 border-t border-border/60 pt-4 text-center">
+                    <p class="text-xs text-muted-foreground">
+                        Não tem uma conta?
+                        <button type="button" onclick="irParaOnboarding()"
+                                class="font-bold text-primary hover:underline ml-1">
+                            Criar conta no SEIVA →
                         </button>
                     </p>
                 </div>
+
             </div>
         </div>
     </div>
