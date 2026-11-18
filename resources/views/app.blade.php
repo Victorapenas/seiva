@@ -88,6 +88,42 @@
         #screen-app.is-active {
             display: block !important;
         }
+        /* Animações Flutuantes Suaves Estilo Fintech */
+        @keyframes floatSlow {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+        @keyframes floatGentle {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-5px) rotate(0.5deg);
+            }
+        }
+        @keyframes pulseRings {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.12;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.25;
+            }
+        }
+        .animate-float-slow {
+            animation: floatSlow 5s ease-in-out infinite;
+        }
+        .animate-float-gentle {
+            animation: floatGentle 4s ease-in-out infinite;
+        }
+        .animate-pulse-rings {
+            animation: pulseRings 8s ease-in-out infinite;
+        }
         .floating-input:focus ~ .floating-label,
         .floating-input:not(:placeholder-shown) ~ .floating-label {
             top: 0.5rem;
@@ -225,6 +261,102 @@
 
         function irParaLogin() {
             trocarTelaPrincipal('screen-login');
+            alternarAbaAuth('entrar');
+        }
+
+        // ==========================================
+        // ALTERNÂNCIA DE ABAS NO CARD (ENTRAR VS CRIAR CONTA)
+        // ==========================================
+        function alternarAbaAuth(aba) {
+            const btnEntrar = document.getElementById('tabAuthEntrar');
+            const btnCadastro = document.getElementById('tabAuthCadastro');
+            const formLogin = document.getElementById('formLoginCard');
+            const formCadastro = document.getElementById('formCadastroCard');
+            const title = document.getElementById('authCardTitle');
+            const subtitle = document.getElementById('authCardSubtitle');
+            const footerText = document.getElementById('authCardFooterText');
+
+            if (aba === 'cadastro') {
+                if (btnEntrar) btnEntrar.className = "relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all";
+                if (btnCadastro) btnCadastro.className = "relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground shadow-soft transition-all";
+                if (formLogin) formLogin.classList.add('hidden');
+                if (formCadastro) formCadastro.classList.remove('hidden');
+                if (title) title.innerText = "Criar conta no SEIVA";
+                if (subtitle) subtitle.innerText = "Cadastre-se para organizar suas finanças e o seu lar a dois";
+                if (footerText) {
+                    footerText.innerHTML = 'Já tem uma conta? <button type="button" onclick="alternarAbaAuth(\'entrar\')" class="font-bold text-primary hover:underline ml-1">Fazer login</button>';
+                }
+            } else {
+                if (btnEntrar) btnEntrar.className = "relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground shadow-soft transition-all";
+                if (btnCadastro) btnCadastro.className = "relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all";
+                if (formLogin) formLogin.classList.remove('hidden');
+                if (formCadastro) formCadastro.classList.add('hidden');
+                if (title) title.innerText = "Bem-vindo(a) de volta";
+                if (subtitle) subtitle.innerText = "Acesse seu painel pessoal e o ambiente do seu Lar";
+                if (footerText) {
+                    footerText.innerHTML = 'Não tem uma conta? <button type="button" onclick="alternarAbaAuth(\'cadastro\')" class="font-bold text-primary hover:underline ml-1">Criar conta no SEIVA</button>';
+                }
+            }
+            lucide.createIcons();
+        }
+
+        async function executarCadastroCard(e) {
+            e.preventDefault();
+            const btn = document.getElementById('cardRegSubmitBtn');
+            const nome = document.getElementById('cardRegNome').value.trim();
+            const email = document.getElementById('cardRegEmail').value.trim();
+            const senha = document.getElementById('cardRegSenha').value;
+            const senhaConf = document.getElementById('cardRegSenhaConfirma').value;
+            const renda = parseFloat(document.getElementById('cardRegRenda').value) || 0;
+
+            if (!nome || !email || !senha) return alert('Por favor, preencha todos os campos obrigatórios.');
+            if (senha !== senhaConf) return alert('As senhas não coincidem.');
+            if (senha.length < 6) return alert('A senha deve ter no mínimo 6 caracteres.');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Criando sua conta...';
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nome,
+                        email,
+                        senha,
+                        renda_mensal: renda,
+                        tipo_renda: 'clt',
+                        banco_principal: 'Nubank',
+                        pin_caixa_preta: '1234',
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    usuarioSessao = data.usuario;
+                    
+                    // Cria automaticamente o Lar Compartilhado para o casal
+                    try {
+                        const larRes = await fetch('/api/lar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ nome: 'Nosso Cantinho', emoji: '🌿' })
+                        });
+                        if (larRes.ok) larSessao = await larRes.json();
+                    } catch (e) {}
+
+                    montarAmbienteLogado();
+                    trocarTelaPrincipal('screen-app');
+                } else {
+                    alert(data.error || 'Erro ao realizar cadastro.');
+                }
+            } catch (err) {
+                alert('Erro de conexão ao comunicar com o servidor.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Criar minha conta no SEIVA</span><i data-lucide="arrow-right" class="size-4"></i>';
+                lucide.createIcons();
+            }
         }
 
         function irParaOnboarding() {
