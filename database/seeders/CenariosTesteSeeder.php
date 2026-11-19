@@ -139,12 +139,12 @@ class CenariosTesteSeeder extends Seeder
             ]
         );
 
-        // Contas bancárias
+        // Contas bancárias de Ian e Duda (Conforme Protótipo Oficial)
         $contaIan = Conta::updateOrCreate(
             ['usuario_id' => $ian->id_usuario, 'nome' => 'Inter Ian'],
             [
                 'tipo' => 'corrente',
-                'saldo' => 9900.00,
+                'saldo' => 11105.00,
                 'comprometido' => 1800.00,
                 'funcao' => 'gasto',
                 'cor' => '#ff7a00',
@@ -152,15 +152,60 @@ class CenariosTesteSeeder extends Seeder
             ]
         );
 
+        // 5 Contas de Duda (Idêntico ao Protótipo da Imagem 4 - Total R$ 3.745,00)
         $contaDuda = Conta::updateOrCreate(
-            ['usuario_id' => $duda->id_usuario, 'nome' => 'Nubank Duda'],
+            ['usuario_id' => $duda->id_usuario, 'nome' => 'Nubank'],
             [
                 'tipo' => 'corrente',
-                'saldo' => 4950.00,
-                'comprometido' => 1200.00,
+                'saldo' => 1180.00,
+                'comprometido' => 890.00,
                 'funcao' => 'gasto',
                 'cor' => '#820ad1',
                 'chave_pix' => 'duda@seiva.com',
+            ]
+        );
+
+        Conta::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'nome' => 'PicPay'],
+            [
+                'tipo' => 'corrente',
+                'saldo' => 240.00,
+                'comprometido' => 0.00,
+                'funcao' => 'gasto',
+                'cor' => '#11c76f',
+            ]
+        );
+
+        Conta::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'nome' => 'Mercado Pago'],
+            [
+                'tipo' => 'corrente',
+                'saldo' => 95.00,
+                'comprometido' => 0.00,
+                'funcao' => 'gasto',
+                'cor' => '#009ee3',
+            ]
+        );
+
+        Conta::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'nome' => 'Poupança Caixa'],
+            [
+                'tipo' => 'poupanca',
+                'saldo' => 2100.00,
+                'comprometido' => 2100.00,
+                'funcao' => 'reserva',
+                'cor' => '#005ca9',
+            ]
+        );
+
+        Conta::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'nome' => 'Dinheiro em espécie'],
+            [
+                'tipo' => 'carteira',
+                'saldo' => 130.00,
+                'comprometido' => 0.00,
+                'funcao' => 'gasto',
+                'cor' => '#10b981',
             ]
         );
         // Total somado das contas do casal = R$ 14.850,00!

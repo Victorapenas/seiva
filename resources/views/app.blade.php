@@ -1232,10 +1232,76 @@
             lucide.createIcons();
         }
 
-        // --- DASHBOARD ---
+        // --- DASHBOARD (OFICIAL DO PROTÓTIPO SEIVA) ---
+        let heroAbaAtiva = 'renda';
+
+        function alternarAbaHero(tipo) {
+            heroAbaAtiva = tipo;
+            const cardRenda = document.getElementById('cardHeroMinhaRenda');
+            const cardLar = document.getElementById('cardHeroCustoLar');
+            const tabRenda = document.getElementById('tabHeroMinhaRenda');
+            const tabLar = document.getElementById('tabHeroCustoLar');
+            const dotRenda = document.getElementById('sliderDotRenda');
+            const dotLar = document.getElementById('sliderDotLar');
+            const dicaTexto = document.getElementById('sliderTextoDica');
+
+            if (tipo === 'renda') {
+                if (cardRenda) cardRenda.classList.remove('hidden');
+                if (cardLar) cardLar.classList.add('hidden');
+                if (tabRenda) {
+                    tabRenda.className = 'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs';
+                }
+                if (tabLar) {
+                    tabLar.className = 'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+                }
+                if (dotRenda) dotRenda.className = 'size-2 rounded-full bg-emerald-600 transition-all';
+                if (dotLar) dotLar.className = 'size-2 rounded-full bg-muted transition-all';
+                if (dicaTexto) dicaTexto.innerText = 'Arraste para o lado para ver o Custo do Lar';
+            } else {
+                if (cardRenda) cardRenda.classList.add('hidden');
+                if (cardLar) cardLar.classList.remove('hidden');
+                if (tabLar) {
+                    tabLar.className = 'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs';
+                }
+                if (tabRenda) {
+                    tabRenda.className = 'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+                }
+                if (dotLar) dotLar.className = 'size-2 rounded-full bg-emerald-600 transition-all';
+                if (dotRenda) dotRenda.className = 'size-2 rounded-full bg-muted transition-all';
+                if (dicaTexto) dicaTexto.innerText = 'Arraste para o lado para ver a sua renda';
+            }
+            lucide.createIcons();
+        }
+
+        function alternarVisibilidadeSaldos() {
+            saldosVisiveis = !saldosVisiveis;
+            const btnLabel = document.getElementById('btnVisSaldosLabel');
+            if (btnLabel) btnLabel.innerText = saldosVisiveis ? 'Ocultar' : 'Exibir';
+            carregarDashboardDados();
+        }
+
+        function recusarPedidoAjuda() {
+            const b = document.getElementById('bannerPedidoAjuda');
+            if (b) b.classList.add('hidden');
+            seivaNotificar('Pedido de ajuda arquivado.', 'info', 'Pedido de Ajuda');
+        }
+
+        function aceitarPedidoAjuda() {
+            const b = document.getElementById('bannerPedidoAjuda');
+            if (b) b.classList.add('hidden');
+            seivaNotificar('Você ajudou Ian com R$ 50,00! 🌿💚', 'sucesso', 'Ajuda Confirmada');
+        }
+
+        function confirmarRegistroRapido(titulo, valor) {
+            seivaNotificar(`Pagamento de ${titulo} (${BRL(valor)}) registrado com sucesso!`, 'sucesso', 'Registrado');
+            setTimeout(carregarDashboardDados, 500);
+        }
+
         async function carregarDashboardDados() {
             try {
-                const res = await fetch('/api/dashboard');
+                const res = await fetch('/api/dashboard', {
+                    headers: { 'Accept': 'application/json' }
+                });
                 if (!res.ok) return;
                 const data = await res.json();
 
@@ -1250,136 +1316,199 @@
                     badgePerfil.innerText = `${data.usuario.nome} (${isCasal ? 'Casal · ' + data.lar.nome : 'Individual'})`;
                 }
 
-                // Avatar e nomes do cabeçalho
+                // Avatar e saudação do cabeçalho
                 const avatarEl = document.getElementById('dashAvatar');
                 if (avatarEl) {
-                    avatarEl.innerText = isCasal ? (data.lar.iniciais_casal || 'CL') : (data.usuario.iniciais || 'VH');
+                    avatarEl.innerText = data.usuario.iniciais || 'DU';
                 }
 
-                const nomeLarEl = document.getElementById('dashNomeLar');
-                if (nomeLarEl) {
-                    nomeLarEl.innerText = isCasal ? `${data.lar.nome} 🌿` : 'Meu Espaço 🌿';
+                const greetingEl = document.getElementById('dashGreeting');
+                if (greetingEl) {
+                    const primeiroNome = data.usuario.nome.split(' ')[0];
+                    greetingEl.innerText = `Boa tarde, ${primeiroNome}`;
                 }
 
-                const subtituloEl = document.getElementById('dashSubtituloCasal');
-                if (subtituloEl) {
-                    subtituloEl.innerText = isCasal ? (data.lar.nomes_casal || 'Duda & Ian') : data.usuario.nome;
+                const dateEl = document.getElementById('dashDateSub');
+                if (dateEl) {
+                    dateEl.innerText = data.hero_mes?.data_extenso || 'Quinta, 12 de junho de 2026';
                 }
 
-                const badgeModo = document.getElementById('dashBadgeModo');
-                if (badgeModo) {
-                    badgeModo.innerText = isCasal ? 'Casal & Lar' : 'Modo Individual';
-                }
-
-                // Rótulo e valor do Saldo Principal
-                const labelSaldo = document.getElementById('dashLabelSaldoPrincipal');
-                if (labelSaldo) {
-                    labelSaldo.innerText = isCasal ? 'SALDO DO LAR' : 'SALDO LIVRE DISPONÍVEL';
-                }
-
-                const valorPrincipal = isCasal ? data.lar.saldo_lar : data.resumo.saldo_livre;
-                const saldoPrincipalEl = document.getElementById('dashValSaldoLivre');
-                if (saldoPrincipalEl) {
-                    saldoPrincipalEl.innerText = saldosVisiveis ? BRL(valorPrincipal) : 'R$ ••••••';
-                }
-
-                const tendenciaEl = document.getElementById('dashTendenciaTexto');
-                if (tendenciaEl) {
-                    tendenciaEl.innerHTML = `<i data-lucide="trending-up" class="size-3.5"></i> ${isCasal ? (data.lar.tendencia_mes || '+R$ 2.450 este mês') : '+R$ 1.800 este mês'}`;
-                }
-
-                const comp = data.resumo.saldo_comprometido || 0;
-                const livre = data.resumo.saldo_livre || 0;
-                const elComp = document.getElementById('dashValComprometido');
-                if (elComp) elComp.innerText = saldosVisiveis ? BRL(comp) : '••••';
-
-                const elLivre = document.getElementById('dashValLivre');
-                if (elLivre) elLivre.innerText = saldosVisiveis ? BRL(livre) : '••••';
-
-                // Card Rateio Proporcional
-                const rateioBox = document.getElementById('cardRateioProporcionalBox');
-                if (rateioBox) {
-                    if (isCasal && data.lar.membros_rateio && data.lar.membros_rateio.length >= 2) {
-                        const m1 = data.lar.membros_rateio[0];
-                        const m2 = data.lar.membros_rateio[1];
-
-                        rateioBox.innerHTML = `
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <h3 class="text-sm font-bold text-foreground">Rateio Proporcional</h3>
-                                    <span class="text-xs text-muted-foreground hidden sm:inline">· Divisão justa por renda</span>
-                                </div>
-                                <span class="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 border border-emerald-500/20">
-                                    <i data-lucide="sparkles" class="size-3"></i> Mais justo que 50/50
-                                </span>
-                            </div>
-                            <div class="h-3.5 w-full rounded-full bg-muted flex overflow-hidden ring-1 ring-border">
-                                <div id="barRateioMembro1" class="h-full bg-emerald-600 transition-all duration-500 rounded-l-full" style="width: ${m1.percentual}%"></div>
-                                <div id="barRateioMembro2" class="h-full bg-amber-400 transition-all duration-500 rounded-r-full" style="width: ${m2.percentual}%"></div>
-                            </div>
-                            <div class="flex items-center justify-between text-xs pt-0.5">
-                                <div class="flex items-center gap-2">
-                                    <span class="size-2.5 rounded-full bg-emerald-600"></span>
-                                    <span class="font-bold text-foreground">${m1.primeiro_nome}: ${m1.percentual}% (${m1.renda_formatada})</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="font-bold text-foreground">${m2.primeiro_nome}: ${m2.percentual}% (${m2.renda_formatada})</span>
-                                    <span class="size-2.5 rounded-full bg-amber-400"></span>
-                                </div>
-                            </div>
-                        `;
+                // 2. Banner de Pedido de Ajuda
+                const bannerAjuda = document.getElementById('bannerPedidoAjuda');
+                if (bannerAjuda) {
+                    if (data.pedido_ajuda && data.pedido_ajuda.tem_pedido) {
+                        bannerAjuda.classList.remove('hidden');
+                        const tituloAjuda = document.getElementById('pedidoAjudaTitulo');
+                        if (tituloAjuda) {
+                            tituloAjuda.innerHTML = `${data.pedido_ajuda.solicitante} pediu uma ajuda de <span class="text-emerald-800 dark:text-emerald-400 font-black">${BRL(data.pedido_ajuda.valor)}</span>`;
+                        }
+                        const descAjuda = document.getElementById('pedidoAjudaDesc');
+                        if (descAjuda) descAjuda.innerText = data.pedido_ajuda.motivo;
+                        const tagAjuda = document.getElementById('pedidoAjudaTag');
+                        if (tagAjuda) tagAjuda.innerHTML = `<span class="font-bold">${data.pedido_ajuda.solicitante_iniciais}</span> ${data.pedido_ajuda.motivo.substring(0, 32)} · há 20 min`;
                     } else {
-                        rateioBox.innerHTML = `
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div>
-                                    <div class="flex items-center gap-2">
-                                        <h3 class="text-sm font-bold text-foreground">Ambiente Individual Ativo</h3>
-                                        <span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">Você no controle</span>
-                                    </div>
-                                    <p class="text-xs text-muted-foreground mt-0.5">Quer dividir contas a dois? Crie seu Lar compartilhado e calcule o rateio justo automaticamente.</p>
-                                </div>
-                                <button onclick="trocarAbaApp('lar')" class="shrink-0 px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition shadow-2xs">
-                                    Configurar Lar Compartilhado
-                                </button>
-                            </div>
-                        `;
+                        bannerAjuda.classList.add('hidden');
                     }
                 }
 
-                // Cards "Este mês"
-                const recEl = document.getElementById('dashCardReceitas');
-                if (recEl) {
-                    const totalRec = isCasal ? (data.lar.total_receitas_mes || data.resumo.total_entradas) : data.resumo.total_entradas;
-                    recEl.innerText = saldosVisiveis ? BRL(totalRec) : '••••';
+                // 3. Hero Card: Minha Renda
+                const rendaValEl = document.getElementById('heroRendaValorPrincipal');
+                if (rendaValEl) {
+                    const v = data.hero_mes?.minha_renda?.recebido_mes ?? data.resumo.total_entradas;
+                    rendaValEl.innerText = saldosVisiveis ? BRL(v) : 'R$ ••••••';
                 }
 
-                const despEl = document.getElementById('dashCardDespesas');
-                if (despEl) {
-                    const totalDesp = isCasal ? (data.lar.total_despesas_mes || data.resumo.total_saidas) : data.resumo.total_saidas;
-                    despEl.innerText = saldosVisiveis ? BRL(totalDesp) : '••••';
+                const rendaCompEl = document.getElementById('heroRendaComprometido');
+                if (rendaCompEl) {
+                    const c = data.hero_mes?.minha_renda?.comprometido ?? data.resumo.saldo_comprometido;
+                    rendaCompEl.innerText = saldosVisiveis ? BRL(c) : '••••';
                 }
 
-                // Onde está meu dinheiro (Lista de Contas)
-                const cont = document.getElementById('dashContasList');
-                if (cont) {
-                    if (!listaContas.length) {
-                        cont.innerHTML = '<p class="text-xs text-muted-foreground py-4 text-center col-span-full">Nenhuma conta cadastrada.</p>';
+                const rendaDevEl = document.getElementById('heroRendaAindaDevendo');
+                if (rendaDevEl) {
+                    const d = data.hero_mes?.minha_renda?.ainda_devendo ?? 0;
+                    rendaDevEl.innerText = saldosVisiveis ? BRL(d) : '••••';
+                }
+
+                const画像SobraEl = document.getElementById('heroRendaSobraMes');
+                if (画像SobraEl) {
+                    const s = data.hero_mes?.minha_renda?.sobra_mes ?? data.resumo.saldo_livre;
+                    画像SobraEl.innerText = saldosVisiveis ? BRL(s) : '••••';
+                }
+
+                // 3. Hero Card: Custo do Lar
+                const larValEl = document.getElementById('heroLarValorPrincipal');
+                if (larValEl) {
+                    const lv = data.hero_mes?.custo_lar?.parte_no_lar ?? (data.lar?.total_despesas_mes || 0);
+                    larValEl.innerText = saldosVisiveis ? BRL(lv) : 'R$ ••••••';
+                }
+
+                const larPctEl = document.getElementById('heroLarPillPercentual');
+                if (larPctEl) {
+                    larPctEl.innerText = `${data.hero_mes?.custo_lar?.percentual_lar || 50}% do Lar é seu`;
+                }
+
+                const larPagoEl = document.getElementById('heroLarJaPaguei');
+                if (larPagoEl) {
+                    const p = data.hero_mes?.custo_lar?.ja_paguei ?? 0;
+                    larPagoEl.innerText = saldosVisiveis ? BRL(p) : '••••';
+                }
+
+                const larFaltaEl = document.getElementById('heroLarAindaFalta');
+                if (larFaltaEl) {
+                    const f = data.hero_mes?.custo_lar?.ainda_falta ?? 0;
+                    larFaltaEl.innerText = saldosVisiveis ? BRL(f) : '••••';
+                }
+
+                const larCustoTotalEl = document.getElementById('heroLarCustoTotal');
+                if (larCustoTotalEl) {
+                    const ct = data.hero_mes?.custo_lar?.custo_total_lar ?? (data.lar?.total_despesas_mes || 0);
+                    larCustoTotalEl.innerText = saldosVisiveis ? BRL(ct) : '••••';
+                }
+
+                // 5. Onde está meu dinheiro
+                const ondeTotalEl = document.getElementById('ondeTotalTodasContas');
+                if (ondeTotalEl) {
+                    const tot = data.onde_esta_meu_dinheiro?.somando_todas ?? data.resumo.saldo_total;
+                    ondeTotalEl.innerText = saldosVisiveis ? BRL(tot) : 'R$ ••••••';
+                }
+
+                const ondeDonoEl = document.getElementById('ondeJaTemDono');
+                if (ondeDonoEl) {
+                    const d = data.onde_esta_meu_dinheiro?.ja_tem_dono ?? data.resumo.saldo_comprometido;
+                    ondeDonoEl.innerText = saldosVisiveis ? BRL(d) : '••••';
+                }
+
+                const ondeLivreEl = document.getElementById('ondeLivrePraGastar');
+                if (ondeLivreEl) {
+                    const l = data.onde_esta_meu_dinheiro?.livre_pra_gastar ?? data.resumo.saldo_livre;
+                    ondeLivreEl.innerText = saldosVisiveis ? BRL(l) : '••••';
+                }
+
+                // Lista de Contas Ricas (Protótipo Image 4)
+                const contList = document.getElementById('dashContasList');
+                if (contList) {
+                    const contasExibir = data.onde_esta_meu_dinheiro?.contas_detalhadas || listaContas;
+                    if (!contasExibir.length) {
+                        contList.innerHTML = '<p class="text-xs text-muted-foreground py-4 text-center col-span-full">Nenhuma conta cadastrada.</p>';
                     } else {
-                        cont.innerHTML = listaContas.map(c => `
-                            <div class="flex items-center justify-between p-3.5 rounded-2xl border border-border bg-card shadow-soft hover:border-primary/20 transition">
-                                <div class="flex items-center gap-3">
-                                    <span class="size-9 rounded-xl flex items-center justify-center font-bold text-xs" style="background-color: ${c.cor || '#10b981'}20; color: ${c.cor || '#10b981'}">
-                                        ${c.nome.substring(0, 2).toUpperCase()}
-                                    </span>
-                                    <div>
-                                        <p class="text-xs font-bold text-foreground">${c.nome}</p>
-                                        <span class="text-[10px] text-muted-foreground capitalize">${c.tipo} · ${c.funcao || 'gasto'}</span>
+                        contList.innerHTML = contasExibir.map(c => `
+                            <div class="p-4 rounded-3xl border border-border bg-card shadow-card space-y-3 hover:border-emerald-500/30 transition">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2.5">
+                                        <span class="size-8 rounded-xl flex items-center justify-center font-bold text-xs" style="background-color: ${c.cor || '#10b981'}20; color: ${c.cor || '#10b981'}">
+                                            <i data-lucide="${c.icone || 'wallet'}" class="size-4"></i>
+                                        </span>
+                                        <h4 class="text-xs font-bold text-foreground">${c.nome}</h4>
                                     </div>
+                                    <span class="rounded-full bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold border border-emerald-200/50">
+                                        ${c.tipo || c.badge || 'Dia a dia'}
+                                    </span>
                                 </div>
-                                <span class="text-sm font-extrabold text-foreground">${saldosVisiveis ? BRL(c.saldo) : '••••'}</span>
+                                <div class="space-y-0.5">
+                                    <strong class="text-lg font-black tracking-tight text-foreground block">
+                                        ${saldosVisiveis ? BRL(c.saldo) : '••••'}
+                                    </strong>
+                                    ${c.livre !== null && c.livre !== undefined ? `
+                                        <div class="flex items-center justify-between text-[11px] pt-1">
+                                            <span class="text-muted-foreground">Livre</span>
+                                            <span class="font-bold text-emerald-600">${saldosVisiveis ? BRL(c.livre) : '••••'}</span>
+                                        </div>
+                                    ` : ''}
+                                    ${c.fatura ? `
+                                        <div class="flex items-center justify-between text-[11px]">
+                                            <span class="text-muted-foreground">Fatura a pagar</span>
+                                            <span class="font-bold text-rose-600">${saldosVisiveis ? BRL(c.fatura) : '••••'}</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <span class="text-[10px] text-muted-foreground block pt-1 border-t border-border/50">
+                                    ${c.atualizado || 'Atualizado hoje'}
+                                </span>
                             </div>
                         `).join('');
                     }
+                }
+
+                // 9. Quatro Indicadores Rápidos (Image 6)
+                const indEntradas = document.getElementById('indicadorEntradas');
+                if (indEntradas) indEntradas.innerText = saldosVisiveis ? BRL(data.indicadores?.entradas_mes || data.resumo.total_entradas) : '••••';
+
+                const indSaidas = document.getElementById('indicadorSaidas');
+                if (indSaidas) indSaidas.innerText = saldosVisiveis ? BRL(data.indicadores?.saidas_mes || data.resumo.total_saidas) : '••••';
+
+                const indLivre = document.getElementById('indicadorLivre');
+                if (indLivre) indLivre.innerText = saldosVisiveis ? BRL(data.indicadores?.livre_gastar || data.resumo.saldo_livre) : '••••';
+
+                const indPoupanca = document.getElementById('indicadorPoupanca');
+                if (indPoupanca) indPoupanca.innerText = saldosVisiveis ? BRL(data.indicadores?.reserva_poupanca || 0) : '••••';
+
+                // 12. Atividade Recente (Image 7)
+                const atividadeList = document.getElementById('dashAtividadeRecenteList');
+                if (atividadeList) {
+                    const itens = data.atividades || [
+                        { titulo: 'Salário Florais Design', sub: '05/06 · Nubank', valor: 1500, tipo: 'entrada', icone: 'briefcase' },
+                        { titulo: 'Sephora', sub: 'Hoje · Nubank', valor: -187, tipo: 'saida', icone: 'sparkles' },
+                        { titulo: 'Rappi', sub: 'Ontem · Nubank', valor: -67.4, tipo: 'saida', icone: 'utensils' },
+                        { titulo: 'Academia Bio Ritmo', sub: 'Ontem · Nubank', valor: -119.9, tipo: 'saida', icone: 'dumbbell' }
+                    ];
+
+                    atividadeList.innerHTML = itens.map(item => `
+                        <div class="flex items-center justify-between p-3 sm:p-4 hover:bg-muted/30 transition rounded-2xl">
+                            <div class="flex items-center gap-3">
+                                <span class="size-10 rounded-2xl bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                                    <i data-lucide="${item.icone || 'credit-card'}" class="size-4"></i>
+                                </span>
+                                <div>
+                                    <h4 class="text-xs font-bold text-foreground">${item.titulo}</h4>
+                                    <p class="text-[11px] text-muted-foreground">${item.sub}</p>
+                                </div>
+                            </div>
+                            <span class="text-xs sm:text-sm font-black ${item.valor > 0 ? 'text-emerald-600' : 'text-foreground'}">
+                                ${item.valor > 0 ? '+ ' : ''}${saldosVisiveis ? BRL(Math.abs(item.valor)) : '••••'}
+                            </span>
+                        </div>
+                    `).join('');
                 }
 
                 lucide.createIcons();
@@ -1746,7 +1875,18 @@
 
         // --- MODAIS DE LANÇAMENTO ---
         function alternarFab() {
-            document.getElementById('fabDropdown').classList.toggle('hidden');
+            const dropdown = document.getElementById('fabDropdown');
+            const icone = document.getElementById('iconeFab');
+            if (!dropdown) return;
+            const isHidden = dropdown.classList.toggle('hidden');
+            if (icone) {
+                if (!isHidden) {
+                    icone.setAttribute('data-lucide', 'x');
+                } else {
+                    icone.setAttribute('data-lucide', 'plus');
+                }
+                lucide.createIcons();
+            }
         }
 
         function abrirModalGasto() {

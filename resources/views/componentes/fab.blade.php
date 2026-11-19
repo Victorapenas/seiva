@@ -1,33 +1,46 @@
 {{-- 
-    Componente: Botão de Ação Rápida Flutuante (FAB)
+    Componente: Botão de Ação Rápida Flutuante (FAB) Oficial do Protótipo
     Responsável: Victor Hugo / Equipe SEIVA
-    Funcionalidade: Menu expansível para registro instantâneo de gasto pessoal, entrada financeira ou despesa conjunta do lar
+    Funcionalidade: Menu expansível com Lançar gasto, Registrar recebimento, Novo acordo e Nova meta
 --}}
 <div class="fixed bottom-24 right-5 z-40 flex flex-col items-end gap-3 lg:bottom-8">
-    <!-- Menu Dropdown do FAB -->
-    <div id="fabDropdown" class="hidden flex flex-col items-end gap-2">
-        <button onclick="abrirModalGasto(); alternarFab();" class="flex items-center gap-2 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-semibold text-foreground shadow-elevated border border-border hover:bg-muted transition">
-            <span class="size-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center">
-                <i data-lucide="trending-down" class="size-3.5"></i>
+    <!-- Menu Expansível do FAB -->
+    <div id="fabDropdown" class="hidden flex flex-col items-end gap-2.5 transition-all">
+        <!-- 1. Lançar gasto -->
+        <button onclick="abrirModalGasto(); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
+            <span class="size-8 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                <i data-lucide="trending-down" class="size-4"></i>
             </span>
             <span>Lançar gasto</span>
         </button>
-        <button onclick="abrirModalEntrada(); alternarFab();" class="flex items-center gap-2 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-semibold text-foreground shadow-elevated border border-border hover:bg-muted transition">
-            <span class="size-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                <i data-lucide="trending-up" class="size-3.5"></i>
+
+        <!-- 2. Registrar recebimento -->
+        <button onclick="abrirModalEntrada(); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
+            <span class="size-8 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                <i data-lucide="trending-up" class="size-4"></i>
             </span>
-            <span>Registrar entrada</span>
+            <span>Registrar recebimento</span>
         </button>
-        <button onclick="abrirModalDespesaLar(); alternarFab();" class="flex items-center gap-2 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-semibold text-foreground shadow-elevated border border-border hover:bg-muted transition">
-            <span class="size-7 rounded-full bg-accent text-accent-foreground flex items-center justify-center">
-                <i data-lucide="home" class="size-3.5"></i>
+
+        <!-- 3. Novo acordo -->
+        <button onclick="trocarAbaApp('acordos'); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
+            <span class="size-8 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                <i data-lucide="handshake" class="size-4"></i>
             </span>
-            <span>Despesa do Lar</span>
+            <span>Novo acordo</span>
+        </button>
+
+        <!-- 4. Nova meta -->
+        <button onclick="trocarAbaApp('metas'); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
+            <span class="size-8 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                <i data-lucide="target" class="size-4"></i>
+            </span>
+            <span>Nova meta</span>
         </button>
     </div>
 
-    <!-- Botão Principal + -->
-    <button onclick="alternarFab()" aria-label="Ações rápidas" class="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-elevated hover:bg-primary/95 active:scale-95 transition">
-        <i data-lucide="plus" class="size-6"></i>
+    <!-- Botão Principal Redondo Verde com Efeito Toggle + / ✕ -->
+    <button onclick="alternarFab()" id="btnFabPrincipal" aria-label="Ações rápidas" class="flex size-14 items-center justify-center rounded-full bg-[#1b4d37] text-white shadow-elevated hover:bg-[#153f2c] active:scale-95 transition-transform duration-200">
+        <i id="iconeFab" data-lucide="plus" class="size-7 transition-transform duration-200"></i>
     </button>
 </div>
