@@ -37,16 +37,26 @@ class AuthController extends Controller
         }
 
         // Extrai os dados da requisição POST em variáveis separadas (Método acadêmico ensinado em sala)
+        // Normaliza tipo_renda se vier "outros" ou em caixa alta
+        if (!empty($_POST['tipo_renda'])) {
+            $_POST['tipo_renda'] = strtolower(trim($_POST['tipo_renda']));
+            if ($_POST['tipo_renda'] === 'outros') {
+                $_POST['tipo_renda'] = 'outro';
+            }
+        }
+
         extract($_POST, EXTR_SKIP);
 
         $validator = Validator::make($_POST, [
             'nome' => 'required|string|max:255',
             'email' => 'required|email|unique:usuarios,email',
+            'telefone' => 'nullable|string|max:30',
             'senha' => 'required|string|min:4',
             'tipo_renda' => 'nullable|string|in:clt,pj,autonomo,outro,empresario',
             'renda_mensal' => 'nullable|numeric|min:0',
             'renda_extra' => 'nullable|numeric|min:0',
             'saldo_inicial' => 'nullable|numeric|min:0',
+            'dia_recebimento' => 'nullable|integer',
             'banco_principal' => 'nullable|string|max:100',
             'pin_caixa_preta' => 'nullable|string|max:10',
             'chave_pix' => 'nullable|string|max:100',

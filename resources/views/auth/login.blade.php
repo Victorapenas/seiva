@@ -259,7 +259,7 @@
 
                 <!-- Abas Superiores Alternáveis: [ Entrar | Criar conta ] -->
                 <div class="relative mb-6 flex rounded-2xl bg-muted p-1">
-                    <button type="button" id="tabAuthEntrar" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground shadow-soft transition-all">
+                    <button type="button" id="tabAuthEntrar" onclick="alternarAbaAuth('entrar')" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold bg-primary text-primary-foreground shadow-soft transition-all">
                         Entrar
                     </button>
                     <button type="button" id="tabAuthCadastro" onclick="irParaOnboarding()" class="relative z-10 flex-1 rounded-xl py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all">
