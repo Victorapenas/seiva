@@ -200,6 +200,7 @@
     @include('componentes.modais.modal-google')
     @include('componentes.modais.modal-transacao')
     @include('componentes.modais.modal-despesa-lar')
+    @include('componentes.modais.modal-boas-vindas')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -1206,6 +1207,8 @@
             }
 
             carregarDashboardDados();
+            // Exibe o painel de boas-vindas ao entrar (respeitando "não mostrar hoje")
+            setTimeout(() => abrirBoasVindas(), 700);
         }
 
         function trocarAbaApp(tabId) {
@@ -1512,6 +1515,10 @@
                 }
 
                 lucide.createIcons();
+
+                // Renderiza seções dinâmicas (metas, despesas, fluxo, saúde, casal vs individual)
+                renderizarSecoesDinamicasDashboard(data);
+
             } catch (e) {
                 console.error('Erro ao carregar dashboard:', e);
             }
@@ -2026,6 +2033,560 @@
             await fetch('/api/perfil/excluir', { method: 'DELETE' });
             location.reload();
         }
+
+        // ==========================================
+        // PAINEL DE BOAS-VINDAS INTELIGENTE
+        // Aparece ao entrar/recarregar o sistema
+        // Notificações reais + ações rápidas personalizáveis
+        // ==========================================
+
+        // Catálogo completo de ações disponíveis
+        const ACOES_CATALOGO = [
+            { id: 'gasto',      icone: 'trending-down',  label: 'Lançar gasto',       cor: '#c84b31', bg: '#fff5f5', fn: 'abrirModalGasto()',         padrao: true  },
+            { id: 'entrada',    icone: 'trending-up',    label: 'Registrar entrada',   cor: '#2e6b4f', bg: '#f0fdf4', fn: 'abrirModalEntrada()',       padrao: true  },
+            { id: 'extrato',    icone: 'receipt',        label: 'Ver extrato',         cor: '#6366f1', bg: '#eef2ff', fn: "trocarAbaApp('transacoes')", padrao: true  },
+            { id: 'metas',      icone: 'target',         label: 'Minhas metas',        cor: '#0891b2', bg: '#ecfeff', fn: "trocarAbaApp('metas')",      padrao: false },
+            { id: 'lar',        icone: 'home',           label: 'Área do Lar',         cor: '#059669', bg: '#ecfdf5', fn: "trocarAbaApp('lar')",        padrao: false },
+            { id: 'acordos',    icone: 'handshake',      label: 'Mesa de Acordos',     cor: '#d97706', bg: '#fffbeb', fn: "trocarAbaApp('acordos')",    padrao: false },
+            { id: 'cobrador',   icone: 'bell-ring',      label: 'Cobrador Diplomata',  cor: '#7c3aed', bg: '#f5f3ff', fn: "trocarAbaApp('cobrador')",   padrao: false },
+            { id: 'relatorio',  icone: 'bar-chart-2',   label: 'Relatórios',          cor: '#1d4ed8', bg: '#eff6ff', fn: "seivaNotificar('Relatórios em breve!','info')", padrao: false },
+        ];
+
+        function getAcoesSalvas() {
+            try {
+                const salvo = localStorage.getItem('seiva_bv_acoes');
+                if (salvo) {
+                    const ids = JSON.parse(salvo);
+                    return ACOES_CATALOGO.filter(a => ids.includes(a.id));
+                }
+            } catch(e) {}
+            return ACOES_CATALOGO.filter(a => a.padrao);
+        }
+
+        function salvarAcoesBV(ids) {
+            localStorage.setItem('seiva_bv_acoes', JSON.stringify(ids));
+        }
+
+        function deveExibirBoasVindas() {
+            try {
+                const chave = 'seiva_bv_ocultar_ate';
+                const ocultar = localStorage.getItem(chave);
+                if (!ocultar) return true;
+                // "Não mostrar hoje" = ocultar até meia-noite do dia seguinte
+                const limite = new Date(ocultar);
+                return new Date() > limite;
+            } catch(e) { return true; }
+        }
+
+        function atualizarNaoMostrarBV(checked) {
+            const chave = 'seiva_bv_ocultar_ate';
+            if (checked) {
+                // Ocultar até meia-noite de hoje
+                const amanha = new Date();
+                amanha.setHours(23, 59, 59, 999);
+                localStorage.setItem(chave, amanha.toISOString());
+            } else {
+                localStorage.removeItem(chave);
+            }
+        }
+
+        function getSaudacao() {
+            const h = new Date().getHours();
+            if (h < 12) return 'Bom dia';
+            if (h < 18) return 'Boa tarde';
+            return 'Boa noite';
+        }
+
+        async function abrirBoasVindas() {
+            if (!deveExibirBoasVindas()) return;
+
+            const modal = document.getElementById('modalBoasVindas');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+
+            // Preenche saudação com dados do usuário em sessão
+            const nome = usuarioSessao?.nome?.split(' ')[0] || 'usuário';
+            const saudEl = document.getElementById('bvSaudacao');
+            const nomeEl = document.getElementById('bvNome');
+            if (saudEl) saudEl.innerText = getSaudacao();
+            if (nomeEl) nomeEl.innerText = nome;
+
+            // Renderiza ações rápidas salvas
+            renderizarAcoesBV();
+
+            // Carrega dados assíncronos em paralelo
+            Promise.all([
+                carregarNotificacoesBV(),
+                carregarResumoBV(),
+            ]).catch(console.error);
+
+            lucide.createIcons();
+        }
+
+        function fecharBoasVindas() {
+            const modal = document.getElementById('modalBoasVindas');
+            if (modal) modal.classList.add('hidden');
+            // Fecha também o painel de personalização
+            const painel = document.getElementById('painelPersonalizacaoBV');
+            if (painel) painel.classList.add('hidden');
+        }
+
+        async function carregarNotificacoesBV() {
+            try {
+                const res = await fetch('/api/notificacoes', {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                const lista = document.getElementById('bvListaNotificacoes');
+                if (!lista) return;
+
+                const badge = document.getElementById('bvBadgeNotif');
+
+                const notifs = data.notificacoes || [];
+                const totalNaoLidas = data.total_nao_lidas || 0;
+
+                // Atualiza badge
+                if (badge) {
+                    if (totalNaoLidas > 0) {
+                        badge.innerText = totalNaoLidas > 9 ? '9+' : totalNaoLidas;
+                        badge.classList.remove('hidden');
+                        badge.classList.add('flex');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+
+                // Atualiza subtítulo
+                const sub = document.getElementById('bvSubtitulo');
+                if (sub) {
+                    if (totalNaoLidas > 0) {
+                        sub.innerText = `${totalNaoLidas} notificação${totalNaoLidas > 1 ? 'ões' : ''} pendente${totalNaoLidas > 1 ? 's' : ''} para você`;
+                    } else {
+                        sub.innerText = 'Tudo em dia! 🌱 Nenhuma pendência.';
+                    }
+                }
+
+                const iconesPorTipo = {
+                    sucesso:  { icon: 'check-circle', bg: 'bg-emerald-50', cor: 'text-emerald-600', borda: 'border-emerald-200/60' },
+                    alerta:   { icon: 'alert-triangle', bg: 'bg-amber-50', cor: 'text-amber-500',   borda: 'border-amber-200/60' },
+                    cobranca: { icon: 'hand-coins',  bg: 'bg-purple-50',  cor: 'text-purple-600',  borda: 'border-purple-200/60' },
+                    info:     { icon: 'info',         bg: 'bg-blue-50',    cor: 'text-blue-600',    borda: 'border-blue-200/60'   },
+                    erro:     { icon: 'x-circle',     bg: 'bg-rose-50',    cor: 'text-rose-500',    borda: 'border-rose-200/60'   },
+                };
+
+                lista.innerHTML = notifs.map(n => {
+                    const cfg = iconesPorTipo[n.tipo] || iconesPorTipo.info;
+                    const opacidade = n.lida ? 'opacity-60' : '';
+                    const acaoBotao = n.acao
+                        ? `<button type="button" onclick="${n.acao.fn}; fecharBoasVindas();"
+                               class="mt-1.5 text-[10px] font-bold text-primary hover:underline">
+                               ${n.acao.label} →
+                           </button>`
+                        : '';
+                    return `
+                        <div class="flex items-start gap-3 p-3 rounded-2xl border ${cfg.borda} ${cfg.bg} ${opacidade} transition">
+                            <span class="size-9 rounded-xl ${cfg.bg} ${cfg.cor} flex items-center justify-center shrink-0 border ${cfg.borda}">
+                                <i data-lucide="${cfg.icon}" class="size-4"></i>
+                            </span>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-foreground leading-snug">${n.titulo}</p>
+                                <p class="text-[11px] text-muted-foreground leading-snug mt-0.5">${n.texto}</p>
+                                ${acaoBotao}
+                            </div>
+                            <span class="text-[10px] text-muted-foreground shrink-0 mt-0.5">${n.tempo}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                lucide.createIcons();
+            } catch(e) {
+                console.error('Erro ao carregar notificações:', e);
+            }
+        }
+
+        async function carregarResumoBV() {
+            try {
+                const res = await fetch('/api/dashboard', {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                const entEl = document.getElementById('bvValorEntradas');
+                const saiEl = document.getElementById('bvValorSaidas');
+                const livEl = document.getElementById('bvValorLivre');
+
+                if (entEl) entEl.innerText = BRL(data.resumo?.total_entradas || 0);
+                if (saiEl) saiEl.innerText = BRL(data.resumo?.total_saidas   || 0);
+                if (livEl) livEl.innerText = BRL(data.resumo?.saldo_livre     || 0);
+            } catch(e) {
+                console.error('Erro ao carregar resumo BV:', e);
+            }
+        }
+
+        function renderizarAcoesBV() {
+            const container = document.getElementById('bvAcoesRapidas');
+            if (!container) return;
+            const acoes = getAcoesSalvas();
+
+            if (!acoes.length) {
+                container.innerHTML = '<p class="text-xs text-muted-foreground col-span-2 text-center py-2">Nenhuma ação selecionada. Clique em ⚙ para personalizar.</p>';
+                return;
+            }
+
+            container.innerHTML = acoes.map(a => `
+                <button type="button"
+                        onclick="${a.fn}; fecharBoasVindas();"
+                        class="flex items-center gap-2.5 p-3.5 rounded-2xl border border-border bg-card hover:bg-muted/40 transition group text-left">
+                    <span class="size-8 rounded-xl flex items-center justify-center shrink-0"
+                          style="background-color: ${a.bg}; color: ${a.cor}">
+                        <i data-lucide="${a.icone}" class="size-4"></i>
+                    </span>
+                    <span class="text-xs font-bold text-foreground leading-tight">${a.label}</span>
+                </button>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function abrirPersonalizacaoBoasVindas() {
+            const painel = document.getElementById('painelPersonalizacaoBV');
+            if (!painel) return;
+
+            const idsSalvos = getAcoesSalvas().map(a => a.id);
+
+            const lista = document.getElementById('listaPersonalizacaoBV');
+            if (lista) {
+                lista.innerHTML = ACOES_CATALOGO.map(a => `
+                    <label class="flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-muted/40 cursor-pointer transition">
+                        <div class="flex items-center gap-2.5">
+                            <span class="size-8 rounded-xl flex items-center justify-center shrink-0"
+                                  style="background-color: ${a.bg}; color: ${a.cor}">
+                                <i data-lucide="${a.icone}" class="size-4"></i>
+                            </span>
+                            <span class="text-xs font-semibold text-foreground">${a.label}</span>
+                        </div>
+                        <input type="checkbox"
+                               class="rounded border-border size-4 accent-primary"
+                               value="${a.id}"
+                               ${idsSalvos.includes(a.id) ? 'checked' : ''}
+                               onchange="toggleAcaoBV('${a.id}', this.checked)">
+                    </label>
+                `).join('');
+            }
+
+            painel.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function fecharPersonalizacaoBoasVindas() {
+            const painel = document.getElementById('painelPersonalizacaoBV');
+            if (painel) painel.classList.add('hidden');
+            renderizarAcoesBV(); // Re-renderiza com as novas seleções
+        }
+
+        function toggleAcaoBV(id, ativo) {
+            try {
+                let ids = getAcoesSalvas().map(a => a.id);
+                if (ativo && !ids.includes(id)) ids.push(id);
+                if (!ativo) ids = ids.filter(x => x !== id);
+                // Mantém a ordem do catálogo
+                ids = ACOES_CATALOGO.map(a => a.id).filter(i => ids.includes(i));
+                salvarAcoesBV(ids);
+            } catch(e) {}
+        }
+
+        async function marcarTodasLidasBV() {
+            try {
+                await fetch('/api/notificacoes/ler', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+                });
+                // Re-carrega a lista com todas marcadas como lidas
+                await carregarNotificacoesBV();
+                seivaNotificar('Todas as notificações foram marcadas como lidas.', 'sucesso', 'Notificações');
+            } catch(e) {}
+        }
+
+        // ── Alias: o sino do dashboard abre o painel de boas-vindas ──────────
+        function abrirModalNotificacoes() {
+            // Reseta o "não mostrar hoje" para que o painel abra mesmo se já foi visto
+            const modal = document.getElementById('modalBoasVindas');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            const nome = usuarioSessao?.nome?.split(' ')[0] || 'usuário';
+            const saudEl = document.getElementById('bvSaudacao');
+            const nomeEl = document.getElementById('bvNome');
+            if (saudEl) saudEl.innerText = getSaudacao();
+            if (nomeEl) nomeEl.innerText = nome;
+            renderizarAcoesBV();
+            Promise.all([carregarNotificacoesBV(), carregarResumoBV()]).catch(console.error);
+            lucide.createIcons();
+        }
+
+        // ── Renderização dinâmica das seções do Dashboard ─────────────────────
+        // Executado ao final de carregarDashboardDados()
+
+        function renderizarSecoesDinamicasDashboard(data) {
+            const isCasal = Boolean(data.is_casal && data.lar);
+
+            // — Ocultar/Exibir aba "Custo do Lar" conforme tipo de usuário —
+            const tabLar  = document.getElementById('tabHeroCustoLar');
+            const sliderDotLar  = document.getElementById('sliderDotLar');
+            const sliderDica    = document.getElementById('sliderTextoDica');
+            const cardLar       = document.getElementById('cardHeroCustoLar');
+            const heroTituloSec = document.getElementById('heroTituloSecao');
+            const bannerAjuda   = document.getElementById('bannerPedidoAjuda');
+
+            if (!isCasal) {
+                // Individual: ocultar tudo do Lar
+                if (tabLar)       tabLar.classList.add('hidden');
+                if (sliderDotLar) sliderDotLar.classList.add('hidden');
+                if (sliderDica)   sliderDica.innerText = '';
+                if (cardLar)      cardLar.classList.add('hidden');
+                if (bannerAjuda)  bannerAjuda.classList.add('hidden');
+                if (heroTituloSec) heroTituloSec.innerText = 'Meu mês financeiro';
+                // Garante aba de renda ativa
+                alternarAbaHero('renda');
+
+                // Ocultar grupo do Lar na sidebar
+                const grpLar = document.getElementById('labelGrupoLarSidebar');
+                if (grpLar) {
+                    const secaoLar = grpLar.closest('div');
+                    if (secaoLar) secaoLar.classList.add('hidden');
+                }
+            } else {
+                // Casal: garantir visibilidade
+                if (tabLar)       tabLar.classList.remove('hidden');
+                if (sliderDotLar) sliderDotLar.classList.remove('hidden');
+                if (sliderDica)   sliderDica.innerText = 'Arraste para o lado para ver o Custo do Lar';
+                if (heroTituloSec) heroTituloSec.innerText = `Seu mês de ${data.hero_mes?.mes_nome || 'junho'}`;
+
+                const grpLar = document.getElementById('labelGrupoLarSidebar');
+                if (grpLar) {
+                    const secaoLar = grpLar.closest('div');
+                    if (secaoLar) secaoLar.classList.remove('hidden');
+                }
+            }
+
+            // — Atualizar fontes de renda no hero card —
+            const pillsFontes = document.getElementById('heroRendaPillsFontes');
+            if (pillsFontes && data.hero_mes?.minha_renda?.fontes?.length) {
+                const fontes = data.hero_mes.minha_renda.fontes;
+                pillsFontes.innerHTML = `
+                    <span class="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2.5 py-1 text-gray-200 font-medium">
+                        <i data-lucide="calendar" class="size-3"></i> ${data.hero_mes.mes_nome} ${data.hero_mes.ano}
+                    </span>
+                    ${fontes.map(f => `<span class="rounded-lg bg-white/10 px-2.5 py-1 text-gray-200 font-medium">${f.nome} ${BRL(f.valor)}</span>`).join('')}
+                `;
+            }
+
+            // — Saúde Financeira dinâmica —
+            const sf = data.saude_financeira;
+            if (sf) {
+                // Atualiza o gauge (círculo SVG)
+                const circleProgress = document.querySelector('#pane-dashboard circle:last-child');
+                if (circleProgress) {
+                    const circumference = 251.2;
+                    const offset = circumference - (sf.score / 100) * circumference;
+                    circleProgress.setAttribute('stroke-dashoffset', Math.round(offset));
+                    const corScore = sf.score >= 80 ? '#10b981' : (sf.score >= 60 ? '#f59e0b' : '#ef4444');
+                    circleProgress.setAttribute('stroke', corScore);
+                }
+                // Atualiza texto central
+                const textoScore = document.querySelector('#pane-dashboard .absolute.inset-0 span:first-child');
+                const textoStatus = document.querySelector('#pane-dashboard .absolute.inset-0 span:last-child');
+                if (textoScore) textoScore.innerText = `${sf.score}%`;
+                if (textoStatus) {
+                    textoStatus.innerText = sf.status;
+                    textoStatus.className = `text-[11px] font-bold ${sf.score >= 80 ? 'text-emerald-600' : (sf.score >= 60 ? 'text-amber-600' : 'text-red-500')}`;
+                }
+
+                // Atualiza insights
+                const insightsCont = document.querySelector('#pane-dashboard .space-y-2\\.5.flex-1');
+                if (insightsCont && sf.insights?.length) {
+                    const verAnaliseBtn = insightsCont.querySelector('.pt-2');
+                    insightsCont.innerHTML = sf.insights.map(ins => {
+                        const icon = ins.tipo === 'sucesso' ? '✅' : '⚠️';
+                        return `<div class="flex items-start gap-2.5 text-xs text-foreground">
+                            <span class="${ins.tipo === 'sucesso' ? 'text-emerald-600' : 'text-amber-500'} font-bold shrink-0">${icon}</span>
+                            <p>${ins.texto}</p>
+                        </div>`;
+                    }).join('');
+                    if (verAnaliseBtn) insightsCont.appendChild(verAnaliseBtn);
+                }
+            }
+
+            // — Pra registrar hoje —
+            const praRegList = document.getElementById('dashPraRegistrarList');
+            if (!praRegList) {
+                // Seção existe com HTML estático – atualizar diretamente o container pai
+                const secaoPraReg = document.querySelector('#pane-dashboard section .space-y-2\\.5.pt-1');
+                if (secaoPraReg) {
+                    const itens = data.pra_registrar_hoje || [];
+                    if (!itens.length) {
+                        secaoPraReg.innerHTML = `
+                            <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/60 text-xs text-emerald-800 font-medium">
+                                <i data-lucide="check-circle" class="size-4 text-emerald-600 shrink-0"></i>
+                                Tudo em dia! Nenhuma conta pendente por aqui.
+                            </div>`;
+                    } else {
+                        secaoPraReg.innerHTML = itens.map(item => {
+                            const isFatura = item.tipo === 'fatura';
+                            const iconeCor = isFatura ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
+                            return `
+                            <div class="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-rose-200/60 shadow-2xs">
+                                <div class="flex items-center gap-3">
+                                    <span class="size-9 rounded-xl ${iconeCor} flex items-center justify-center shrink-0">
+                                        <i data-lucide="${item.icone || 'credit-card'}" class="size-4"></i>
+                                    </span>
+                                    <div>
+                                        <h4 class="text-xs font-extrabold text-foreground">${item.titulo} · ${BRL(item.valor)}</h4>
+                                        <p class="text-[11px] text-muted-foreground">${item.descricao}</p>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="confirmarRegistroRapido('${item.titulo.replace(/'/g,"\\'")}', ${item.valor})"
+                                        class="px-4 py-1.5 rounded-xl bg-[#c84b31] hover:bg-[#b03d25] text-white font-bold text-xs transition shadow-2xs">
+                                    Registrar
+                                </button>
+                            </div>`;
+                        }).join('');
+                    }
+                }
+            }
+
+            // — Metas —
+            const metasGrid = document.querySelector('#pane-dashboard section .grid.grid-cols-1.sm\\:grid-cols-2.gap-3\\.5');
+            if (metasGrid) {
+                const metas = data.metas || [];
+                if (!metas.length) {
+                    metasGrid.innerHTML = `<p class="text-xs text-muted-foreground col-span-2 py-4 text-center">Nenhuma meta ativa. Crie sua primeira meta!</p>`;
+                } else {
+                    metasGrid.innerHTML = metas.map(m => {
+                        const pct = m.percentual || 0;
+                        const isLar = m.tipo === 'Do Lar';
+                        const badgeCls = isLar ? 'bg-emerald-100 text-emerald-800' : 'bg-muted text-muted-foreground';
+                        const iconMap = { laptop: 'laptop', shield: 'shield', target: 'target', snowflake: 'snowflake' };
+                        const ico = iconMap[m.icone] || 'target';
+                        return `
+                        <div class="rounded-3xl border border-border bg-card p-5 shadow-card space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="size-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                                        <i data-lucide="${ico}" class="size-4"></i>
+                                    </span>
+                                    <h4 class="text-xs font-bold text-foreground">${m.nome}</h4>
+                                </div>
+                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold ${badgeCls}">${m.tipo}</span>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                                    <div class="h-full bg-emerald-600 rounded-full transition-all" style="width: ${Math.min(100, pct)}%"></div>
+                                </div>
+                                <div class="flex items-center justify-between text-xs font-extrabold text-foreground pt-0.5">
+                                    <span>${BRL(m.atual)} de ${BRL(m.total)}</span>
+                                    <span class="text-emerald-700">${pct}%</span>
+                                </div>
+                            </div>
+                            <p class="text-[11px] text-muted-foreground flex items-center gap-1">
+                                <i data-lucide="piggy-bank" class="size-3 text-primary"></i> ${m.onde}
+                            </p>
+                        </div>`;
+                    }).join('');
+                }
+            }
+
+            // — Despesas Fixas —
+            const despFixasGrid = document.querySelector('#pane-dashboard .grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-4.gap-3');
+            if (despFixasGrid) {
+                const fixas = data.despesas_fixas || [];
+                if (!fixas.length) {
+                    despFixasGrid.innerHTML = `<p class="text-xs text-muted-foreground col-span-4 py-4 text-center">Nenhuma despesa fixa registrada.</p>`;
+                } else {
+                    despFixasGrid.innerHTML = fixas.map(df => {
+                        const badgeCfg = df.tipo === 'aviso'
+                            ? { cls: 'bg-amber-500/10 text-amber-700', label: '⚠️ ' + df.status }
+                            : df.tipo === 'pendente'
+                                ? { cls: 'bg-muted text-muted-foreground', label: df.status }
+                                : { cls: 'bg-emerald-500/10 text-emerald-700', label: '✅ ' + df.status };
+                        return `
+                        <div class="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="size-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                                    <i data-lucide="${df.icone || 'receipt'}" class="size-3.5"></i>
+                                </span>
+                                <span class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${badgeCfg.cls}">
+                                    ${badgeCfg.label}
+                                </span>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-foreground">${df.titulo}</h4>
+                                <strong class="text-base font-extrabold text-foreground">${BRL(df.valor)}</strong>
+                                <span class="text-[10px] text-muted-foreground block mt-0.5">${df.vencimento}</span>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            }
+
+            // — Fluxo dos 2 meses (atualizar alturas das barras) —
+            const fluxo = data.fluxo_meses;
+            if (fluxo && fluxo.length >= 2) {
+                const maxVal = Math.max(fluxo[0].entradas, fluxo[0].saidas, fluxo[1].entradas, fluxo[1].saidas, 1);
+                const pct = (v) => Math.max(8, Math.round((v / maxVal) * 100));
+
+                // Mês 1 (passado)
+                const bars = document.querySelectorAll('#pane-dashboard .flex.items-end.justify-center.gap-12 .flex.flex-col.items-center.gap-2');
+                if (bars.length >= 2) {
+                    const b0 = bars[0].querySelector('.flex.items-end');
+                    const b1 = bars[1].querySelector('.flex.items-end');
+                    if (b0) {
+                        const divs0 = b0.querySelectorAll('div');
+                        if (divs0[0]) divs0[0].style.height = pct(fluxo[0].entradas) + '%';
+                        if (divs0[1]) divs0[1].style.height = pct(fluxo[0].saidas) + '%';
+                    }
+                    if (b1) {
+                        const divs1 = b1.querySelectorAll('div');
+                        if (divs1[0]) divs1[0].style.height = pct(fluxo[1].entradas) + '%';
+                        if (divs1[1]) divs1[1].style.height = pct(fluxo[1].saidas) + '%';
+                    }
+                    // Labels dos meses
+                    const labels = document.querySelectorAll('#pane-dashboard .flex.items-end.justify-center.gap-12 span.text-xs');
+                    if (labels[0]) labels[0].innerText = fluxo[0].mes;
+                    if (labels[1]) labels[1].innerText = fluxo[1].mes;
+
+                    // Sub-título do card
+                    const subFluxo = document.querySelector('#pane-dashboard .flex.items-center.justify-between p.text-xs.text-muted-foreground');
+                    if (subFluxo) subFluxo.innerText = `${fluxo[0].mes} e ${fluxo[1].mes} · entradas vs. saídas`;
+                }
+            }
+
+            // — Seção Hero: título mês —
+            if (heroTituloSec && isCasal) {
+                heroTituloSec.innerText = `Seu mês de ${data.hero_mes?.mes_nome || 'junho'}`;
+            }
+
+            // — Badge de notificações no sino do dashboard —
+            const badgeNotifDash = document.getElementById('dashBadgeNotifCount');
+            if (badgeNotifDash) {
+                // Carrega contagem de não lidas de forma leve
+                fetch('/api/notificacoes', { headers: { 'Accept': 'application/json' } })
+                    .then(r => r.ok ? r.json() : null)
+                    .then(nd => {
+                        if (nd && nd.total_nao_lidas > 0) {
+                            badgeNotifDash.innerText = nd.total_nao_lidas > 9 ? '9+' : nd.total_nao_lidas;
+                            badgeNotifDash.classList.remove('hidden');
+                        } else {
+                            badgeNotifDash.classList.add('hidden');
+                        }
+                    }).catch(() => {});
+            }
+
+            lucide.createIcons();
+        }
     </script>
 </body>
 </html>
+

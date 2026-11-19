@@ -12,6 +12,7 @@ use App\Http\Controllers\MetaController;
 use App\Http\Controllers\ProjetoController;
 use App\Http\Controllers\CobrancaController;
 use App\Http\Controllers\LgpdController;
+use App\Http\Controllers\NotificacoesController;
 
 // Rota principal da aplicação SEIVA
 Route::get('/', function () {
@@ -95,5 +96,9 @@ Route::prefix('api')->group(function () {
         Route::put('/perfil', [LgpdController::class, 'updateProfile']);
         Route::get('/perfil/exportar', [LgpdController::class, 'exportData']);
         Route::delete('/perfil/excluir', [LgpdController::class, 'deleteAccount']);
+
+        // Notificações do Painel de Boas-Vindas
+        Route::get('/notificacoes', [NotificacoesController::class, 'index']);
+        Route::post('/notificacoes/ler', [NotificacoesController::class, 'marcarTodasLidas']);
     });
 });
