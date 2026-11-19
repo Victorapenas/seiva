@@ -136,9 +136,18 @@
                         <p id="err_regTelefone" class="hidden text-xs text-rose-500 font-medium mt-1"></p>
                     </div>
                     <div>
-                        <label class="text-xs font-medium text-foreground">Senha</label>
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-medium text-foreground">Senha</label>
+                            <button type="button" onclick="alternarVisibilidadeSenha('regSenha', 'iconOlhoSenha')" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1 transition" title="Mostrar/ocultar senha">
+                                <i id="iconOlhoSenha" data-lucide="eye" class="size-3.5"></i>
+                                <span id="txtOlhoSenha">Ver senha</span>
+                            </button>
+                        </div>
                         <div class="relative mt-1">
-                            <input type="password" id="regSenha" oninput="testarForcaSenha(this.value)" placeholder="Mínimo 6 caracteres" class="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-primary">
+                            <input type="password" id="regSenha" oninput="testarForcaSenha(this.value); verificarCoincidenciaSenhas();" placeholder="Mínimo 6 caracteres" class="h-12 w-full rounded-2xl border border-border bg-background pl-4 pr-11 text-sm text-foreground outline-none transition focus:border-primary">
+                            <button type="button" onclick="alternarVisibilidadeSenha('regSenha', 'iconOlhoSenha')" class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition p-1 rounded-lg" aria-label="Ver ou ocultar senha">
+                                <i data-lucide="eye" class="size-4"></i>
+                            </button>
                         </div>
                         <!-- Barra de Força -->
                         <div class="mt-2 flex items-center gap-2">
@@ -152,8 +161,28 @@
                         <p id="err_regSenha" class="hidden text-xs text-rose-500 font-medium mt-1"></p>
                     </div>
                     <div>
-                        <label class="text-xs font-medium text-foreground">Confirmar senha</label>
-                        <input type="password" id="regSenhaConfirma" placeholder="Repita a senha" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-primary">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-medium text-foreground">Confirmar senha</label>
+                            <button type="button" onclick="alternarVisibilidadeSenha('regSenhaConfirma', 'iconOlhoConfirma')" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1 transition" title="Mostrar/ocultar confirmação">
+                                <i id="iconOlhoConfirma" data-lucide="eye" class="size-3.5"></i>
+                                <span id="txtOlhoConfirma">Ver senha</span>
+                            </button>
+                        </div>
+                        <div class="relative mt-1">
+                            <input type="password" id="regSenhaConfirma" oninput="verificarCoincidenciaSenhas()" placeholder="Repita a mesma senha" class="h-12 w-full rounded-2xl border border-border bg-background pl-4 pr-11 text-sm text-foreground outline-none transition focus:border-primary">
+                            <button type="button" onclick="alternarVisibilidadeSenha('regSenhaConfirma', 'iconOlhoConfirma')" class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition p-1 rounded-lg" aria-label="Ver ou ocultar confirmação de senha">
+                                <i data-lucide="eye" class="size-4"></i>
+                            </button>
+                        </div>
+                        <!-- Validação visual se as duas senhas coincidem -->
+                        <div id="boxSenhasIguais" class="hidden mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                            <i data-lucide="check-circle" class="size-3.5 text-emerald-500"></i>
+                            <span>As senhas coincidem perfeitamente</span>
+                        </div>
+                        <div id="boxSenhasDiferentes" class="hidden mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                            <i data-lucide="alert-circle" class="size-3.5 text-amber-500"></i>
+                            <span>As senhas digitadas ainda não são iguais</span>
+                        </div>
                         <p id="err_regSenhaConfirma" class="hidden text-xs text-rose-500 font-medium mt-1"></p>
                     </div>
                 </div>

@@ -449,6 +449,66 @@
             }
         }
 
+        // ==========================================
+        // CONTROLE DE VISIBILIDADE E COINCIDÊNCIA DE SENHAS
+        // Permite ver as senhas para checar se são iguais e dá feedback em tempo real
+        // ==========================================
+        function alternarVisibilidadeSenha(inputId, iconId = null) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+
+            // Atualiza o texto "Ver senha" / "Ocultar" se existir
+            if (inputId === 'regSenha') {
+                const txt = document.getElementById('txtOlhoSenha');
+                if (txt) txt.innerText = isPassword ? 'Ocultar' : 'Ver senha';
+            } else if (inputId === 'regSenhaConfirma') {
+                const txt = document.getElementById('txtOlhoConfirma');
+                if (txt) txt.innerText = isPassword ? 'Ocultar' : 'Ver senha';
+            }
+
+            // Atualiza os ícones de olho do input e do cabeçalho
+            const iconNome = isPassword ? 'eye-off' : 'eye';
+            if (iconId) {
+                const icon = document.getElementById(iconId);
+                if (icon) icon.setAttribute('data-lucide', iconNome);
+            }
+
+            // Atualiza qualquer botão interno do input
+            const parent = input.parentElement;
+            if (parent) {
+                const innerIcon = parent.querySelector('button i[data-lucide]');
+                if (innerIcon) innerIcon.setAttribute('data-lucide', iconNome);
+            }
+
+            lucide.createIcons();
+        }
+
+        function verificarCoincidenciaSenhas() {
+            const s1 = document.getElementById('regSenha')?.value || '';
+            const s2 = document.getElementById('regSenhaConfirma')?.value || '';
+            const boxIguais = document.getElementById('boxSenhasIguais');
+            const boxDiferentes = document.getElementById('boxSenhasDiferentes');
+
+            if (!boxIguais || !boxDiferentes) return;
+
+            if (!s2) {
+                boxIguais.classList.add('hidden');
+                boxDiferentes.classList.add('hidden');
+                return;
+            }
+
+            if (s1 === s2) {
+                boxIguais.classList.remove('hidden');
+                boxDiferentes.classList.add('hidden');
+            } else {
+                boxIguais.classList.add('hidden');
+                boxDiferentes.classList.remove('hidden');
+            }
+            lucide.createIcons();
+        }
+
         function irParaOnboarding() {
             stepOnboarding = 0;
             const faseWelcome = document.getElementById('onboardingFaseWelcome');
@@ -906,12 +966,30 @@
         // ==========================================
         async function executarLogin(e) {
             e.preventDefault();
+            const emailInput = document.getElementById('loginEmail');
+            const senhaInput = document.getElementById('loginSenha');
+            const email = emailInput.value.trim();
+            const senha = senhaInput.value;
+
+            if (!email) {
+                emailInput.classList.add('border-red-400', 'ring-1', 'ring-red-300');
+                emailInput.focus();
+                seivaNotificar('Informe seu e-mail cadastrado.', 'aviso', 'Campo obrigatório');
+                emailInput.addEventListener('input', () => emailInput.classList.remove('border-red-400', 'ring-1', 'ring-red-300'), { once: true });
+                return;
+            }
+            if (!senha) {
+                senhaInput.classList.add('border-red-400', 'ring-1', 'ring-red-300');
+                senhaInput.focus();
+                seivaNotificar('Digite sua senha de acesso.', 'aviso', 'Campo obrigatório');
+                senhaInput.addEventListener('input', () => senhaInput.classList.remove('border-red-400', 'ring-1', 'ring-red-300'), { once: true });
+                return;
+            }
+
             const btn = document.getElementById('loginSubmitBtn');
             btn.disabled = true;
             btn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Validando acesso...';
 
-            const email = document.getElementById('loginEmail').value.trim();
-            const senha = document.getElementById('loginSenha').value;
             const lembrar = document.getElementById('loginLembrar') ? document.getElementById('loginLembrar').checked : true;
 
             try {
@@ -1495,10 +1573,27 @@
         async function salvarTransacaoForm(e) {
             e.preventDefault();
             const tipo = document.getElementById('formTransTipo').value;
-            const titulo = document.getElementById('formTransTitulo').value;
+            const titulo = document.getElementById('formTransTitulo').value.trim();
             const valor = parseFloat(document.getElementById('formTransValor').value);
             const conta_id = document.getElementById('formTransContaId').value;
             const categoria_id = document.getElementById('formTransCategoriaId').value;
+
+            if (!titulo) {
+                const el = document.getElementById('formTransTitulo');
+                el.classList.add('border-red-400', 'ring-1', 'ring-red-300');
+                el.focus();
+                seivaNotificar('Informe a descrição da transação.', 'aviso', 'Campo obrigatório');
+                el.addEventListener('input', () => el.classList.remove('border-red-400', 'ring-1', 'ring-red-300'), { once: true });
+                return;
+            }
+            if (!valor || valor <= 0) {
+                const el = document.getElementById('formTransValor');
+                el.classList.add('border-red-400', 'ring-1', 'ring-red-300');
+                el.focus();
+                seivaNotificar('Informe um valor válido maior que zero.', 'aviso', 'Campo obrigatório');
+                el.addEventListener('input', () => el.classList.remove('border-red-400', 'ring-1', 'ring-red-300'), { once: true });
+                return;
+            }
 
             const res = await fetch('/api/transacoes', {
                 method: 'POST',
@@ -1518,10 +1613,27 @@
 
         async function salvarDespesaLarForm(e) {
             e.preventDefault();
-            const titulo = document.getElementById('formLarDespTitulo').value;
+            const titulo = document.getElementById('formLarDespTitulo').value.trim();
             const valor_total = parseFloat(document.getElementById('formLarDespValor').value);
             const divisao = document.getElementById('formLarDespDivisao').value;
             const data_vencimento = document.getElementById('formLarDespData').value;
+
+            if (!titulo) {
+                const el = document.getElementById('formLarDespTitulo');
+                el.classList.add('border-red-400', 'ring-1', 'ring-red-300');
+                el.focus();
+                seivaNotificar('Informe o nome da despesa do Lar.', 'aviso', 'Campo obrigatório');
+                el.addEventListener('input', () => el.classList.remove('border-red-400', 'ring-1', 'ring-red-300'), { once: true });
+                return;
+            }
+            if (!valor_total || valor_total <= 0) {
+                const el = document.getElementById('formLarDespValor');
+                el.classList.add('border-red-400', 'ring-1', 'ring-red-300');
+                el.focus();
+                seivaNotificar('Informe um valor válido maior que zero.', 'aviso', 'Campo obrigatório');
+                el.addEventListener('input', () => el.classList.remove('border-red-400', 'ring-1', 'ring-red-300'), { once: true });
+                return;
+            }
 
             const res = await fetch('/api/lar/despesas', {
                 method: 'POST',

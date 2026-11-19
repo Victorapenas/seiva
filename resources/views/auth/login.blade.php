@@ -274,9 +274,9 @@
                 </div>
 
                 <!-- FORMULÁRIO DE LOGIN -->
-                <form id="formLoginCard" onsubmit="executarLogin(event)" class="space-y-4">
+                <form id="formLoginCard" onsubmit="executarLogin(event)" class="space-y-4" novalidate>
                     <div class="relative">
-                        <input type="email" id="loginEmail" required placeholder=" "
+                        <input type="email" id="loginEmail" placeholder=" "
                                class="floating-input peer h-14 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
                         <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200">
                             E-mail cadastrado
@@ -284,11 +284,14 @@
                     </div>
 
                     <div class="relative">
-                        <input type="password" id="loginSenha" required placeholder=" "
-                               class="floating-input peer h-14 w-full rounded-2xl border border-border bg-background px-4 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        <input type="password" id="loginSenha" placeholder=" "
+                               class="floating-input peer h-14 w-full rounded-2xl border border-border bg-background pl-4 pr-12 pt-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20">
                         <label class="floating-label pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground transition-all duration-200">
                             Senha de acesso
                         </label>
+                        <button type="button" onclick="alternarVisibilidadeSenha('loginSenha', 'iconOlhoLogin')" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition p-1 rounded-lg" aria-label="Ver ou ocultar senha">
+                            <i id="iconOlhoLogin" data-lucide="eye" class="size-4"></i>
+                        </button>
                     </div>
 
                     <div class="flex items-center justify-between text-xs pt-1">
