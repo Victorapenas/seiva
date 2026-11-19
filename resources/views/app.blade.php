@@ -404,7 +404,7 @@
             if (senha.length < 6) return seivaNotificar('A senha deve ter no mínimo 6 caracteres para sua segurança.', 'erro', 'Senha fraca');
 
             btn.disabled = true;
-            btn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Criando sua conta...';
+            btn.innerHTML = '<span>Criando sua conta...</span>';
 
             try {
                 const res = await fetch('/api/register', {
@@ -795,7 +795,7 @@
 
                 const btnAvancar = document.getElementById('btnAvancarOnboarding');
                 btnAvancar.disabled = true;
-                btnAvancar.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Criando sua conta...';
+                btnAvancar.innerHTML = '<span>Criando sua conta...</span>';
 
                 // Caso especial: Usuário já autenticado via Google (já cadastrado no banco)
                 if (usuarioSessao && usuarioSessao.id_usuario && (usuarioSessao.google_id || usuarioSessao.email.includes('google') || usuarioSessao.email.includes('gmail'))) {
@@ -988,14 +988,17 @@
 
             const btn = document.getElementById('loginSubmitBtn');
             btn.disabled = true;
-            btn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Validando acesso...';
+            btn.innerHTML = '<span>Entrando no SEIVA...</span>';
 
             const lembrar = document.getElementById('loginLembrar') ? document.getElementById('loginLembrar').checked : true;
 
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ email, senha, lembrar })
                 });
 
@@ -1003,12 +1006,13 @@
                 if (res.ok) {
                     usuarioSessao = data.usuario;
                     larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
-                    montarAmbienteLogado();
                     trocarTelaPrincipal('screen-app');
+                    montarAmbienteLogado();
                 } else {
                     seivaNotificar(data.error || 'E-mail ou senha incorretos.', 'erro', 'Falha no login');
                 }
             } catch (err) {
+                console.error('Erro no login:', err);
                 seivaNotificar('Erro de conexão ao comunicar com o servidor.', 'erro', 'Falha de Conexão');
             } finally {
                 btn.disabled = false;
@@ -1166,21 +1170,39 @@
         // ==========================================
         function montarAmbienteLogado() {
             if (!usuarioSessao) return;
-            const iniciais = usuarioSessao.iniciais || usuarioSessao.nome.substring(0, 2).toUpperCase();
-            const primeiroNome = usuarioSessao.nome.split(' ')[0];
+            const iniciais = usuarioSessao.iniciais || (usuarioSessao.nome ? usuarioSessao.nome.substring(0, 2).toUpperCase() : 'SE');
+            const primeiroNome = usuarioSessao.nome ? usuarioSessao.nome.split(' ')[0] : 'Usuário';
 
-            document.getElementById('userNameSidebar').innerText = usuarioSessao.nome;
-            document.getElementById('userAvatarSidebar').innerText = iniciais;
-            document.getElementById('dashAvatar').innerText = iniciais;
-            document.getElementById('dashGreeting').innerText = `Olá, ${primeiroNome}`;
-            document.getElementById('perfilNomeTxt').innerText = usuarioSessao.nome;
-            document.getElementById('perfilEmailTxt').innerText = usuarioSessao.email;
-            document.getElementById('perfilAvatarCircle').innerText = iniciais;
+            const elUserSide = document.getElementById('userNameSidebar');
+            if (elUserSide) elUserSide.innerText = usuarioSessao.nome;
+
+            const elAvSide = document.getElementById('userAvatarSidebar');
+            if (elAvSide) elAvSide.innerText = iniciais;
+
+            const elDashAv = document.getElementById('dashAvatar');
+            if (elDashAv) elDashAv.innerText = iniciais;
+
+            const elDashGreet = document.getElementById('dashGreeting');
+            if (elDashGreet) elDashGreet.innerText = `Olá, ${primeiroNome}`;
+
+            const elPerfNome = document.getElementById('perfilNomeTxt');
+            if (elPerfNome) elPerfNome.innerText = usuarioSessao.nome;
+
+            const elPerfEmail = document.getElementById('perfilEmailTxt');
+            if (elPerfEmail) elPerfEmail.innerText = usuarioSessao.email;
+
+            const elPerfAv = document.getElementById('perfilAvatarCircle');
+            if (elPerfAv) elPerfAv.innerText = iniciais;
 
             if (larSessao) {
-                document.getElementById('userLarPillSidebar').innerText = `${larSessao.nome} 🌿`;
-                document.getElementById('labelGrupoLarSidebar').innerText = `🌿 ${larSessao.nome}`;
-                document.getElementById('larHeaderTitle').innerText = larSessao.nome;
+                const elLarPill = document.getElementById('userLarPillSidebar');
+                if (elLarPill) elLarPill.innerText = `${larSessao.nome} 🌿`;
+
+                const elGrpLar = document.getElementById('labelGrupoLarSidebar');
+                if (elGrpLar) elGrpLar.innerText = `🌿 ${larSessao.nome}`;
+
+                const elLarHead = document.getElementById('larHeaderTitle');
+                if (elLarHead) elLarHead.innerText = larSessao.nome;
             }
 
             carregarDashboardDados();
@@ -1372,14 +1394,20 @@
                 seivaNotificar(`Acessando perfil de ${email}...`, 'info', 'Alternando Ambiente');
                 let res = await fetch('/api/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ email: email, senha: '123456' })
                 });
 
                 if (!res.ok) {
                     res = await fetch('/api/login', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify({ email: email, senha: 'password' })
                     });
                 }
@@ -1388,14 +1416,15 @@
                 if (res.ok && data.usuario) {
                     usuarioSessao = data.usuario;
                     larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
-                    montarAmbienteLogado();
                     trocarTelaPrincipal('screen-app');
+                    montarAmbienteLogado();
                     trocarAbaApp('dashboard');
                     seivaNotificar(`Ambiente atualizado para ${data.usuario.nome}!`, 'sucesso', 'Conectado');
                 } else {
                     seivaNotificar(data.error || 'Não foi possível alternar de usuário.', 'erro');
                 }
             } catch (err) {
+                console.error('Erro ao alternar perfil:', err);
                 seivaNotificar('Erro de conexão ao alternar perfil de teste.', 'erro');
             }
         }
