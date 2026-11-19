@@ -1,10 +1,10 @@
-# 🌿 SEIVA — Dinheiro Sem Tabu
+# 🌿 SEIVA — Onde seu dinheiro criar raízes
 > Sistema de Gestão Financeira Pessoal e Compartilhada para Lares e Casais  
 > **Projeto Interdisciplinar (PI) — 4º Período | IFBA**
 
 ---
 
-## 👥 Equipe do Projeto
+## Equipe do Projeto
 - **Victor Hugo Santana Sousa** — Líder Técnico & Arquitetura
 - **Maria Eduarda Lima** — Documentação do PI & Relato de Condução
 - **Quételi** — Autenticação, Cadastro & Segurança (RF001)
@@ -13,7 +13,7 @@
 
 ---
 
-## 🚀 Como Executar o Projeto Localmente
+## Como Executar o Projeto Localmente
 
 ### Pré-requisitos
 - PHP 8.2+ (instalado no XAMPP em `C:\xampp\php\php.exe` ou no PATH da sua máquina)
@@ -34,7 +34,7 @@ Abra seu navegador em:
 
 ---
 
-## ✨ Funcionalidades Principais do Sistema
+## Funcionalidades Principais do Sistema
 
 1. **Autenticação & Segurança (RF001):**
    - Cadastro e login com fluxo fluido em página dedicada.
@@ -62,7 +62,7 @@ Abra seu navegador em:
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 - **Backend:** PHP 8.2+ / Laravel 12
 - **Banco de Dados:** SQLite (com suporte a MySQL/PostgreSQL via migrations)
 - **Frontend:** Blade Templates com Tailwind CSS e componentes dinâmicos
@@ -70,7 +70,7 @@ Abra seu navegador em:
 
 ---
 
-## 📂 Estrutura de Documentação & Avaliação do PI
+## Estrutura de Documentação & Avaliação do PI
 - `docs/apresentacao-pi.html` — Slides oficiais da apresentação acadêmica do projeto.
 - `docs/RELATO_DE_CONDUCAO.md` — Relato de condução com a tabela comparativa (Previsto x Realizado) e distribuição das responsabilidades por membro.
 - `docs/BAREMA_PI_ENTREGA_2.md` — Mapeamento detalhado de conformidade com todos os critérios do Barema de Avaliação.
