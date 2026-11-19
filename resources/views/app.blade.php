@@ -202,9 +202,105 @@
     @include('componentes.modais.modal-despesa-lar')
 
     <!-- ============================================================== -->
+    <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
+    <!-- ============================================================== -->
+    <div id="seivaToastContainer" class="fixed top-5 right-5 z-[99999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-[calc(100%-2.5rem)] sm:w-full"></div>
+
+    <!-- ============================================================== -->
     <!-- SCRIPT MASTER DE ORQUESTRAÇÃO & COMUNICAÇÃO COM O BACKEND       -->
     <!-- ============================================================== -->
     <script>
+        // ==========================================
+        // SISTEMA GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH)
+        // Substitui alertas nativos feios estilo spam por cards elegantes
+        // ==========================================
+        function seivaNotificar(mensagem, tipo = 'info', titulo = null) {
+            let container = document.getElementById('seivaToastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'seivaToastContainer';
+                container.className = 'fixed top-5 right-5 z-[99999] flex flex-col gap-2.5 pointer-events-none max-w-sm w-[calc(100%-2.5rem)] sm:w-full';
+                document.body.appendChild(container);
+            }
+
+            const tipoFmt = String(tipo || 'info').toLowerCase();
+            let borderClass = 'border-l-primary';
+            let iconBgClass = 'bg-primary/10 text-primary';
+            let iconName = 'info';
+            let defaultTitle = 'Notificação';
+
+            if (tipoFmt === 'erro' || tipoFmt === 'error' || tipoFmt === 'danger') {
+                borderClass = 'border-l-rose-500';
+                iconBgClass = 'bg-rose-500/10 text-rose-500';
+                iconName = 'alert-circle';
+                defaultTitle = 'Atenção';
+            } else if (tipoFmt === 'sucesso' || tipoFmt === 'success') {
+                borderClass = 'border-l-emerald-500';
+                iconBgClass = 'bg-emerald-500/10 text-emerald-500';
+                iconName = 'check-circle-2';
+                defaultTitle = 'Tudo certo!';
+            } else if (tipoFmt === 'aviso' || tipoFmt === 'warning') {
+                borderClass = 'border-l-amber-500';
+                iconBgClass = 'bg-amber-500/10 text-amber-500';
+                iconName = 'alert-triangle';
+                defaultTitle = 'Aviso';
+            }
+
+            const titleText = titulo || defaultTitle;
+            const toastId = 'toast_' + Math.random().toString(36).slice(2, 9);
+
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = `pointer-events-auto flex items-start gap-3 rounded-2xl border border-border border-l-4 ${borderClass} bg-card/95 backdrop-blur-md p-3.5 shadow-2xl transition-all duration-300 transform translate-y-[-10px] opacity-0 text-left`;
+
+            toast.innerHTML = `
+                <div class="size-8 rounded-xl ${iconBgClass} flex items-center justify-center shrink-0 mt-0.5">
+                    <i data-lucide="${iconName}" class="size-4"></i>
+                </div>
+                <div class="flex-1 min-w-0 pr-1">
+                    <p class="text-xs font-bold text-foreground leading-tight">${titleText}</p>
+                    <p class="text-xs text-muted-foreground mt-0.5 leading-snug break-words">${mensagem}</p>
+                </div>
+                <button type="button" onclick="fecharToast('${toastId}')" class="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition shrink-0" aria-label="Fechar">
+                    <i data-lucide="x" class="size-3.5"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // Animação suave de entrada
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-[-10px]', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+            });
+
+            // Limite de 4 toasts na tela (remove os mais antigos)
+            while (container.children.length > 4) {
+                container.firstElementChild.remove();
+            }
+
+            // Fechamento automático suave
+            setTimeout(() => {
+                fecharToast(toastId);
+            }, 4500);
+        }
+
+        function fecharToast(id) {
+            const toast = document.getElementById(id);
+            if (!toast) return;
+            toast.classList.add('opacity-0', 'translate-x-4');
+            setTimeout(() => {
+                if (toast && toast.parentNode) toast.remove();
+            }, 300);
+        }
+
+        // Override definitivo de window.alert para impedir popups nativos estilo spam
+        window.alert = function(msg) {
+            if (!msg) return;
+            seivaNotificar(msg, 'aviso');
+        };
+
         // Estado Global da Aplicação
         let usuarioSessao = null;
         let larSessao = null;
@@ -303,9 +399,9 @@
             const senhaConf = document.getElementById('cardRegSenhaConfirma').value;
             const renda = parseFloat(document.getElementById('cardRegRenda').value) || 0;
 
-            if (!nome || !email || !senha) return alert('Por favor, preencha todos os campos obrigatórios.');
-            if (senha !== senhaConf) return alert('As senhas não coincidem.');
-            if (senha.length < 6) return alert('A senha deve ter no mínimo 6 caracteres.');
+            if (!nome || !email || !senha) return seivaNotificar('Por favor, preencha todos os campos obrigatórios.', 'erro', 'Dados pendentes');
+            if (senha !== senhaConf) return seivaNotificar('As senhas não coincidem. Verifique a digitação.', 'erro', 'Confirmação incorreta');
+            if (senha.length < 6) return seivaNotificar('A senha deve ter no mínimo 6 caracteres para sua segurança.', 'erro', 'Senha fraca');
 
             btn.disabled = true;
             btn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Criando sua conta...';
@@ -342,10 +438,10 @@
                     montarAmbienteLogado();
                     trocarTelaPrincipal('screen-app');
                 } else {
-                    alert(data.error || 'Erro ao realizar cadastro.');
+                    seivaNotificar(data.error || 'Erro ao realizar cadastro.', 'erro');
                 }
             } catch (err) {
-                alert('Erro de conexão ao comunicar com o servidor.');
+                seivaNotificar('Erro de conexão ao comunicar com o servidor.', 'erro', 'Falha de Conexão');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<span>Criar minha conta no SEIVA</span><i data-lucide="arrow-right" class="size-4"></i>';
@@ -441,6 +537,9 @@
         }
 
         function exibirErroOnboarding(msg, inputId = null) {
+            // Dispara o toast elegante da Fintech sem abrir popups nativos feios
+            seivaNotificar(msg, 'erro', 'Informação obrigatória');
+
             const box = document.getElementById('onbAlertError');
             const msgEl = document.getElementById('onbAlertErrorMsg');
             if (box && msgEl) {
@@ -817,10 +916,10 @@
                     montarAmbienteLogado();
                     trocarTelaPrincipal('screen-app');
                 } else {
-                    alert(data.error || 'E-mail ou senha incorretos.');
+                    seivaNotificar(data.error || 'E-mail ou senha incorretos.', 'erro', 'Falha no login');
                 }
             } catch (err) {
-                alert('Erro de conexão ao comunicar com o servidor.');
+                seivaNotificar('Erro de conexão ao comunicar com o servidor.', 'erro', 'Falha de Conexão');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<span>Entrar no SEIVA</span><i data-lucide="arrow-right" class="size-4"></i>';
@@ -897,10 +996,10 @@
                         trocarTelaPrincipal('screen-app');
                     }
                 } else {
-                    alert(data.error || 'Não foi possível validar o token do Google.');
+                    seivaNotificar(data.error || 'Não foi possível validar o login com o Google.', 'erro', 'Google Auth');
                 }
             } catch (err) {
-                alert('Erro de conexão com o servidor de autenticação.');
+                seivaNotificar('Erro de conexão com o servidor de autenticação.', 'erro', 'Falha de Conexão');
             }
         }
 
@@ -926,10 +1025,10 @@
                         trocarTelaPrincipal('screen-app');
                     }
                 } else {
-                    alert(data.error || 'Erro na autenticação com o Google.');
+                    seivaNotificar(data.error || 'Erro na autenticação com o Google.', 'erro', 'Google Auth');
                 }
             } catch (err) {
-                alert('Erro de conexão ao comunicar com a API do Google.');
+                seivaNotificar('Erro de conexão ao comunicar com a API do Google.', 'erro', 'Falha de Conexão');
             }
         }
 
@@ -1129,7 +1228,7 @@
         // --- CAIXA PRETA ---
         async function validarPinCaixa() {
             const pin = document.getElementById('caixaPinField').value;
-            if (!pin) return alert('Digite o PIN de 4 dígitos.');
+            if (!pin) return seivaNotificar('Digite o PIN de 4 dígitos da Caixa Preta.', 'aviso', 'PIN obrigatório');
 
             const res = await fetch('/api/caixa-preta/verificar-pin', {
                 method: 'POST',
@@ -1143,7 +1242,7 @@
                 document.getElementById('caixaUnsealedBox').classList.remove('hidden');
                 carregarCaixaRegistros();
             } else {
-                alert(data.error || 'PIN incorreto.');
+                seivaNotificar(data.error || 'PIN incorreto. Tente novamente.', 'erro', 'Acesso negado');
             }
         }
 
@@ -1353,7 +1452,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ destinatario_id: destId, titulo, valor, mensagem })
             });
-            alert('Lembrete diplomático enviado!');
+            seivaNotificar('Lembrete diplomático enviado com sucesso pelo SEIVA! 🌿', 'sucesso', 'Lembrete Enviado');
         }
 
         // --- MODAIS DE LANÇAMENTO ---
@@ -1399,8 +1498,9 @@
                 fecharModalId('modalTransacao');
                 carregarDashboardDados();
                 carregarExtratoDados();
+                seivaNotificar('Transação registrada com sucesso!', 'sucesso', 'Transação Salva');
             } else {
-                alert('Erro ao registrar.');
+                seivaNotificar('Não foi possível registrar a transação. Verifique os dados.', 'erro', 'Erro ao Registrar');
             }
         }
 
@@ -1420,8 +1520,9 @@
             if (res.ok) {
                 fecharModalId('modalDespesaLar');
                 carregarLarDados();
+                seivaNotificar('Despesa do Lar cadastrada com sucesso!', 'sucesso', 'Despesa Salva');
             } else {
-                alert('Erro ao registrar despesa do lar.');
+                seivaNotificar('Não foi possível registrar a despesa do Lar.', 'erro', 'Erro ao Registrar');
             }
         }
 

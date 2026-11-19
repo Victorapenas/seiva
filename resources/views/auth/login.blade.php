@@ -296,7 +296,7 @@
                             <input type="checkbox" id="loginLembrar" checked class="rounded border-border text-primary focus:ring-primary">
                             Lembrar de mim
                         </label>
-                        <a href="#" onclick="alert('Para redefinir sua senha, confirme o e-mail cadastrado.'); return false;"
+                        <a href="#" onclick="seivaNotificar('Para redefinir sua senha, informe seu e-mail cadastrado ou contate o suporte do SEIVA.', 'info', 'Redefinição de Senha'); return false;"
                            class="font-medium text-primary hover:underline">Esqueceu a senha?</a>
                     </div>
 
