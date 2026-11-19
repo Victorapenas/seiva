@@ -339,6 +339,27 @@
                     </p>
                 </div>
 
+                <!-- Acesso Rápido para Avaliação e Demonstração -->
+                <div class="mt-4 pt-3 border-t border-border/40 text-center">
+                    <p class="text-[11px] font-semibold text-muted-foreground mb-2 flex items-center justify-center gap-1">
+                        <i data-lucide="sparkles" class="size-3 text-amber-500"></i> Perfis de Demonstração:
+                    </p>
+                    <div class="flex flex-wrap items-center justify-center gap-1.5">
+                        <button type="button" onclick="preencherLoginTeste('duda@seiva.com', '123456')" 
+                                class="px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold text-[11px] text-foreground transition shadow-2xs">
+                            👩 Duda (Casal)
+                        </button>
+                        <button type="button" onclick="preencherLoginTeste('ian@seiva.com', '123456')" 
+                                class="px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold text-[11px] text-foreground transition shadow-2xs">
+                            👨 Ian (Casal)
+                        </button>
+                        <button type="button" onclick="preencherLoginTeste('victor@seiva.com', '123456')" 
+                                class="px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold text-[11px] text-foreground transition shadow-2xs">
+                            👤 Victor Hugo (Individual)
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Selo de Privacidade Mobile -->
                 <div class="mt-4 pt-3 border-t border-border/40 text-center text-[10px] text-muted-foreground flex items-center justify-center gap-1.5">
                     <i data-lucide="shield-check" class="size-3.5 text-primary"></i>
