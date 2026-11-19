@@ -184,7 +184,7 @@
                 Privacidade & Conformidade com a LGPD
             </span>
             <span class="flex items-center gap-1.5 text-emerald-200 font-medium">
-                <i data-lucide="leaf" class="size-3.5"></i> Onde seu dinheiro cria raízes
+                Dinheiro Sem Tabu
             </span>
         </div>
     </div>

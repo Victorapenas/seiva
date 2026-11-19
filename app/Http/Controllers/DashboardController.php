@@ -146,7 +146,7 @@ class DashboardController extends Controller
             'transacoes_recentes' => $recentes,
             'lar' => $dadosLar,
             'is_casal' => $lar !== null,
-            'slogan' => 'Onde seu dinheiro cria raízes',
+            'slogan' => 'Dinheiro Sem Tabu',
         ]);
     }
 }
