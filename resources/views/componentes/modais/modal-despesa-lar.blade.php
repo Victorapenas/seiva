@@ -9,15 +9,15 @@
             <i data-lucide="x" class="size-5"></i>
         </button>
         <h3 class="text-lg font-bold text-foreground mb-4">Lançar Despesa do Lar</h3>
-        <form onsubmit="salvarDespesaLarForm(event)" class="space-y-4">
+        <form onsubmit="salvarDespesaLarForm(event)" class="space-y-4" novalidate>
             <div>
                 <label class="text-xs font-medium text-foreground">Nome da Despesa</label>
-                <input type="text" id="formLarDespTitulo" required placeholder="Ex: Aluguel, Internet, Supermercado" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
+                <input type="text" id="formLarDespTitulo" placeholder="Ex: Aluguel, Internet, Supermercado" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="text-xs font-medium text-foreground">Valor Total (R$)</label>
-                    <input type="number" step="0.01" id="formLarDespValor" required placeholder="0,00" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-base font-bold text-foreground outline-none focus:border-primary">
+                    <input type="number" step="0.01" id="formLarDespValor" placeholder="0,00" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-base font-bold text-foreground outline-none focus:border-primary">
                 </div>
                 <div>
                     <label class="text-xs font-medium text-foreground">Regra de Divisão</label>
