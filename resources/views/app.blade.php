@@ -1017,6 +1017,24 @@
             }
         }
 
+        // Preenche e submete as credenciais dos perfis de teste com 1 clique
+        function preencherLoginTeste(email, senha) {
+            const emailInput = document.getElementById('loginEmail');
+            const senhaInput = document.getElementById('loginSenha');
+            if (emailInput && senhaInput) {
+                emailInput.value = email;
+                senhaInput.value = senha;
+                const form = document.getElementById('formLoginCard');
+                if (form) {
+                    if (typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else {
+                        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                    }
+                }
+            }
+        }
+
         // --- INTEGRAÇÃO GOOGLE IDENTITY SERVICES ---
         // Abre a janela POPUP OFICIAL DO GOOGLE (igual ao print de Escolha uma conta)
         // Se usuário existente -> Painel. Se novo -> Onboarding direto no passo do Lar!
@@ -1202,38 +1220,190 @@
                 listaContas = data.contas || [];
                 popularSelectsContas(listaContas);
 
-                const livre = data.resumo.saldo_livre || 0;
-                const comp = data.resumo.saldo_comprometido || 0;
-                document.getElementById('dashValSaldoLivre').innerText = saldosVisiveis ? BRL(livre) : 'R$ ••••••';
-                document.getElementById('dashValComprometido').innerText = saldosVisiveis ? BRL(comp) : '••••';
-                document.getElementById('dashValLivre').innerText = saldosVisiveis ? BRL(livre) : '••••';
+                const isCasal = Boolean(data.is_casal && data.lar);
 
-                const cont = document.getElementById('dashContasList');
-                if (!listaContas.length) {
-                    cont.innerHTML = '<p class="text-xs text-muted-foreground py-4 text-center">Nenhuma conta cadastrada.</p>';
-                } else {
-                    cont.innerHTML = listaContas.map(c => `
-                        <div class="flex items-center justify-between p-3.5 rounded-2xl border border-border bg-card shadow-soft">
-                            <div class="flex items-center gap-3">
-                                <span class="size-9 rounded-xl bg-muted text-foreground flex items-center justify-center font-bold text-xs">
-                                    ${c.nome.substring(0, 2).toUpperCase()}
+                // Badge de perfil ativo
+                const badgePerfil = document.getElementById('dashBadgePerfilAtivo');
+                if (badgePerfil) {
+                    badgePerfil.innerText = `${data.usuario.nome} (${isCasal ? 'Casal · ' + data.lar.nome : 'Individual'})`;
+                }
+
+                // Avatar e nomes do cabeçalho
+                const avatarEl = document.getElementById('dashAvatar');
+                if (avatarEl) {
+                    avatarEl.innerText = isCasal ? (data.lar.iniciais_casal || 'CL') : (data.usuario.iniciais || 'VH');
+                }
+
+                const nomeLarEl = document.getElementById('dashNomeLar');
+                if (nomeLarEl) {
+                    nomeLarEl.innerText = isCasal ? `${data.lar.nome} 🌿` : 'Meu Espaço 🌿';
+                }
+
+                const subtituloEl = document.getElementById('dashSubtituloCasal');
+                if (subtituloEl) {
+                    subtituloEl.innerText = isCasal ? (data.lar.nomes_casal || 'Duda & Ian') : data.usuario.nome;
+                }
+
+                const badgeModo = document.getElementById('dashBadgeModo');
+                if (badgeModo) {
+                    badgeModo.innerText = isCasal ? 'Casal & Lar' : 'Modo Individual';
+                }
+
+                // Rótulo e valor do Saldo Principal
+                const labelSaldo = document.getElementById('dashLabelSaldoPrincipal');
+                if (labelSaldo) {
+                    labelSaldo.innerText = isCasal ? 'SALDO DO LAR' : 'SALDO LIVRE DISPONÍVEL';
+                }
+
+                const valorPrincipal = isCasal ? data.lar.saldo_lar : data.resumo.saldo_livre;
+                const saldoPrincipalEl = document.getElementById('dashValSaldoLivre');
+                if (saldoPrincipalEl) {
+                    saldoPrincipalEl.innerText = saldosVisiveis ? BRL(valorPrincipal) : 'R$ ••••••';
+                }
+
+                const tendenciaEl = document.getElementById('dashTendenciaTexto');
+                if (tendenciaEl) {
+                    tendenciaEl.innerHTML = `<i data-lucide="trending-up" class="size-3.5"></i> ${isCasal ? (data.lar.tendencia_mes || '+R$ 2.450 este mês') : '+R$ 1.800 este mês'}`;
+                }
+
+                const comp = data.resumo.saldo_comprometido || 0;
+                const livre = data.resumo.saldo_livre || 0;
+                const elComp = document.getElementById('dashValComprometido');
+                if (elComp) elComp.innerText = saldosVisiveis ? BRL(comp) : '••••';
+
+                const elLivre = document.getElementById('dashValLivre');
+                if (elLivre) elLivre.innerText = saldosVisiveis ? BRL(livre) : '••••';
+
+                // Card Rateio Proporcional
+                const rateioBox = document.getElementById('cardRateioProporcionalBox');
+                if (rateioBox) {
+                    if (isCasal && data.lar.membros_rateio && data.lar.membros_rateio.length >= 2) {
+                        const m1 = data.lar.membros_rateio[0];
+                        const m2 = data.lar.membros_rateio[1];
+
+                        rateioBox.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-sm font-bold text-foreground">Rateio Proporcional</h3>
+                                    <span class="text-xs text-muted-foreground hidden sm:inline">· Divisão justa por renda</span>
+                                </div>
+                                <span class="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 border border-emerald-500/20">
+                                    <i data-lucide="sparkles" class="size-3"></i> Mais justo que 50/50
                                 </span>
-                                <div>
-                                    <p class="text-xs font-semibold text-foreground">${c.nome}</p>
-                                    <span class="text-[10px] text-muted-foreground capitalize">${c.tipo}</span>
+                            </div>
+                            <div class="h-3.5 w-full rounded-full bg-muted flex overflow-hidden ring-1 ring-border">
+                                <div id="barRateioMembro1" class="h-full bg-emerald-600 transition-all duration-500 rounded-l-full" style="width: ${m1.percentual}%"></div>
+                                <div id="barRateioMembro2" class="h-full bg-amber-400 transition-all duration-500 rounded-r-full" style="width: ${m2.percentual}%"></div>
+                            </div>
+                            <div class="flex items-center justify-between text-xs pt-0.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="size-2.5 rounded-full bg-emerald-600"></span>
+                                    <span class="font-bold text-foreground">${m1.primeiro_nome}: ${m1.percentual}% (${m1.renda_formatada})</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-foreground">${m2.primeiro_nome}: ${m2.percentual}% (${m2.renda_formatada})</span>
+                                    <span class="size-2.5 rounded-full bg-amber-400"></span>
                                 </div>
                             </div>
-                            <span class="text-sm font-bold text-foreground">${saldosVisiveis ? BRL(c.saldo) : '••••'}</span>
-                        </div>
-                    `).join('');
+                        `;
+                    } else {
+                        rateioBox.innerHTML = `
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-sm font-bold text-foreground">Ambiente Individual Ativo</h3>
+                                        <span class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">Você no controle</span>
+                                    </div>
+                                    <p class="text-xs text-muted-foreground mt-0.5">Quer dividir contas a dois? Crie seu Lar compartilhado e calcule o rateio justo automaticamente.</p>
+                                </div>
+                                <button onclick="trocarAbaApp('lar')" class="shrink-0 px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition shadow-2xs">
+                                    Configurar Lar Compartilhado
+                                </button>
+                            </div>
+                        `;
+                    }
                 }
-            } catch (e) {}
+
+                // Cards "Este mês"
+                const recEl = document.getElementById('dashCardReceitas');
+                if (recEl) {
+                    const totalRec = isCasal ? (data.lar.total_receitas_mes || data.resumo.total_entradas) : data.resumo.total_entradas;
+                    recEl.innerText = saldosVisiveis ? BRL(totalRec) : '••••';
+                }
+
+                const despEl = document.getElementById('dashCardDespesas');
+                if (despEl) {
+                    const totalDesp = isCasal ? (data.lar.total_despesas_mes || data.resumo.total_saidas) : data.resumo.total_saidas;
+                    despEl.innerText = saldosVisiveis ? BRL(totalDesp) : '••••';
+                }
+
+                // Onde está meu dinheiro (Lista de Contas)
+                const cont = document.getElementById('dashContasList');
+                if (cont) {
+                    if (!listaContas.length) {
+                        cont.innerHTML = '<p class="text-xs text-muted-foreground py-4 text-center col-span-full">Nenhuma conta cadastrada.</p>';
+                    } else {
+                        cont.innerHTML = listaContas.map(c => `
+                            <div class="flex items-center justify-between p-3.5 rounded-2xl border border-border bg-card shadow-soft hover:border-primary/20 transition">
+                                <div class="flex items-center gap-3">
+                                    <span class="size-9 rounded-xl flex items-center justify-center font-bold text-xs" style="background-color: ${c.cor || '#10b981'}20; color: ${c.cor || '#10b981'}">
+                                        ${c.nome.substring(0, 2).toUpperCase()}
+                                    </span>
+                                    <div>
+                                        <p class="text-xs font-bold text-foreground">${c.nome}</p>
+                                        <span class="text-[10px] text-muted-foreground capitalize">${c.tipo} · ${c.funcao || 'gasto'}</span>
+                                    </div>
+                                </div>
+                                <span class="text-sm font-extrabold text-foreground">${saldosVisiveis ? BRL(c.saldo) : '••••'}</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                lucide.createIcons();
+            } catch (e) {
+                console.error('Erro ao carregar dashboard:', e);
+            }
+        }
+
+        // ALTERNÂNCIA RÁPIDA DE USUÁRIO PARA TESTES (DUDA, IAN, VICTOR HUGO)
+        async function trocarUsuarioRapido(email) {
+            try {
+                seivaNotificar(`Acessando perfil de ${email}...`, 'info', 'Alternando Ambiente');
+                let res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, senha: '123456' })
+                });
+
+                if (!res.ok) {
+                    res = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email, senha: 'password' })
+                    });
+                }
+
+                const data = await res.json();
+                if (res.ok && data.usuario) {
+                    usuarioSessao = data.usuario;
+                    larSessao = (data.usuario.lares && data.usuario.lares.length) ? data.usuario.lares[0] : null;
+                    montarAmbienteLogado();
+                    trocarTelaPrincipal('screen-app');
+                    trocarAbaApp('dashboard');
+                    seivaNotificar(`Ambiente atualizado para ${data.usuario.nome}!`, 'sucesso', 'Conectado');
+                } else {
+                    seivaNotificar(data.error || 'Não foi possível alternar de usuário.', 'erro');
+                }
+            } catch (err) {
+                seivaNotificar('Erro de conexão ao alternar perfil de teste.', 'erro');
+            }
         }
 
         function alternarVisibilidadeSaldos() {
             saldosVisiveis = !saldosVisiveis;
             const btn = document.getElementById('btnVisSaldos');
-            btn.innerHTML = saldosVisiveis ? '<i data-lucide="eye" class="size-3.5"></i><span>Ocultar</span>' : '<i data-lucide="eye-off" class="size-3.5"></i><span>Mostrar</span>';
+            btn.innerHTML = saldosVisiveis ? '<i data-lucide="eye" class="size-4"></i>' : '<i data-lucide="eye-off" class="size-4"></i>';
             carregarDashboardDados();
             lucide.createIcons();
         }
