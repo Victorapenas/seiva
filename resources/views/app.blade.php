@@ -400,6 +400,7 @@
         }
 
         function recuarPassoOnboarding() {
+            fecharAlertaOnboarding();
             if (stepOnboarding === 0) {
                 // Retorna à tela de introdução do Onboarding
                 const faseWelcome = document.getElementById('onboardingFaseWelcome');
@@ -414,6 +415,7 @@
         }
 
         function renderizarPassoOnboarding() {
+            fecharAlertaOnboarding();
             document.querySelectorAll('.onb-step-view').forEach((view, idx) => {
                 view.classList.toggle('hidden', idx !== stepOnboarding);
                 const bar = document.getElementById(`onbBar${idx}`);
@@ -438,35 +440,188 @@
             lucide.createIcons();
         }
 
+        function exibirErroOnboarding(msg, inputId = null) {
+            const box = document.getElementById('onbAlertError');
+            const msgEl = document.getElementById('onbAlertErrorMsg');
+            if (box && msgEl) {
+                msgEl.innerText = msg;
+                box.classList.remove('hidden');
+            }
+
+            document.querySelectorAll('.onb-input-error').forEach(el => {
+                el.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/20', 'onb-input-error');
+            });
+
+            if (inputId) {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.classList.add('border-rose-500', 'ring-2', 'ring-rose-500/20', 'onb-input-error');
+                    input.focus();
+                    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    input.addEventListener('input', function handler() {
+                        input.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/20', 'onb-input-error');
+                        if (box) box.classList.add('hidden');
+                        input.removeEventListener('input', handler);
+                    });
+                }
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            lucide.createIcons();
+        }
+
+        function fecharAlertaOnboarding() {
+            const box = document.getElementById('onbAlertError');
+            if (box) box.classList.add('hidden');
+            document.querySelectorAll('.onb-input-error').forEach(el => {
+                el.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/20', 'onb-input-error');
+            });
+        }
+
         async function avancarEtapaOnboarding() {
+            fecharAlertaOnboarding();
+
+            // ───── PASSO 1: QUEM É VOCÊ (DADOS PESSOAIS) ─────
             if (stepOnboarding === 0) {
                 const nome = document.getElementById('regNome').value.trim();
                 const email = document.getElementById('regEmail').value.trim();
+                const telefone = document.getElementById('regTelefone').value.trim();
                 const senha = document.getElementById('regSenha').value;
                 const senhaConf = document.getElementById('regSenhaConfirma').value;
 
-                if (!nome || !email || !senha) return alert('Por favor, preencha todos os campos obrigatórios.');
-                if (senha !== senhaConf) return alert('As senhas não coincidem.');
-                if (senha.length < 6) return alert('A senha deve ter no mínimo 6 caracteres.');
+                if (!nome) {
+                    return exibirErroOnboarding('O nome completo é obrigatório.', 'regNome');
+                }
+                const partesNome = nome.split(/\s+/).filter(Boolean);
+                if (partesNome.length < 2 || nome.length < 5) {
+                    return exibirErroOnboarding('Por favor, informe seu nome completo (nome e sobrenome).', 'regNome');
+                }
+
+                if (!email) {
+                    return exibirErroOnboarding('O e-mail é obrigatório para acessar sua conta.', 'regEmail');
+                }
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    return exibirErroOnboarding('Por favor, informe um endereço de e-mail válido (ex: seu.nome@email.com).', 'regEmail');
+                }
+
+                if (!telefone) {
+                    return exibirErroOnboarding('O telefone/WhatsApp é obrigatório para avisos de contas e convite do Lar.', 'regTelefone');
+                }
+                const digitosTel = telefone.replace(/\D/g, '');
+                if (digitosTel.length < 10) {
+                    return exibirErroOnboarding('Informe um telefone válido com DDD (mínimo 10 dígitos, ex: 71 99999-9999).', 'regTelefone');
+                }
+
+                if (!senha) {
+                    return exibirErroOnboarding('A senha de acesso é obrigatória.', 'regSenha');
+                }
+                if (senha.length < 6) {
+                    return exibirErroOnboarding('A senha deve ter no mínimo 6 caracteres para garantir sua segurança.', 'regSenha');
+                }
+
+                if (!senhaConf) {
+                    return exibirErroOnboarding('Por favor, confirme a sua senha digitada.', 'regSenhaConfirma');
+                }
+                if (senha !== senhaConf) {
+                    return exibirErroOnboarding('As senhas digitadas não coincidem. Verifique a confirmação.', 'regSenhaConfirma');
+                }
 
                 stepOnboarding = 1;
                 renderizarPassoOnboarding();
                 return;
             }
 
+            // ───── PASSO 2: SUA RENDA (BASE DO RATEIO PROPORCIONAL) ─────
             if (stepOnboarding === 1) {
+                const rendaInput = document.getElementById('regRenda');
+                const rendaStr = rendaInput.value.trim();
+                const rendaValor = parseFloat(rendaStr);
+
+                if (!rendaStr || isNaN(rendaValor) || rendaValor <= 0) {
+                    return exibirErroOnboarding('A renda mensal líquida é obrigatória e deve ser maior que R$ 0,00 para o cálculo do rateio justo do casal.', 'regRenda');
+                }
+
+                const diaRecebe = document.getElementById('regDiaRecebe').value;
+                if (diaRecebe === '' || diaRecebe === null) {
+                    return exibirErroOnboarding('Por favor, selecione o dia em que costuma receber sua renda.', 'regDiaRecebe');
+                }
+
+                const temExtra = document.getElementById('regTemExtra').checked;
+                if (temExtra) {
+                    const extraInput = document.getElementById('regRendaExtra');
+                    const extraStr = extraInput.value.trim();
+                    const extraValor = parseFloat(extraStr);
+                    if (!extraStr || isNaN(extraValor) || extraValor <= 0) {
+                        return exibirErroOnboarding('Você marcou que possui renda extra. Por favor, informe o valor médio mensal da renda extra (maior que zero).', 'regRendaExtra');
+                    }
+                }
+
                 stepOnboarding = 2;
                 renderizarPassoOnboarding();
                 return;
             }
 
+            // ───── PASSO 3: CONTAS & CAIXA PRETA ─────
             if (stepOnboarding === 2) {
+                // Se escolheu 'Outro', o nome do banco ou carteira é obrigatório
+                if (bancoOnboarding === 'Outro') {
+                    const outroInput = document.getElementById('regBancoOutroNome');
+                    const outroNome = outroInput ? outroInput.value.trim() : '';
+                    if (!outroNome || outroNome.length < 2) {
+                        return exibirErroOnboarding('Por favor, informe o nome do seu banco ou onde o seu dinheiro está guardado.', 'regBancoOutroNome');
+                    }
+                }
+
+                // Saldo inicial é obrigatório (não pode ser vazio; pode ser 0)
+                const saldoInput = document.getElementById('regSaldoInicial');
+                const saldoStr = saldoInput.value.trim();
+                if (saldoStr === '' || isNaN(parseFloat(saldoStr)) || parseFloat(saldoStr) < 0) {
+                    return exibirErroOnboarding('O saldo atual da conta principal é obrigatório (digite 0 caso a conta esteja sem saldo).', 'regSaldoInicial');
+                }
+
+                // Chave Pix é obrigatória
+                const pixInput = document.getElementById('regPix');
+                const pixValor = pixInput.value.trim();
+                if (!pixValor || pixValor.length < 3) {
+                    return exibirErroOnboarding('A chave Pix principal é obrigatória para transferências e rateio de despesas do casal.', 'regPix');
+                }
+
+                // PIN da Caixa Preta é OBRIGATÓRIO com 4 dígitos numéricos
+                const pinInput = document.getElementById('regPinCaixa');
+                const pinValor = pinInput.value.trim();
+                if (!pinValor || !/^\d{4}$/.test(pinValor)) {
+                    return exibirErroOnboarding('O PIN da Caixa Preta é obrigatório e deve conter exatamente 4 números (ex: 1234).', 'regPinCaixa');
+                }
+
                 stepOnboarding = 3;
                 renderizarPassoOnboarding();
                 return;
             }
 
+            // ───── PASSO 4: SEU LAR & FINALIZAÇÃO ─────
             if (stepOnboarding === 3) {
+                if (usoLarOnboarding) {
+                    const larInput = document.getElementById('regNomeLar');
+                    const nomeLar = larInput ? larInput.value.trim() : '';
+                    if (!nomeLar || nomeLar.length < 3) {
+                        return exibirErroOnboarding('Por favor, informe um nome para o seu Lar compartilhado (mínimo 3 caracteres, ex: Nosso Cantinho).', 'regNomeLar');
+                    }
+
+                    const emailParceiroInput = document.getElementById('regEmailParceiro');
+                    const emailParceiro = emailParceiroInput ? emailParceiroInput.value.trim() : '';
+                    if (emailParceiro) {
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailRegex.test(emailParceiro)) {
+                            return exibirErroOnboarding('O e-mail do parceiro(a) informado não é válido.', 'regEmailParceiro');
+                        }
+                        const meuEmail = document.getElementById('regEmail').value.trim();
+                        if (emailParceiro.toLowerCase() === meuEmail.toLowerCase()) {
+                            return exibirErroOnboarding('O e-mail do parceiro(a) não pode ser igual ao seu próprio e-mail de cadastro.', 'regEmailParceiro');
+                        }
+                    }
+                }
+
                 const btnAvancar = document.getElementById('btnAvancarOnboarding');
                 btnAvancar.disabled = true;
                 btnAvancar.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Criando sua conta...';
@@ -475,7 +630,7 @@
                 if (usuarioSessao && usuarioSessao.id_usuario && (usuarioSessao.google_id || usuarioSessao.email.includes('google') || usuarioSessao.email.includes('gmail'))) {
                     try {
                         if (usoLarOnboarding) {
-                            const nomeLar = document.getElementById('regNomeLar').value || 'Nosso Cantinho';
+                            const nomeLar = document.getElementById('regNomeLar').value.trim() || 'Nosso Cantinho';
                             const larRes = await fetch('/api/lar', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -514,10 +669,10 @@
                     renda_mensal: parseFloat(document.getElementById('regRenda').value) || 0,
                     dia_recebimento: parseInt(document.getElementById('regDiaRecebe').value) || 5,
                     renda_extra: parseFloat(document.getElementById('regRendaExtra').value) || 0,
-                    saldo_inicial: parseFloat(document.getElementById('regSaldoInicial').value) || null,
+                    saldo_inicial: parseFloat(document.getElementById('regSaldoInicial').value) || 0,
                     banco_principal: bancoFinal,
                     chave_pix: document.getElementById('regPix').value.trim(),
-                    pin_caixa_preta: document.getElementById('regPinCaixa').value || '1234',
+                    pin_caixa_preta: document.getElementById('regPinCaixa').value.trim() || '1234',
                 };
 
                 try {
@@ -533,7 +688,7 @@
 
                         // Se escolheu criar o Lar
                         if (usoLarOnboarding) {
-                            const nomeLar = document.getElementById('regNomeLar').value || 'Nosso Cantinho';
+                            const nomeLar = document.getElementById('regNomeLar').value.trim() || 'Nosso Cantinho';
                             const larRes = await fetch('/api/lar', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -547,10 +702,10 @@
                         montarAmbienteLogado();
                         trocarTelaPrincipal('screen-app');
                     } else {
-                        alert(data.error || 'Erro ao realizar cadastro.');
+                        exibirErroOnboarding(data.error || 'Erro ao realizar cadastro.');
                     }
                 } catch (err) {
-                    alert('Erro de conexão ao realizar cadastro.');
+                    exibirErroOnboarding('Erro de conexão ao realizar cadastro.');
                 } finally {
                     btnAvancar.disabled = false;
                     btnAvancar.innerHTML = '<span id="btnAvancarOnboardingLabel">Concluir cadastro e entrar</span><i data-lucide="arrow-right" class="size-5"></i>';
