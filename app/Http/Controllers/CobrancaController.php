@@ -47,8 +47,20 @@ class CobrancaController extends Controller
         $user = Auth::user();
         $lar = $user->lares()->first();
 
+        if (!$lar) {
+            return response()->json(['error' => 'Você precisa pertencer a um Lar compartilhado para enviar cobranças.'], 400);
+        }
+
+        $destinatarioNoLar = LarMembro::where('lar_id', $lar->id_lar)
+            ->where('usuario_id', $request->destinatario_id)
+            ->exists();
+
+        if (!$destinatarioNoLar) {
+            return response()->json(['error' => 'O destinatário informado não é membro do seu Lar.'], 403);
+        }
+
         $cobranca = Cobranca::create([
-            'lar_id' => $lar ? $lar->id_lar : 1,
+            'lar_id' => $lar->id_lar,
             'criada_por' => $user->id_usuario,
             'destinatario_id' => $request->destinatario_id,
             'titulo' => $request->titulo,
@@ -61,7 +73,7 @@ class CobrancaController extends Controller
         // Cria a notificação para o destinatário
         Notificacao::create([
             'usuario_id' => $request->destinatario_id,
-            'lar_id' => $lar ? $lar->id_lar : null,
+            'lar_id' => $lar->id_lar,
             'titulo' => '🌿 Lembrete diplomático de ' . $user->nome,
             'mensagem' => $request->mensagem . " | Chave PIX: " . ($user->chave_pix ?: $user->email),
             'tipo' => 'lar',
