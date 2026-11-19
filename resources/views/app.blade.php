@@ -537,31 +537,41 @@
         }
 
         function exibirErroOnboarding(msg, inputId = null) {
-            // Dispara o toast elegante da Fintech sem abrir popups nativos feios
-            seivaNotificar(msg, 'erro', 'Informação obrigatória');
+            fecharAlertaOnboarding();
 
-            const box = document.getElementById('onbAlertError');
-            const msgEl = document.getElementById('onbAlertErrorMsg');
-            if (box && msgEl) {
-                msgEl.innerText = msg;
-                box.classList.remove('hidden');
-            }
-
-            document.querySelectorAll('.onb-input-error').forEach(el => {
-                el.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/20', 'onb-input-error');
-            });
+            // Dispara o toast elegante e discreto da Fintech
+            seivaNotificar(msg, 'erro', 'Atenção');
 
             if (inputId) {
                 const input = document.getElementById(inputId);
                 if (input) {
-                    input.classList.add('border-rose-500', 'ring-2', 'ring-rose-500/20', 'onb-input-error');
-                    input.focus();
+                    // Leva suavemente o usuário exatamente até o campo que não foi preenchido
                     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    input.addEventListener('input', function handler() {
-                        input.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/20', 'onb-input-error');
-                        if (box) box.classList.add('hidden');
-                        input.removeEventListener('input', handler);
-                    });
+                    setTimeout(() => input.focus(), 250);
+
+                    // Destaca o campo com borda suave de atenção
+                    input.classList.add('border-rose-500', 'ring-2', 'ring-rose-500/25', 'onb-input-error');
+
+                    // Mostra o aviso contextual logo abaixo do campo
+                    const errEl = document.getElementById('err_' + inputId);
+                    if (errEl) {
+                        errEl.innerText = msg;
+                        errEl.classList.remove('hidden');
+                        errEl.classList.add('onb-msg-error');
+                    }
+
+                    // Limpa o aviso assim que o usuário começar a preencher
+                    const limparErro = () => {
+                        input.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/25', 'onb-input-error');
+                        if (errEl) {
+                            errEl.classList.add('hidden');
+                            errEl.classList.remove('onb-msg-error');
+                        }
+                        input.removeEventListener('input', limparErro);
+                        input.removeEventListener('change', limparErro);
+                    };
+                    input.addEventListener('input', limparErro);
+                    input.addEventListener('change', limparErro);
                 }
             } else {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -570,10 +580,12 @@
         }
 
         function fecharAlertaOnboarding() {
-            const box = document.getElementById('onbAlertError');
-            if (box) box.classList.add('hidden');
             document.querySelectorAll('.onb-input-error').forEach(el => {
-                el.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/20', 'onb-input-error');
+                el.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/25', 'onb-input-error');
+            });
+            document.querySelectorAll('.onb-msg-error').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('onb-msg-error');
             });
         }
 
