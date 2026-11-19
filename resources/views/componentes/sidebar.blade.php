@@ -12,7 +12,7 @@
             </div>
             <div>
                 <span class="text-base font-extrabold tracking-tight text-foreground block leading-none">SEIVA</span>
-                <span class="text-[10px] font-medium text-muted-foreground">Dinheiro Sem Tabu</span>
+                <span class="text-[10px] font-medium text-muted-foreground">Onde seu dinheiro cria raízes</span>
             </div>
         </div>
     </div>
