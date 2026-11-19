@@ -1,7 +1,7 @@
 {{-- 
     Módulo: Dashboard Consolidado e Painel do Lar / Individual (RF009)
     Responsável Acadêmico: Victor Hugo
-    Conceito: "Onde seu dinheiro cria raízes 🌱"
+    Conceito: "Dinheiro Sem Tabu"
     Fidelidade ao Protótipo Original: Saldo do Lar, Rateio Proporcional justo, Ações Rápidas (Rateio, Receita, Acordo),
     Cards Este Mês (Receitas e Despesas) e Pills de Destaque (Cobrador Diplomata & Caixa Preta).
 --}}
@@ -72,8 +72,8 @@
             <span id="dashLabelSaldoPrincipal" class="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                 SALDO DO LAR
             </span>
-            <span class="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <i data-lucide="sprout" class="size-3.5"></i> Onde seu dinheiro cria raízes
+            <span class="text-[11px] font-semibold text-primary flex items-center gap-1">
+                Dinheiro Sem Tabu
             </span>
         </div>
 
@@ -261,9 +261,8 @@
             <i data-lucide="shield-check" class="size-3.5 text-emerald-600"></i>
             Privacidade & Conformidade com a LGPD (Lei nº 13.709/2018)
         </span>
-        <span class="flex items-center gap-1.5 font-medium text-emerald-700 dark:text-emerald-400">
-            <i data-lucide="sprout" class="size-3.5"></i>
-            Onde seu dinheiro cria raízes
+        <span class="flex items-center gap-1.5 font-medium text-primary">
+            Dinheiro Sem Tabu
         </span>
     </footer>
 

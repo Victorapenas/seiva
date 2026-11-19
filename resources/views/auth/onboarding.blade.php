@@ -30,8 +30,8 @@
             <img src="/seiva-logo.png" alt="SEIVA" class="object-contain w-full h-full" onerror="this.src='/icon.svg'">
         </div>
         <h1 class="mt-5 text-3xl font-bold tracking-tight text-foreground">SEIVA</h1>
-        <p class="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-            <i data-lucide="leaf" class="size-4 text-primary"></i> Onde seu dinheiro cria raízes
+        <p class="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
+            Dinheiro Sem Tabu
         </p>
 
         <div class="mt-8 flex w-full flex-col gap-2.5">
