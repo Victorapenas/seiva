@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SEIVA — Dinheiro Sem Tabu | Finanças do Casal & Lares Compartilhados</title>
+    <title>SEIVA — Onde seu dinheiro cria raízes | Finanças do Casal & Lares Compartilhados</title>
     
     <!-- Meta Tags Acadêmicas e de Produto -->
     <meta name="description" content="Gestão Financeira Inteligente para Lares Compartilhados e Finanças Pessoais. Entrega 2 do Projeto Interdisciplinar de ADS - IFBA.">

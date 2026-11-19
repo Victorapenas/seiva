@@ -32,7 +32,7 @@
                         </span>
                     </div>
                     <span class="text-[11px] font-semibold text-emerald-200/90 tracking-widest uppercase block mt-1">
-                        Dinheiro Sem Tabu
+                        Onde seu dinheiro cria raízes
                     </span>
                 </div>
             </div>
@@ -184,7 +184,7 @@
                 Privacidade & Conformidade com a LGPD
             </span>
             <span class="flex items-center gap-1.5 text-emerald-200 font-medium">
-                Dinheiro Sem Tabu
+                <i data-lucide="leaf" class="size-3.5"></i> Onde seu dinheiro cria raízes
             </span>
         </div>
     </div>
@@ -216,7 +216,7 @@
                             </span>
                         </div>
                         <span class="text-[11px] font-semibold text-emerald-200/90 tracking-widest uppercase block mt-0.5">
-                            Dinheiro Sem Tabu
+                            Onde seu dinheiro cria raízes
                         </span>
                     </div>
                 </div>
