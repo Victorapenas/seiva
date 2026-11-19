@@ -233,7 +233,13 @@ class LarController extends Controller
 
     public function quitarParticipacao($id)
     {
-        $participacao = ParticipacaoDespesa::findOrFail($id);
+        $user = Auth::user();
+        $larIds = $user->lares()->pluck('lares.id_lar')->toArray();
+
+        $participacao = ParticipacaoDespesa::whereHas('despesa', function ($q) use ($larIds) {
+            $q->whereIn('lar_id', $larIds);
+        })->findOrFail($id);
+
         $participacao->update(['pago' => true]);
 
         // Verifica se todas participações foram quitadas

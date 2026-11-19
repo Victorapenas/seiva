@@ -35,11 +35,13 @@ class GerenciarUsuarios
      */
     public function validarPinCaixaPreta(string $pin): bool
     {
-        if (!$this->usuario->pin_caixa_preta) {
+        $savedPin = $this->usuario->pin_caixa_preta;
+        if (!$savedPin) {
             return false;
         }
 
-        return Hash::check($pin, $this->usuario->pin_caixa_preta) || $this->usuario->pin_caixa_preta === $pin;
+        $isBcrypt = is_string($savedPin) && str_starts_with($savedPin, '$2y$');
+        return ($savedPin === $pin) || ($isBcrypt && Hash::check($pin, $savedPin));
     }
 
     /**

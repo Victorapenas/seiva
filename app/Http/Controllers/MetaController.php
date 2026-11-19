@@ -65,7 +65,15 @@ class MetaController extends Controller
     public function contribuir(Request $request, $id)
     {
         $request->validate(['valor' => 'required|numeric|min:0.01']);
-        $meta = Meta::findOrFail($id);
+        $user = Auth::user();
+        $larIds = $user->lares()->pluck('lares.id_lar')->toArray();
+
+        $meta = Meta::where(function ($q) use ($user, $larIds) {
+            $q->where('usuario_id', $user->id_usuario);
+            if (!empty($larIds)) {
+                $q->orWhereIn('lar_id', $larIds);
+            }
+        })->findOrFail($id);
 
         $meta->increment('valor_atual', $request->valor);
 

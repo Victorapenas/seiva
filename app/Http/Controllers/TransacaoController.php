@@ -45,9 +45,13 @@ class TransacaoController extends Controller
             'visibilidade' => 'nullable|in:pessoal,compartilhado,lar',
         ]);
 
-        return DB::transaction(function () use ($request) {
-            $userId = Auth::id();
+        $userId = Auth::id();
+        $conta = Conta::where('usuario_id', $userId)->where('id_conta', $request->conta_id)->first();
+        if (!$conta) {
+            return response()->json(['error' => 'A conta informada não pertence ao usuário.'], 403);
+        }
 
+        return DB::transaction(function () use ($request, $userId, $conta) {
             $transacao = Transacao::create([
                 'usuario_id' => $userId,
                 'conta_id' => $request->conta_id,
@@ -61,13 +65,10 @@ class TransacaoController extends Controller
             ]);
 
             // Atualiza saldo da conta
-            $conta = Conta::find($request->conta_id);
-            if ($conta) {
-                if ($request->tipo === 'entrada') {
-                    $conta->increment('saldo', $request->valor);
-                } else {
-                    $conta->decrement('saldo', $request->valor);
-                }
+            if ($request->tipo === 'entrada') {
+                $conta->increment('saldo', $request->valor);
+            } else {
+                $conta->decrement('saldo', $request->valor);
             }
 
             return response()->json($transacao->load(['conta', 'categoria']), 201);
@@ -76,20 +77,23 @@ class TransacaoController extends Controller
 
     public function destroy($id)
     {
-        $transacao = Transacao::where('usuario_id', Auth::id())->where('id_transacao', $id)->firstOrFail();
+        $userId = Auth::id();
+        $transacao = Transacao::where('usuario_id', $userId)->where('id_transacao', $id)->firstOrFail();
 
-        // Reverte saldo
-        $conta = Conta::find($transacao->conta_id);
-        if ($conta) {
-            if ($transacao->tipo === 'entrada') {
-                $conta->decrement('saldo', $transacao->valor);
-            } else {
-                $conta->increment('saldo', $transacao->valor);
+        return DB::transaction(function () use ($transacao, $userId) {
+            // Reverte saldo da conta caso ela pertença ao usuário
+            $conta = Conta::where('usuario_id', $userId)->where('id_conta', $transacao->conta_id)->first();
+            if ($conta) {
+                if ($transacao->tipo === 'entrada') {
+                    $conta->decrement('saldo', $transacao->valor);
+                } else {
+                    $conta->increment('saldo', $transacao->valor);
+                }
             }
-        }
 
-        $transacao->delete();
-        return response()->json(['message' => 'Transação excluída e saldo revertido.']);
+            $transacao->delete();
+            return response()->json(['message' => 'Transação excluída e saldo revertido.']);
+        });
     }
 
     public function categorias()

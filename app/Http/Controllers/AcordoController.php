@@ -69,22 +69,33 @@ class AcordoController extends Controller
     {
         $request->validate([
             'titulo' => 'required|string|max:255',
-            'valor' => 'required|numeric',
-            'proposta_texto' => 'required|string',
+            'valor' => 'nullable|numeric',
+            'valor_total' => 'nullable|numeric',
+            'tipo' => 'nullable|in:meta,divida',
+            'proposta_texto' => 'nullable|string',
+            'descricao' => 'nullable|string',
+            'divisao' => 'nullable|string',
             'divisao_sugerida' => 'nullable|string',
         ]);
 
         $user = Auth::user();
         $lar = $user->lares()->firstOrFail();
 
+        $valorTotal = $request->valor_total ?? $request->valor ?? 0;
+        $descricao = $request->descricao ?? $request->proposta_texto ?? '';
+        $divisao = $request->divisao ?? $request->divisao_sugerida ?? '50/50';
+        $tipo = $request->tipo ?? 'meta';
+
         $proposta = Proposta::create([
             'lar_id' => $lar->id_lar,
             'autor_id' => $user->id_usuario,
+            'tipo' => $tipo,
             'titulo' => $request->titulo,
-            'valor' => $request->valor,
-            'proposta_texto' => $request->proposta_texto,
-            'divisao_sugerida' => $request->divisao_sugerida ?? '50/50',
-            'status' => 'em_analise',
+            'descricao' => $descricao,
+            'mensagem' => $descricao,
+            'valor_total' => $valorTotal,
+            'divisao' => $divisao,
+            'status' => 'pendente',
         ]);
 
         return response()->json($proposta->load('autor'), 201);
@@ -93,23 +104,26 @@ class AcordoController extends Controller
     public function votarProposta(Request $request, $id)
     {
         $request->validate(['acao' => 'required|in:aceitar,recusar']);
-        $proposta = Proposta::findOrFail($id);
+        $user = Auth::user();
+        $larIds = $user->lares()->pluck('lares.id_lar')->toArray();
+
+        $proposta = Proposta::whereIn('lar_id', $larIds)->findOrFail($id);
 
         if ($request->acao === 'aceitar') {
-            $proposta->update(['status' => 'aprovada']);
+            $proposta->update(['status' => 'aceita']);
 
             // Converte proposta em Acordo ativo
             Acordo::create([
                 'lar_id' => $proposta->lar_id,
                 'criado_por' => $proposta->autor_id,
                 'titulo' => $proposta->titulo,
-                'tipo' => 'meta',
-                'valor_total' => $proposta->valor,
-                'divisao' => $proposta->divisao_sugerida ?: '50/50',
+                'tipo' => $proposta->tipo ?: 'meta',
+                'valor_total' => $proposta->valor_total,
+                'divisao' => $proposta->divisao ?: '50/50',
                 'status' => 'ativo',
             ]);
         } else {
-            $proposta->update(['status' => 'rejeitada']);
+            $proposta->update(['status' => 'recusada']);
         }
 
         return response()->json(['message' => 'Voto computado!', 'proposta' => $proposta]);

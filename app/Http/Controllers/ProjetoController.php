@@ -54,8 +54,18 @@ class ProjetoController extends Controller
             'custo_estimado' => 'required|numeric',
         ]);
 
+        $user = Auth::user();
+        $lar = $user->lares()->first();
+
+        $projeto = Projeto::where(function ($q) use ($user, $lar) {
+            $q->where('usuario_id', $user->id_usuario);
+            if ($lar) {
+                $q->orWhere('lar_id', $lar->id_lar);
+            }
+        })->findOrFail($id);
+
         $item = ProjetoItem::create([
-            'projeto_id' => $id,
+            'projeto_id' => $projeto->id_projeto,
             'descricao' => $request->descricao,
             'custo_estimado' => $request->custo_estimado,
             'comprado' => false,
@@ -66,7 +76,16 @@ class ProjetoController extends Controller
 
     public function toggleItem($id)
     {
-        $item = ProjetoItem::findOrFail($id);
+        $user = Auth::user();
+        $lar = $user->lares()->first();
+
+        $item = ProjetoItem::whereHas('projeto', function ($q) use ($user, $lar) {
+            $q->where('usuario_id', $user->id_usuario);
+            if ($lar) {
+                $q->orWhere('lar_id', $lar->id_lar);
+            }
+        })->findOrFail($id);
+
         $item->update(['comprado' => !$item->comprado]);
         return response()->json($item);
     }

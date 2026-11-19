@@ -74,6 +74,11 @@ class LgpdController extends Controller
             $user->transacoes()->delete();
             $user->metas()->delete();
             $user->registrosCaixaPreta()->delete();
+            $user->notificacoes()->delete();
+            \App\Models\LarMembro::where('usuario_id', $user->id_usuario)->delete();
+            \App\Models\ParticipacaoDespesa::where('usuario_id', $user->id_usuario)->delete();
+            \App\Models\ConviteLar::where('convidado_por', $user->id_usuario)->delete();
+            \App\Models\Cobranca::where('criada_por', $user->id_usuario)->orWhere('destinatario_id', $user->id_usuario)->delete();
             $user->delete();
         });
 

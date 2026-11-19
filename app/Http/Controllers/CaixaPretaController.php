@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\RegistroCaixaPreta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class CaixaPretaController extends Controller
 {
@@ -14,8 +15,10 @@ class CaixaPretaController extends Controller
         $user = Auth::user();
 
         $savedPin = $user->pin_caixa_preta ?: '1234';
+        $isBcrypt = is_string($savedPin) && str_starts_with($savedPin, '$2y$');
+        $correto = ($request->pin === $savedPin) || ($isBcrypt && Hash::check($request->pin, $savedPin));
 
-        if ($request->pin === $savedPin) {
+        if ($correto) {
             session(['caixa_preta_unlocked' => true]);
             return response()->json(['unlocked' => true, 'message' => 'Acesso concedido à Caixa Preta.']);
         }
