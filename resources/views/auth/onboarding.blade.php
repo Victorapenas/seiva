@@ -218,8 +218,8 @@
 
                 <div class="space-y-4">
                     <div>
-                        <p class="mb-2 text-xs font-medium text-muted-foreground">Banco principal</p>
-                        <div class="grid grid-cols-4 gap-2">
+                        <p class="mb-2 text-xs font-medium text-muted-foreground">Onde seu dinheiro está guardado?</p>
+                        <div class="grid grid-cols-5 gap-2">
                             <button type="button" onclick="setBancoPrincipal('Nubank')" class="banco-select-btn flex flex-col items-center gap-1.5 rounded-2xl border border-primary bg-accent/40 text-foreground py-2.5 text-xs font-medium transition" data-banco="Nubank">
                                 <span class="size-5 rounded-full bg-[#8A2BE2]"></span> Nubank
                             </button>
@@ -232,7 +232,20 @@
                             <button type="button" onclick="setBancoPrincipal('Caixa')" class="banco-select-btn flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-background text-muted-foreground py-2.5 text-xs font-medium transition" data-banco="Caixa">
                                 <span class="size-5 rounded-full bg-[#0070AF]"></span> Caixa
                             </button>
+                            <button type="button" onclick="setBancoPrincipal('Outro')" class="banco-select-btn flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-background text-muted-foreground py-2.5 text-xs font-medium transition" data-banco="Outro">
+                                <span class="size-5 rounded-full bg-stone-400 flex items-center justify-center text-[10px] text-white font-bold">+</span> Outro
+                            </button>
                         </div>
+                    </div>
+
+                    <!-- Campo condicional para quando a pessoa seleciona 'Outro' banco ou carteira -->
+                    <div id="boxBancoOutroInput" class="hidden rounded-2xl border border-primary/40 bg-accent/20 p-3.5 space-y-1.5 transition-all">
+                        <label class="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                            <i data-lucide="landmark" class="size-3.5 text-primary"></i>
+                            <span>Qual é o seu banco ou onde está guardado o dinheiro?</span>
+                        </label>
+                        <input type="text" id="regBancoOutroNome" placeholder="Ex: Bradesco, Santander, Banco do Brasil, C6, Carteira física, PicPay..." class="h-12 w-full rounded-xl border border-border bg-card px-4 text-sm text-foreground outline-none focus:border-primary font-medium">
+                        <p class="text-[11px] text-muted-foreground">Informe o nome do banco ou carteira para organizarmos suas contas.</p>
                     </div>
 
                     <div>

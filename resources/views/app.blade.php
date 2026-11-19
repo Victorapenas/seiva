@@ -357,11 +357,10 @@
             stepOnboarding = 0;
             const faseWelcome = document.getElementById('onboardingFaseWelcome');
             const faseForm = document.getElementById('onboardingFaseForm');
-            // Vai DIRETO para o formulário detalhado em 4 etapas (sem tela intermediária de boas-vindas)
-            if (faseWelcome) faseWelcome.classList.add('hidden');
-            if (faseForm) faseForm.classList.remove('hidden');
+            // Estrutura Fiel ao Protótipo Original: Exibe a tela de Introdução dos 4 passos
+            if (faseWelcome) faseWelcome.classList.remove('hidden');
+            if (faseForm) faseForm.classList.add('hidden');
             trocarTelaPrincipal('screen-onboarding');
-            renderizarPassoOnboarding();
         }
 
         // Fluxo especial quando autenticado pelo Google: pula a digitação de dados pessoais e vai direto para a configuração do Lar
@@ -402,7 +401,12 @@
 
         function recuarPassoOnboarding() {
             if (stepOnboarding === 0) {
-                irParaLogin();
+                // Retorna à tela de introdução do Onboarding
+                const faseWelcome = document.getElementById('onboardingFaseWelcome');
+                const faseForm = document.getElementById('onboardingFaseForm');
+                if (faseWelcome) faseWelcome.classList.remove('hidden');
+                if (faseForm) faseForm.classList.add('hidden');
+                window.scrollTo({ top: 0, behavior: 'instant' });
             } else {
                 stepOnboarding--;
                 renderizarPassoOnboarding();
@@ -493,6 +497,13 @@
                     }
                 }
 
+                // Determina o banco principal (se 'Outro', pega o nome digitado pela pessoa)
+                let bancoFinal = bancoOnboarding;
+                if (bancoOnboarding === 'Outro') {
+                    const nomeOutro = document.getElementById('regBancoOutroNome')?.value.trim();
+                    bancoFinal = nomeOutro || 'Outro';
+                }
+
                 // Envia os dados completos para a API Laravel com POO e extract($_POST)
                 const payload = {
                     nome: document.getElementById('regNome').value.trim(),
@@ -504,7 +515,7 @@
                     dia_recebimento: parseInt(document.getElementById('regDiaRecebe').value) || 5,
                     renda_extra: parseFloat(document.getElementById('regRendaExtra').value) || 0,
                     saldo_inicial: parseFloat(document.getElementById('regSaldoInicial').value) || null,
-                    banco_principal: bancoOnboarding,
+                    banco_principal: bancoFinal,
                     chave_pix: document.getElementById('regPix').value.trim(),
                     pin_caixa_preta: document.getElementById('regPinCaixa').value || '1234',
                 };
@@ -564,6 +575,18 @@
                 const ativo = btn.getAttribute('data-banco') === banco;
                 btn.className = ativo ? "banco-select-btn flex flex-col items-center gap-1.5 rounded-2xl border border-primary bg-accent/40 text-foreground py-2.5 text-xs font-medium transition" : "banco-select-btn flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-background text-muted-foreground py-2.5 text-xs font-medium transition";
             });
+
+            // Exibe ou oculta o campo para digitar o nome quando 'Outro' é selecionado
+            const boxOutro = document.getElementById('boxBancoOutroInput');
+            if (boxOutro) {
+                if (banco === 'Outro') {
+                    boxOutro.classList.remove('hidden');
+                    const inputOutro = document.getElementById('regBancoOutroNome');
+                    if (inputOutro) inputOutro.focus();
+                } else {
+                    boxOutro.classList.add('hidden');
+                }
+            }
         }
 
         function setEscolhaLar(criar) {
