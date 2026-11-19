@@ -14,6 +14,8 @@ use App\Models\Proposta;
 use App\Models\Acordo;
 use App\Models\RegistroCaixaPreta;
 use App\Models\Notificacao;
+use App\Models\Meta;
+use App\Models\Cobranca;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -69,13 +71,24 @@ class CenariosTesteSeeder extends Seeder
             [
                 'tipo' => 'poupanca',
                 'saldo' => 3500.00,
-                'comprometido' => 0.00,
+                'comprometido' => 3500.00,
                 'funcao' => 'reserva',
                 'cor' => '#ff7a00',
             ]
         );
 
-        // Transações de Victor Hugo
+        $contaVictor3 = Conta::updateOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'nome' => 'Carteira Física'],
+            [
+                'tipo' => 'carteira',
+                'saldo' => 250.00,
+                'comprometido' => 0.00,
+                'funcao' => 'gasto',
+                'cor' => '#10b981',
+            ]
+        );
+
+        // Transações de Victor Hugo (Mês atual)
         Transacao::firstOrCreate(
             ['usuario_id' => $victor->id_usuario, 'titulo' => 'Salário Tech'],
             [
@@ -89,6 +102,30 @@ class CenariosTesteSeeder extends Seeder
         );
 
         Transacao::firstOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'titulo' => 'Freela Desenvolvimento'],
+            [
+                'conta_id' => $contaVictor1->id_conta,
+                'categoria_id' => $catTrabalho->id_categoria,
+                'tipo' => 'entrada',
+                'valor' => 800.00,
+                'data' => now()->format('Y-m-08'),
+                'visibilidade' => 'pessoal',
+            ]
+        );
+
+        Transacao::firstOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'titulo' => 'Fatura Cartão Nubank'],
+            [
+                'conta_id' => $contaVictor1->id_conta,
+                'categoria_id' => $catMoradia->id_categoria,
+                'tipo' => 'saida',
+                'valor' => 1200.00,
+                'data' => now()->format('Y-m-12'),
+                'visibilidade' => 'pessoal',
+            ]
+        );
+
+        Transacao::firstOrCreate(
             ['usuario_id' => $victor->id_usuario, 'titulo' => 'Supermercado Mensal'],
             [
                 'conta_id' => $contaVictor1->id_conta,
@@ -97,6 +134,75 @@ class CenariosTesteSeeder extends Seeder
                 'valor' => 850.00,
                 'data' => now()->format('Y-m-10'),
                 'visibilidade' => 'pessoal',
+            ]
+        );
+
+        Transacao::firstOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'titulo' => 'Academia Smart Fit'],
+            [
+                'conta_id' => $contaVictor1->id_conta,
+                'categoria_id' => $catLazer->id_categoria,
+                'tipo' => 'saida',
+                'valor' => 130.00,
+                'data' => now()->format('Y-m-08'),
+                'visibilidade' => 'pessoal',
+            ]
+        );
+
+        // Mês anterior (para alimentar o gráfico de barras comparativo)
+        $mesPassado = now()->subMonth()->format('Y-m');
+        Transacao::firstOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'titulo' => 'Salário Tech Mês Anterior'],
+            [
+                'conta_id' => $contaVictor1->id_conta,
+                'categoria_id' => $catTrabalho->id_categoria,
+                'tipo' => 'entrada',
+                'valor' => 5500.00,
+                'data' => $mesPassado . '-05',
+                'visibilidade' => 'pessoal',
+            ]
+        );
+
+        Transacao::firstOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'titulo' => 'Gastos Totais Mês Anterior'],
+            [
+                'conta_id' => $contaVictor1->id_conta,
+                'categoria_id' => $catMoradia->id_categoria,
+                'tipo' => 'saida',
+                'valor' => 2450.00,
+                'data' => $mesPassado . '-15',
+                'visibilidade' => 'pessoal',
+            ]
+        );
+
+        // Metas Pessoais de Victor Hugo (Tabela metas)
+        Meta::updateOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'titulo' => 'Reserva de Emergência'],
+            [
+                'lar_id' => null,
+                'responsavel_id' => $victor->id_usuario,
+                'emoji' => '🛡️',
+                'categoria' => 'reserva',
+                'valor_alvo' => 10000.00,
+                'valor_atual' => 3500.00,
+                'contribuicao_mensal' => 500.00,
+                'onde_guardado' => 'Reserva Inter',
+                'status' => 'ativa',
+            ]
+        );
+
+        Meta::updateOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'titulo' => 'Setup Dev UltraWide'],
+            [
+                'lar_id' => null,
+                'responsavel_id' => $victor->id_usuario,
+                'emoji' => '💻',
+                'categoria' => 'produto',
+                'valor_alvo' => 3000.00,
+                'valor_atual' => 2400.00,
+                'contribuicao_mensal' => 400.00,
+                'onde_guardado' => 'Nubank Principal',
+                'status' => 'ativa',
             ]
         );
 
@@ -329,6 +435,174 @@ class CenariosTesteSeeder extends Seeder
                 'valor' => 3500.00,
                 'data' => now()->format('Y-m-10'),
                 'visibilidade' => 'lar',
+            ]
+        );
+
+        // Transações de Duda (Idêntico ao Protótipo da Imagem 7 e Imagem 6)
+        Transacao::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Salário Florais Design'],
+            [
+                'conta_id' => $contaDuda->id_conta,
+                'categoria_id' => $catTrabalho->id_categoria,
+                'tipo' => 'entrada',
+                'valor' => 1500.00,
+                'data' => now()->format('Y-m-05'),
+                'visibilidade' => 'lar',
+            ]
+        );
+
+        Transacao::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Freela Design'],
+            [
+                'conta_id' => $contaDuda->id_conta,
+                'categoria_id' => $catTrabalho->id_categoria,
+                'tipo' => 'entrada',
+                'valor' => 200.00,
+                'data' => now()->format('Y-m-08'),
+                'visibilidade' => 'lar',
+            ]
+        );
+
+        Transacao::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Sephora'],
+            [
+                'conta_id' => $contaDuda->id_conta,
+                'categoria_id' => $catLazer->id_categoria,
+                'tipo' => 'saida',
+                'valor' => 187.00,
+                'data' => now()->format('Y-m-d'),
+                'visibilidade' => 'pessoal',
+            ]
+        );
+
+        Transacao::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Rappi'],
+            [
+                'conta_id' => $contaDuda->id_conta,
+                'categoria_id' => $catMercado->id_categoria,
+                'tipo' => 'saida',
+                'valor' => 67.40,
+                'data' => now()->subDay()->format('Y-m-d'),
+                'visibilidade' => 'pessoal',
+            ]
+        );
+
+        Transacao::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Academia Bio Ritmo'],
+            [
+                'conta_id' => $contaDuda->id_conta,
+                'categoria_id' => $catLazer->id_categoria,
+                'tipo' => 'saida',
+                'valor' => 119.90,
+                'data' => now()->subDay()->format('Y-m-d'),
+                'visibilidade' => 'pessoal',
+            ]
+        );
+
+        // Mês anterior Duda (Maio)
+        Transacao::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Salário Florais Design Maio'],
+            [
+                'conta_id' => $contaDuda->id_conta,
+                'categoria_id' => $catTrabalho->id_categoria,
+                'tipo' => 'entrada',
+                'valor' => 1600.00,
+                'data' => $mesPassado . '-05',
+                'visibilidade' => 'pessoal',
+            ]
+        );
+
+        Transacao::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Gastos Mês Maio Duda'],
+            [
+                'conta_id' => $contaDuda->id_conta,
+                'categoria_id' => $catMoradia->id_categoria,
+                'tipo' => 'saida',
+                'valor' => 1100.00,
+                'data' => $mesPassado . '-15',
+                'visibilidade' => 'pessoal',
+            ]
+        );
+
+        // Mês anterior Ian (Maio)
+        Transacao::updateOrCreate(
+            ['usuario_id' => $ian->id_usuario, 'titulo' => 'Salário Ian Maio'],
+            [
+                'conta_id' => $contaIan->id_conta,
+                'categoria_id' => $catTrabalho->id_categoria,
+                'tipo' => 'entrada',
+                'valor' => 6000.00,
+                'data' => $mesPassado . '-05',
+                'visibilidade' => 'lar',
+            ]
+        );
+
+        Transacao::updateOrCreate(
+            ['usuario_id' => $ian->id_usuario, 'titulo' => 'Gastos Mês Maio Ian'],
+            [
+                'conta_id' => $contaIan->id_conta,
+                'categoria_id' => $catMoradia->id_categoria,
+                'tipo' => 'saida',
+                'valor' => 3200.00,
+                'data' => $mesPassado . '-15',
+                'visibilidade' => 'lar',
+            ]
+        );
+
+        // Metas reais do casal e individuais (Tabela metas)
+        Meta::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Notebook Dell'],
+            [
+                'lar_id' => null,
+                'responsavel_id' => $duda->id_usuario,
+                'emoji' => '💻',
+                'categoria' => 'produto',
+                'valor_alvo' => 4500.00,
+                'valor_atual' => 4050.00,
+                'contribuicao_mensal' => 450.00,
+                'onde_guardado' => 'Poupança Caixa',
+                'status' => 'ativa',
+            ]
+        );
+
+        Meta::updateOrCreate(
+            ['lar_id' => $lar->id_lar, 'titulo' => 'Geladeira Samsung'],
+            [
+                'usuario_id' => $duda->id_usuario,
+                'responsavel_id' => $ian->id_usuario,
+                'emoji' => '❄️',
+                'categoria' => 'produto',
+                'valor_alvo' => 3200.00,
+                'valor_atual' => 1000.00,
+                'contribuicao_mensal' => 500.00,
+                'onde_guardado' => 'Conta conjunta do Lar',
+                'status' => 'ativa',
+            ]
+        );
+
+        Meta::updateOrCreate(
+            ['usuario_id' => $ian->id_usuario, 'titulo' => 'Filamento Impressora 3D'],
+            [
+                'lar_id' => null,
+                'responsavel_id' => $ian->id_usuario,
+                'emoji' => '🖨️',
+                'categoria' => 'produto',
+                'valor_alvo' => 250.00,
+                'valor_atual' => 180.00,
+                'contribuicao_mensal' => 70.00,
+                'onde_guardado' => 'Inter Ian',
+                'status' => 'ativa',
+            ]
+        );
+
+        // Pedido de Ajuda Real (Cobranca de Ian para Duda no Banco de Dados)
+        Cobranca::updateOrCreate(
+            ['criada_por' => $ian->id_usuario, 'destinatario_id' => $duda->id_usuario, 'titulo' => 'Filamento da Impressora 3D'],
+            [
+                'lar_id' => $lar->id_lar,
+                'valor' => 50.00,
+                'mensagem' => 'Comprar filamento pra fechar o freela da impressora 3D',
+                'estado' => 'pendente',
             ]
         );
 

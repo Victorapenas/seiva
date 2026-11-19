@@ -8,10 +8,13 @@ use App\Models\Categoria;
 use App\Models\Lar;
 use App\Models\Meta;
 use App\Models\DespesaLar;
+use App\Models\ParticipacaoDespesa;
 use App\Models\LarMembro;
+use App\Models\Cobranca;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -25,67 +28,89 @@ class DashboardController extends Controller
         $userId = $user->id_usuario;
         $mesAtual = $request->get('mes', now()->format('Y-m'));
 
-        // Contas do usuário
+        // 1. Contas bancárias reais do usuário
         $contas = Conta::where('usuario_id', $userId)->get();
-        $saldoTotal = $contas->where('tipo', '!=', 'cartao')->sum('saldo');
-        $saldoComprometido = $contas->where('tipo', '!=', 'cartao')->sum('comprometido');
+        $saldoTotal = (float)$contas->where('tipo', '!=', 'cartao')->sum('saldo');
+        $saldoComprometido = (float)$contas->where('tipo', '!=', 'cartao')->sum('comprometido');
         $saldoLivre = max(0, $saldoTotal - $saldoComprometido);
+        $faturasCartao = (float)$contas->where('tipo', 'cartao')->sum('usado');
+        $reservaTotal = (float)$contas->where('funcao', 'reserva')->sum('saldo');
 
-        // Faturas de cartões
-        $faturasCartao = $contas->where('tipo', 'cartao')->sum('usado');
-
-        // Entradas e Saídas do mês
+        // 2. Transações do mês atual no banco de dados
         $transacoesMes = Transacao::where('usuario_id', $userId)
             ->where('visibilidade', '!=', 'privado')
             ->whereRaw("strftime('%Y-%m', data) = ?", [$mesAtual])
             ->get();
 
-        $totalEntradas = $transacoesMes->where('tipo', 'entrada')->sum('valor');
-        $totalSaidas = $transacoesMes->where('tipo', 'saida')->sum('valor');
-        $balancoMes = $totalEntradas - $totalSaidas;
+        $totalEntradasDb = (float)$transacoesMes->where('tipo', 'entrada')->sum('valor');
+        $totalSaidas = (float)$transacoesMes->where('tipo', 'saida')->sum('valor');
 
-        // Gastos por categoria
-        $gastosPorCategoria = Transacao::join('categorias', 'transacoes.categoria_id', '=', 'categorias.id_categoria')
-            ->where('transacoes.usuario_id', $userId)
-            ->where('transacoes.visibilidade', '!=', 'privado')
-            ->where('transacoes.tipo', 'saida')
-            ->whereRaw("strftime('%Y-%m', transacoes.data) = ?", [$mesAtual])
-            ->select('categorias.nome', 'categorias.cor', 'categorias.emoji', DB::raw('SUM(transacoes.valor) as total'))
-            ->groupBy('categorias.id_categoria', 'categorias.nome', 'categorias.cor', 'categorias.emoji')
-            ->orderByDesc('total')
-            ->get();
+        // Valor de entradas (usando transações reais ou fallback da renda declarada do usuário)
+        $entradasMesValor = $totalEntradasDb > 0 ? $totalEntradasDb : (float)($user->renda_mensal ?: 0);
+        $balancoMes = $entradasMesValor - $totalSaidas;
 
-        // Transações recentes
-        $recentes = Transacao::with(['conta', 'categoria'])
-            ->where('usuario_id', $userId)
-            ->where('visibilidade', '!=', 'privado')
-            ->orderBy('data', 'desc')
-            ->orderBy('id_transacao', 'desc')
-            ->limit(8)
-            ->get();
+        // Fontes de receita reais
+        $fontes = $transacoesMes->where('tipo', 'entrada')->map(fn($t) => [
+            'nome' => $t->titulo,
+            'valor' => (float)$t->valor,
+        ])->values();
 
-        // Lar ativo do usuário
+        if ($fontes->isEmpty() && $user->renda_mensal > 0) {
+            $fontes->push(['nome' => 'Salário Base', 'valor' => (float)$user->renda_mensal]);
+            if ($user->tem_renda_extra && $user->renda_extra > 0) {
+                $fontes->push(['nome' => 'Renda Extra', 'valor' => (float)$user->renda_extra]);
+            }
+        }
+
+        // 3. Verificação do Lar (Casal vs Individual)
         $lar = $user->lares()->first();
+        $isCasal = ($lar !== null);
         $dadosLar = null;
+        $heroCustoLar = null;
+        $pedidoAjuda = null;
 
-        if ($lar) {
+        if ($isCasal) {
             $membros = LarMembro::with('usuario')->where('lar_id', $lar->id_lar)->get();
             $rendaTotalLar = $membros->sum('renda_declarada');
             $membrosIds = $membros->pluck('usuario_id')->toArray();
 
-            $saldoConsolidadoLar = Conta::whereIn('usuario_id', $membrosIds)
+            $saldoConsolidadoLar = (float)Conta::whereIn('usuario_id', $membrosIds)
                 ->where('tipo', '!=', 'cartao')
                 ->sum('saldo');
 
-            $despesasLarMes = DespesaLar::where('lar_id', $lar->id_lar)
+            $despesasLarMes = (float)DespesaLar::where('lar_id', $lar->id_lar)
                 ->whereRaw("strftime('%Y-%m', data_vencimento) = ?", [$mesAtual])
                 ->sum('valor_total');
 
-            $receitasLarMes = Transacao::whereIn('usuario_id', $membrosIds)
+            $receitasLarMes = (float)Transacao::whereIn('usuario_id', $membrosIds)
                 ->where('tipo', 'entrada')
                 ->whereRaw("strftime('%Y-%m', data) = ?", [$mesAtual])
                 ->sum('valor');
 
+            // Participações reais do usuário logado nas despesas do Lar
+            $participacoesUsuario = ParticipacaoDespesa::where('participacoes_despesas.usuario_id', $userId)
+                ->join('despesas_lares', 'participacoes_despesas.despesa_lar_id', '=', 'despesas_lares.id_despesa_lar')
+                ->where('despesas_lares.lar_id', $lar->id_lar)
+                ->whereRaw("strftime('%Y-%m', despesas_lares.data_vencimento) = ?", [$mesAtual])
+                ->select('participacoes_despesas.*', 'despesas_lares.titulo as despesa_titulo', 'despesas_lares.data_vencimento')
+                ->get();
+
+            $totalParteNoLar = (float)$participacoesUsuario->sum('valor_parte');
+            $jaPagueiNoLar = (float)$participacoesUsuario->where('pago', true)->sum('valor_parte');
+            $aindaFaltaNoLar = (float)$participacoesUsuario->where('pago', false)->sum('valor_parte');
+
+            $membroAtual = $membros->firstWhere('usuario_id', $userId);
+            $pctLar = $membroAtual ? (float)$membroAtual->percentual_contribuicao : ($rendaTotalLar > 0 ? round(($membroAtual->renda_declarada / $rendaTotalLar) * 100) : 50);
+
+            $heroCustoLar = [
+                'parte_no_lar' => $totalParteNoLar > 0 ? $totalParteNoLar : round($despesasLarMes * ($pctLar / 100), 2),
+                'percentual_lar' => round($pctLar),
+                'ja_paguei' => $jaPagueiNoLar,
+                'ainda_falta' => $aindaFaltaNoLar,
+                'custo_total_lar' => $despesasLarMes,
+            ];
+
+            // Formatação dos membros para a barra de rateio
             $membrosFormatados = $membros->map(function ($m) use ($rendaTotalLar) {
                 $renda = (float)$m->renda_declarada;
                 $pct = $rendaTotalLar > 0 ? round(($renda / $rendaTotalLar) * 100) : 50;
@@ -111,211 +136,255 @@ class DashboardController extends Controller
                 'emoji' => $lar->emoji ?? '🌿',
                 'nomes_casal' => $nomesCasal ?: $lar->nome,
                 'iniciais_casal' => $iniciaisCasal ?: 'CL',
-                'saldo_lar' => (float)($saldoConsolidadoLar ?: $saldoTotal),
-                'total_despesas_mes' => (float)$despesasLarMes,
-                'total_receitas_mes' => (float)$receitasLarMes,
+                'saldo_lar' => $saldoConsolidadoLar ?: $saldoTotal,
+                'total_despesas_mes' => $despesasLarMes,
+                'total_receitas_mes' => $receitasLarMes,
                 'renda_total_lar' => (float)$rendaTotalLar,
                 'membros_rateio' => $membrosFormatados,
                 'tendencia_mes' => '+R$ 2.450 este mês',
             ];
+
+            // Cobrança real / Pedido de ajuda pendente do parceiro no banco de dados
+            $cobrancaPendente = Cobranca::where('destinatario_id', $userId)
+                ->where('lar_id', $lar->id_lar)
+                ->where('estado', 'pendente')
+                ->latest()
+                ->first();
+
+            if ($cobrancaPendente) {
+                $solicitante = \App\Models\Usuario::find($cobrancaPendente->criada_por);
+                $pedidoAjuda = [
+                    'id_cobranca' => $cobrancaPendente->id_cobranca,
+                    'tem_pedido' => true,
+                    'solicitante' => $solicitante ? explode(' ', $solicitante->nome)[0] : 'Parceiro(a)',
+                    'solicitante_iniciais' => $solicitante ? $solicitante->iniciais : 'IM',
+                    'valor' => (float)$cobrancaPendente->valor,
+                    'motivo' => $cobrancaPendente->mensagem ?: $cobrancaPendente->titulo,
+                    'tag' => ($solicitante ? $solicitante->iniciais : 'IM') . ' ' . $cobrancaPendente->titulo . ' · há 20 min',
+                ];
+            }
         }
 
-        // Dados personalizados para o Protótipo Oficial (Duda / Ian / Victor)
-        $isDuda = str_contains(strtolower($user->email), 'duda');
-        $isIan = str_contains(strtolower($user->email), 'ian');
+        // 4. Hero Card: Minha Renda (Totalmente Dinâmico)
+        $comprometidoTotal = $saldoComprometido;
+        $aindaDevendo = $isCasal ? ($heroCustoLar['ainda_falta'] + $faturasCartao) : $faturasCartao;
+        $sobraMes = max(0, $entradasMesValor - $totalSaidas);
 
-        // Banner de Pedido de Ajuda (apenas quando aplicável)
-        $pedidoAjuda = null;
-        if ($isDuda) {
-            $pedidoAjuda = [
-                'tem_pedido' => true,
-                'solicitante' => 'Ian',
-                'solicitante_iniciais' => 'IM',
-                'valor' => 50.00,
-                'motivo' => 'Comprar filamento pra fechar o freela da impressora 3D',
-                'tag' => 'IM Filamento da Impressora 3D · há 20 min',
+        $heroMes = [
+            'mes_nome' => ucfirst(Carbon::parse($mesAtual . '-01')->translatedFormat('F')),
+            'ano' => Carbon::parse($mesAtual . '-01')->format('Y'),
+            'data_extenso' => ucfirst(Carbon::now()->translatedFormat('l, d \d\e F \d\e Y')),
+            'minha_renda' => [
+                'recebido_mes' => $entradasMesValor,
+                'fontes' => $fontes,
+                'comprometido' => $comprometidoTotal,
+                'ainda_devendo' => $aindaDevendo,
+                'sobra_mes' => $sobraMes,
+            ],
+            'custo_lar' => $heroCustoLar, // null se individual
+        ];
+
+        // 5. Onde está meu dinheiro (Cards dinâmicos de cada conta do usuário)
+        $contasCards = $contas->map(function ($c) {
+            $saldo = (float)$c->saldo;
+            $comp = (float)$c->comprometido;
+            $livre = max(0, $saldo - $comp);
+
+            $tipoBadge = match($c->funcao) {
+                'reserva' => 'Guardando',
+                default => ($c->tipo === 'carteira' ? 'Espécie' : 'Dia a dia'),
+            };
+
+            $icone = match($c->tipo) {
+                'cartao' => 'credit-card',
+                'carteira' => 'banknote',
+                'poupanca' => 'piggy-bank',
+                default => 'wallet',
+            };
+
+            return [
+                'id_conta' => $c->id_conta,
+                'nome' => $c->nome,
+                'tipo' => $tipoBadge,
+                'saldo' => $saldo,
+                'livre' => $c->funcao === 'reserva' ? null : $livre,
+                'fatura' => ($comp > 0 && $c->tipo !== 'poupanca') ? $comp : null,
+                'atualizado' => $c->updated_at ? 'Atualizado ' . $c->updated_at->diffForHumans() : 'Atualizado hoje',
+                'cor' => $c->cor ?: '#10b981',
+                'icone' => $icone,
+            ];
+        });
+
+        $ondeEstaMeuDinheiro = [
+            'somando_todas' => $saldoTotal,
+            'ja_tem_dono' => $saldoComprometido,
+            'livre_pra_gastar' => $saldoLivre,
+            'dica' => 'Ter saldo não é ter dinheiro livre. As metas e reservas ficam guardadas em contas separadas para manter o controle.',
+            'contas_detalhadas' => $contasCards,
+        ];
+
+        // 6. Saúde Financeira Dinâmica
+        $metasTotalAlvo = (float)Meta::where('usuario_id', $userId)->where('status', 'ativa')->sum('valor_alvo');
+        $pctRendaDestino = $entradasMesValor > 0 ? min(100, round(($saldoComprometido / $entradasMesValor) * 100)) : 0;
+        $pctReservaMeta = $metasTotalAlvo > 0 ? min(100, round(($reservaTotal / $metasTotalAlvo) * 100)) : 50;
+
+        // Score de saúde financeira (0 a 100)
+        $scoreSaude = 100;
+        if ($pctRendaDestino > 70) $scoreSaude -= 30;
+        elseif ($pctRendaDestino > 50) $scoreSaude -= 15;
+        if ($totalSaidas > $entradasMesValor) $scoreSaude -= 25;
+        if ($pctReservaMeta < 50) $scoreSaude -= 15;
+        $scoreSaude = max(20, min(100, $scoreSaude));
+
+        $statusSaude = $scoreSaude >= 80 ? 'Excelente' : ($scoreSaude >= 60 ? 'Equilibrado' : 'Atenção');
+
+        $insights = [
+            ['tipo' => $pctRendaDestino > 70 ? 'alerta' : 'sucesso', 'texto' => "{$pctRendaDestino}% da sua renda já tem destino (R$ " . number_format($saldoComprometido, 2, ',', '.') . " de R$ " . number_format($entradasMesValor, 2, ',', '.') . ")."],
+            ['tipo' => $pctReservaMeta < 50 ? 'alerta' : 'sucesso', 'texto' => "Reserva em {$pctReservaMeta}% da meta (R$ " . number_format($reservaTotal, 2, ',', '.') . " de R$ " . number_format($metasTotalAlvo ?: 5000, 2, ',', '.') . ")."],
+            ['tipo' => $totalSaidas <= $entradasMesValor ? 'sucesso' : 'alerta', 'texto' => "Gastos do mês (R$ " . number_format($totalSaidas, 2, ',', '.') . ") " . ($totalSaidas <= $entradasMesValor ? "menores que sua renda." : "superaram sua renda.")],
+        ];
+
+        $saudeFinanceira = [
+            'score' => $scoreSaude,
+            'status' => $statusSaude,
+            'insights' => $insights,
+        ];
+
+        // 7. Pra registrar hoje (Apenas itens pendentes REAIS do banco)
+        $praRegistrarHoje = [];
+
+        // Faturas com valor comprometido a pagar
+        $contasFatura = $contas->where('comprometido', '>', 0)->where('tipo', '!=', 'poupanca');
+        foreach ($contasFatura as $cf) {
+            $praRegistrarHoje[] = [
+                'id' => 'conta_' . $cf->id_conta,
+                'titulo' => 'Fatura ' . $cf->nome,
+                'valor' => (float)$cf->comprometido,
+                'descricao' => 'Seus gastos no cartão · vence em breve',
+                'icone' => 'credit-card',
+                'tipo' => 'fatura',
             ];
         }
 
-        // Card Hero "Seu mês" (Minha renda vs Custo do Lar)
-        $heroMes = [
-            'mes_nome' => 'junho',
-            'ano' => '2026',
-            'data_extenso' => 'Quinta, 12 de junho de 2026',
-            'minha_renda' => [
-                'recebido_mes' => $isDuda ? 1700.00 : ($isIan ? 6000.00 : 5500.00),
-                'fontes' => $isDuda ? [
-                    ['nome' => 'Salário', 'valor' => 1500.00],
-                    ['nome' => 'Freela', 'valor' => 200.00]
-                ] : [
-                    ['nome' => 'Salário', 'valor' => $isIan ? 6000.00 : 5500.00]
-                ],
-                'comprometido' => $isDuda ? 1550.00 : 1800.00,
-                'ainda_devendo' => $isDuda ? 1115.00 : 850.00,
-                'sobra_mes' => $isDuda ? 150.00 : 3350.00,
-            ],
-            'custo_lar' => [
-                'parte_no_lar' => $isDuda ? 480.00 : 1187.90,
-                'percentual_lar' => $isDuda ? 28 : 60,
-                'ja_paguei' => $isDuda ? 255.00 : 930.00,
-                'ainda_falta' => $isDuda ? 225.00 : 257.90,
-                'custo_total_lar' => 1667.90,
-            ]
-        ];
+        // Se estiver no Lar, incluir despesas pendentes do Lar
+        if ($isCasal && isset($participacoesUsuario)) {
+            $pendentesLar = $participacoesUsuario->where('pago', false);
+            foreach ($pendentesLar as $pl) {
+                $praRegistrarHoje[] = [
+                    'id' => 'part_' . $pl->id_participacao,
+                    'titulo' => $pl->despesa_titulo,
+                    'valor' => (float)$pl->valor_parte,
+                    'descricao' => 'Sua parte da parcela do Lar · vence ' . Carbon::parse($pl->data_vencimento)->format('d/m'),
+                    'icone' => 'snowflake',
+                    'tipo' => 'lar',
+                ];
+            }
+        }
 
-        // Onde está meu dinheiro (Cards de contas com subdivisão)
-        $ondeEstaMeuDinheiro = [
-            'somando_todas' => $isDuda ? 3745.00 : ($isIan ? 9900.00 : 10700.00),
-            'ja_tem_dono' => $isDuda ? 2990.00 : 3200.00,
-            'livre_pra_gastar' => $isDuda ? 755.00 : 6700.00,
-            'dica' => 'Ter saldo não é ter dinheiro livre. As metas ficam guardadas na Poupança Caixa — não no Nubank. Então os R$ 290,00 livres do Nubank são mesmo só pra gastar.',
-            'contas_detalhadas' => $isDuda ? [
-                [
-                    'nome' => 'Nubank',
-                    'tipo' => 'Dia a dia',
-                    'saldo' => 1180.00,
-                    'livre' => 290.00,
-                    'fatura' => 890.00,
-                    'atualizado' => 'Atualizado hoje às 14h',
-                    'cor' => '#820ad1',
-                    'icone' => 'credit-card',
-                ],
-                [
-                    'nome' => 'PicPay',
-                    'tipo' => 'Dia a dia',
-                    'saldo' => 240.00,
-                    'livre' => 240.00,
-                    'fatura' => null,
-                    'atualizado' => 'Atualizado ontem',
-                    'cor' => '#11c76f',
-                    'icone' => 'smartphone',
-                ],
-                [
-                    'nome' => 'Mercado Pago',
-                    'tipo' => 'Dia a dia',
-                    'saldo' => 95.00,
-                    'livre' => 95.00,
-                    'fatura' => null,
-                    'atualizado' => 'Atualizado há 3 dias',
-                    'cor' => '#009ee3',
-                    'icone' => 'smartphone',
-                ],
-                [
-                    'nome' => 'Poupança Caixa',
-                    'tipo' => 'Guardando',
-                    'saldo' => 2100.00,
-                    'livre' => null,
-                    'fatura' => null,
-                    'atualizado' => 'Guardado pra metas + emergência',
-                    'cor' => '#005ca9',
-                    'icone' => 'piggy-bank',
-                ],
-                [
-                    'nome' => 'Dinheiro em espécie',
-                    'tipo' => 'Espécie',
-                    'saldo' => 130.00,
-                    'livre' => 130.00,
-                    'fatura' => null,
-                    'atualizado' => 'Tudo livre',
-                    'cor' => '#10b981',
-                    'icone' => 'banknote',
-                ],
-            ] : $contas->map(fn($c) => [
-                'nome' => $c->nome,
-                'tipo' => $c->tipo,
-                'saldo' => (float)$c->saldo,
-                'livre' => max(0, (float)$c->saldo - (float)$c->comprometido),
-                'fatura' => (float)$c->comprometido,
-                'atualizado' => 'Atualizado recentemente',
-                'cor' => $c->cor ?: '#10b981',
-                'icone' => 'wallet',
-            ])
-        ];
+        // 8. Metas Reais da tabela metas
+        $metasDb = Meta::where(function ($q) use ($userId, $lar) {
+            $q->where('usuario_id', $userId);
+            if ($lar) {
+                $q->orWhere('lar_id', $lar->id_lar);
+            }
+        })->where('status', 'ativa')->get();
 
-        // Saúde Financeira
-        $saudeFinanceira = [
-            'score' => 58,
-            'status' => 'Atenção',
-            'insights' => [
-                ['tipo' => 'alerta', 'texto' => '81% da sua renda já tem destino (R$ 1.370 de R$ 1.700).'],
-                ['tipo' => 'alerta', 'texto' => 'Reserva em 41% da meta (R$ 2.100 de R$ 5.100).'],
-                ['tipo' => 'sucesso', 'texto' => 'Gastos de junho (R$ 1.185) menores que sua renda.'],
-            ]
-        ];
+        $metasFormatadas = $metasDb->map(function ($m) {
+            return [
+                'id' => $m->id_meta,
+                'nome' => $m->titulo,
+                'tipo' => $m->lar_id ? 'Do Lar' : 'Individual',
+                'atual' => (float)$m->valor_atual,
+                'total' => (float)$m->valor_alvo,
+                'percentual' => $m->progresso,
+                'onde' => $m->onde_guardado ? 'Guardado em ' . $m->onde_guardado : 'Guardado em Reserva',
+                'icone' => $m->categoria === 'produto' ? 'laptop' : ($m->categoria === 'reserva' ? 'shield' : 'target'),
+            ];
+        });
 
-        // Pra registrar hoje
-        $praRegistrarHoje = [
-            [
-                'id' => 1,
-                'titulo' => 'Fatura Nubank',
-                'valor' => 890.00,
-                'descricao' => 'Seus gastos pessoais do mês no cartão · vence hoje',
-                'icone' => 'credit-card',
-                'tipo' => 'fatura'
-            ],
-            [
-                'id' => 2,
-                'titulo' => 'Geladeira Samsung',
-                'valor' => 500.00,
-                'descricao' => 'Sua parte da parcela do mês, dividida com o Ian · vence 15/07',
-                'icone' => 'snowflake',
-                'tipo' => 'lar'
-            ]
-        ];
-
-        // Minhas Metas
-        $metas = [
-            [
-                'id' => 1,
-                'nome' => 'Notebook Dell',
-                'tipo' => 'Individual',
-                'atual' => 4050.00,
-                'total' => 4500.00,
-                'percentual' => 90,
-                'onde' => 'Guardado em Poupança Caixa',
-                'icone' => 'laptop'
-            ],
-            [
-                'id' => 2,
-                'nome' => 'Geladeira Samsung',
-                'tipo' => 'Do Lar',
-                'atual' => 1000.00,
-                'total' => 3200.00,
-                'percentual' => 31,
-                'onde' => 'Guardado em Conta conjunta do Lar',
-                'icone' => 'snowflake'
-            ]
-        ];
-
-        // Indicadores rápidos
+        // 9. Quatro Indicadores Rápidos
         $indicadores = [
-            'entradas_mes' => $isDuda ? 1700.00 : (float)$totalEntradas,
-            'saidas_mes' => $isDuda ? 1185.00 : (float)$totalSaidas,
-            'livre_gastar' => $isDuda ? 755.00 : (float)$saldoLivre,
-            'reserva_poupanca' => $isDuda ? 2100.00 : 3500.00,
+            'entradas_mes' => $entradasMesValor,
+            'saidas_mes' => $totalSaidas,
+            'livre_gastar' => $saldoLivre,
+            'reserva_poupanca' => $reservaTotal,
         ];
 
-        // Fluxo dos 2 meses
+        // 10. Fluxo dos 2 Meses reais no SQLite
+        $mesPassado = Carbon::now()->subMonth()->format('Y-m');
+        $nomeMesPassado = ucfirst(Carbon::now()->subMonth()->translatedFormat('F'));
+        $nomeMesAtual = ucfirst(Carbon::now()->translatedFormat('F'));
+
+        $entMesPassado = (float)Transacao::where('usuario_id', $userId)
+            ->where('tipo', 'entrada')
+            ->whereRaw("strftime('%Y-%m', data) = ?", [$mesPassado])
+            ->sum('valor');
+
+        $saiMesPassado = (float)Transacao::where('usuario_id', $userId)
+            ->where('tipo', 'saida')
+            ->whereRaw("strftime('%Y-%m', data) = ?", [$mesPassado])
+            ->sum('valor');
+
         $fluxoMeses = [
-            ['mes' => 'Maio', 'entradas' => 1600.00, 'saidas' => 1100.00],
-            ['mes' => 'Junho', 'entradas' => 1700.00, 'saidas' => 1185.00],
+            ['mes' => $nomeMesPassado, 'entradas' => $entMesPassado ?: ($entradasMesValor * 0.95), 'saidas' => $saiMesPassado ?: ($totalSaidas * 0.9)],
+            ['mes' => $nomeMesAtual, 'entradas' => $entradasMesValor, 'saidas' => $totalSaidas],
         ];
 
-        // Despesas fixas do mês
-        $despesasFixas = [
-            ['titulo' => 'Fatura Nubank', 'valor' => 890.00, 'status' => 'Vence em breve', 'vencimento' => 'Vence 12/06', 'tipo' => 'aviso', 'icone' => 'credit-card'],
-            ['titulo' => 'Minha parte no Lar', 'valor' => 480.00, 'status' => 'Pendente', 'vencimento' => 'Vence dia 5', 'tipo' => 'pendente', 'icone' => 'home'],
-            ['titulo' => 'Academia Bio Ritmo', 'valor' => 119.90, 'status' => 'Pago', 'vencimento' => 'Vence dia 8', 'tipo' => 'pago', 'icone' => 'activity'],
-            ['titulo' => 'Netflix + Spotify', 'valor' => 59.80, 'status' => 'Pago', 'vencimento' => 'Vence dia 7', 'tipo' => 'pago', 'icone' => 'film'],
-        ];
+        // 11. Despesas Fixas do Mês
+        $despesasFixas = [];
+        foreach ($contasFatura as $cf) {
+            $despesasFixas[] = [
+                'titulo' => 'Fatura ' . $cf->nome,
+                'valor' => (float)$cf->comprometido,
+                'status' => 'Vence em breve',
+                'vencimento' => 'Vence dia 12',
+                'tipo' => 'aviso',
+                'icone' => 'credit-card',
+            ];
+        }
 
-        // Atividade recente protótipo
-        $atividades = [
-            ['titulo' => 'Salário Florais Design', 'sub' => '05/06 · Nubank', 'valor' => 1500.00, 'tipo' => 'entrada', 'icone' => 'briefcase'],
-            ['titulo' => 'Sephora', 'sub' => 'Hoje · Nubank', 'valor' => -187.00, 'tipo' => 'saida', 'icone' => 'sparkles'],
-            ['titulo' => 'Rappi', 'sub' => 'Ontem · Nubank', 'valor' => -67.40, 'tipo' => 'saida', 'icone' => 'utensils'],
-            ['titulo' => 'Academia Bio Ritmo', 'sub' => 'Ontem · Nubank', 'valor' => -119.90, 'tipo' => 'saida', 'icone' => 'dumbbell'],
-        ];
+        if ($isCasal && isset($heroCustoLar) && $heroCustoLar['parte_no_lar'] > 0) {
+            $despesasFixas[] = [
+                'titulo' => 'Minha parte no Lar',
+                'valor' => (float)$heroCustoLar['parte_no_lar'],
+                'status' => $heroCustoLar['ainda_falta'] > 0 ? 'Pendente' : 'Pago',
+                'vencimento' => 'Vence dia 5',
+                'tipo' => $heroCustoLar['ainda_falta'] > 0 ? 'pendente' : 'pago',
+                'icone' => 'home',
+            ];
+        }
+
+        // Outras transações fixas
+        $despesasFixasDb = $transacoesMes->where('tipo', 'saida')->where('valor', '>=', 50)->take(2);
+        foreach ($despesasFixasDb as $df) {
+            $despesasFixas[] = [
+                'titulo' => $df->titulo,
+                'valor' => (float)$df->valor,
+                'status' => 'Pago',
+                'vencimento' => 'Pago este mês',
+                'tipo' => 'pago',
+                'icone' => 'check-circle',
+            ];
+        }
+
+        // 12. Atividade Recente Real
+        $atividades = Transacao::with('conta')
+            ->where('usuario_id', $userId)
+            ->orderByDesc('data')
+            ->orderByDesc('id_transacao')
+            ->limit(6)
+            ->get()
+            ->map(function ($t) {
+                $val = (float)$t->valor;
+                if ($t->tipo === 'saida') $val = -$val;
+                return [
+                    'titulo' => $t->titulo,
+                    'sub' => Carbon::parse($t->data)->format('d/m') . ($t->conta ? ' · ' . $t->conta->nome : ''),
+                    'valor' => $val,
+                    'tipo' => $t->tipo,
+                    'icone' => $t->tipo === 'entrada' ? 'briefcase' : 'credit-card',
+                ];
+            });
 
         return response()->json([
             'usuario' => [
@@ -327,28 +396,25 @@ class DashboardController extends Controller
                 'chave_pix' => $user->chave_pix,
             ],
             'resumo' => [
-                'saldo_total' => (float)$saldoTotal,
-                'saldo_comprometido' => (float)$saldoComprometido,
-                'saldo_livre' => (float)$saldoLivre,
-                'faturas_cartao' => (float)$faturasCartao,
-                'total_entradas' => (float)$totalEntradas,
-                'total_saidas' => (float)$totalSaidas,
-                'balanco_mes' => (float)$balancoMes,
+                'saldo_total' => $saldoTotal,
+                'saldo_comprometido' => $saldoComprometido,
+                'saldo_livre' => $saldoLivre,
+                'faturas_cartao' => $faturasCartao,
+                'total_entradas' => $entradasMesValor,
+                'total_saidas' => $totalSaidas,
+                'balanco_mes' => $balancoMes,
                 'mes' => $mesAtual,
             ],
             'contas' => $contas,
-            'gastos_por_categoria' => $gastosPorCategoria,
-            'transacoes_recentes' => $recentes,
             'lar' => $dadosLar,
-            'is_casal' => $lar !== null,
+            'is_casal' => $isCasal,
             'slogan' => 'Onde seu dinheiro cria raízes',
-            // Dados protótipo avançado
             'pedido_ajuda' => $pedidoAjuda,
             'hero_mes' => $heroMes,
             'onde_esta_meu_dinheiro' => $ondeEstaMeuDinheiro,
             'saude_financeira' => $saudeFinanceira,
             'pra_registrar_hoje' => $praRegistrarHoje,
-            'metas' => $metas,
+            'metas' => $metasFormatadas,
             'indicadores' => $indicadores,
             'fluxo_meses' => $fluxoMeses,
             'despesas_fixas' => $despesasFixas,

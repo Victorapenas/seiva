@@ -1,0 +1,169 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Notificacao;
+use App\Models\Cobranca;
+use App\Models\Meta;
+use App\Models\Conta;
+use App\Models\ParticipacaoDespesa;
+use App\Models\DespesaLar;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+
+/**
+ * NotificacoesController
+ * Responsável por:
+ *  - GET  /api/notificacoes      => Listar notificações reais (inbox do painel de boas-vindas)
+ *  - POST /api/notificacoes/ler  => Marcar todas como lidas
+ */
+class NotificacoesController extends Controller
+{
+    public function index()
+    {
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Não autenticado'], 401);
+
+        $userId = $user->id_usuario;
+        $lar = $user->lares()->first();
+        $notifs = [];
+
+        // ── 1. Notificações persistidas no banco ──────────────────────────────
+        $dbNotifs = Notificacao::where('usuario_id', $userId)
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get();
+
+        foreach ($dbNotifs as $n) {
+            $notifs[] = [
+                'id'      => 'notif_' . $n->id_notificacao,
+                'titulo'  => $n->titulo,
+                'texto'   => $n->mensagem,
+                'tipo'    => $n->tipo ?? 'info',
+                'lida'    => (bool)$n->lida,
+                'tempo'   => $n->tempo ?? ($n->created_at ? Carbon::parse($n->created_at)->diffForHumans() : ''),
+            ];
+        }
+
+        // ── 2. Cobranças pendentes recebidas (do parceiro de Lar) ─────────────
+        if ($lar) {
+            $cobrancas = Cobranca::where('destinatario_id', $userId)
+                ->where('lar_id', $lar->id_lar)
+                ->where('estado', 'pendente')
+                ->with('criador')
+                ->orderByDesc('created_at')
+                ->limit(5)
+                ->get();
+
+            foreach ($cobrancas as $c) {
+                $nomeCriador = $c->criador ? explode(' ', $c->criador->nome)[0] : 'Parceiro(a)';
+                $notifs[] = [
+                    'id'     => 'cobranca_' . $c->id_cobranca,
+                    'titulo' => "{$nomeCriador} pediu R$ " . number_format($c->valor, 2, ',', '.'),
+                    'texto'  => $c->mensagem ?: $c->titulo,
+                    'tipo'   => 'cobranca',
+                    'lida'   => false,
+                    'tempo'  => $c->created_at ? Carbon::parse($c->created_at)->diffForHumans() : '',
+                    'acao'   => ['label' => 'Ver pedido', 'fn' => 'trocarAbaApp(\'cobrador\')'],
+                ];
+            }
+
+            // ── 3. Despesas do Lar que vencem em 3 dias ──────────────────────
+            $hoje = now();
+            $em3dias = now()->addDays(3);
+            $mesAtual = now()->format('Y-m');
+
+            $participacoesPendentes = ParticipacaoDespesa::where('usuario_id', $userId)
+                ->join('despesas_lares', 'participacoes_despesas.despesa_lar_id', '=', 'despesas_lares.id_despesa_lar')
+                ->where('despesas_lares.lar_id', $lar->id_lar)
+                ->where('participacoes_despesas.pago', false)
+                ->whereRaw("date(despesas_lares.data_vencimento) <= ?", [$em3dias->format('Y-m-d')])
+                ->whereRaw("date(despesas_lares.data_vencimento) >= ?", [$hoje->format('Y-m-d')])
+                ->select('participacoes_despesas.*', 'despesas_lares.titulo as despesa_titulo', 'despesas_lares.data_vencimento')
+                ->get();
+
+            foreach ($participacoesPendentes as $p) {
+                $diasRestantes = $hoje->diffInDays(Carbon::parse($p->data_vencimento), false);
+                $textoVenc = $diasRestantes === 0 ? 'Vence hoje!' : "Vence em {$diasRestantes} " . ($diasRestantes === 1 ? 'dia' : 'dias');
+                $notifs[] = [
+                    'id'    => 'despesa_' . $p->id_participacao,
+                    'titulo' => "{$p->despesa_titulo} · R$ " . number_format($p->valor_parte, 2, ',', '.'),
+                    'texto' => $textoVenc,
+                    'tipo'  => 'alerta',
+                    'lida'  => false,
+                    'tempo' => $textoVenc,
+                    'acao'  => ['label' => 'Registrar pagamento', 'fn' => 'trocarAbaApp(\'lar\')'],
+                ];
+            }
+        }
+
+        // ── 4. Faturas de cartão com saldo comprometido alto ──────────────────
+        $cartoes = Conta::where('usuario_id', $userId)
+            ->where('tipo', 'cartao')
+            ->where('comprometido', '>', 0)
+            ->get();
+
+        foreach ($cartoes as $cartao) {
+            $notifs[] = [
+                'id'    => 'fatura_' . $cartao->id_conta,
+                'titulo' => "Fatura {$cartao->nome} · R$ " . number_format($cartao->comprometido, 2, ',', '.'),
+                'texto' => 'Valor comprometido aguardando registro',
+                'tipo'  => 'alerta',
+                'lida'  => false,
+                'tempo' => 'Este mês',
+                'acao'  => ['label' => 'Registrar', 'fn' => 'abrirModalGasto()'],
+            ];
+        }
+
+        // ── 5. Metas próximas de completar (> 85%) ───────────────────────────
+        $metasQuaseCompletas = Meta::where('usuario_id', $userId)
+            ->where('status', 'ativa')
+            ->whereRaw('(valor_atual * 100.0 / valor_alvo) >= 85')
+            ->get();
+
+        foreach ($metasQuaseCompletas as $m) {
+            $pct = $m->valor_alvo > 0 ? round(($m->valor_atual / $m->valor_alvo) * 100) : 0;
+            if ($pct < 100) {
+                $notifs[] = [
+                    'id'    => 'meta_' . $m->id_meta,
+                    'titulo' => "Meta \"{$m->titulo}\" quase lá! {$pct}%",
+                    'texto' => 'Faltam R$ ' . number_format($m->valor_alvo - $m->valor_atual, 2, ',', '.') . ' para concluir',
+                    'tipo'  => 'sucesso',
+                    'lida'  => false,
+                    'tempo' => 'Meta ativa',
+                    'acao'  => ['label' => 'Ver metas', 'fn' => 'trocarAbaApp(\'metas\')'],
+                ];
+            }
+        }
+
+        // Se não houver nada, mensagem de inbox limpo
+        if (empty($notifs)) {
+            $notifs[] = [
+                'id'    => 'vazio',
+                'titulo' => 'Tudo em dia! 🌱',
+                'texto' => 'Nenhuma notificação pendente por aqui.',
+                'tipo'  => 'sucesso',
+                'lida'  => true,
+                'tempo' => 'Agora',
+            ];
+        }
+
+        return response()->json([
+            'notificacoes' => $notifs,
+            'total_nao_lidas' => collect($notifs)->where('lida', false)->count(),
+        ]);
+    }
+
+    public function marcarTodasLidas()
+    {
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Não autenticado'], 401);
+
+        Notificacao::where('usuario_id', $user->id_usuario)
+            ->where('lida', false)
+            ->update(['lida' => true]);
+
+        return response()->json(['ok' => true]);
+    }
+}
