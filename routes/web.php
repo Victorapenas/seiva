@@ -18,6 +18,12 @@ Route::get('/', function () {
     return view('app');
 })->name('login');
 
+// Apresentação Interativa do Projeto SEIVA (PI - IFBA)
+Route::get('/apresentacao', function () {
+    $path = base_path('docs/apresentacao-pi.html');
+    return response()->file($path, ['Content-Type' => 'text/html; charset=UTF-8']);
+});
+
 // Janela Popup Oficial do Google OAuth2
 Route::get('/auth/google/popup', function () {
     return view('auth.google-popup');
