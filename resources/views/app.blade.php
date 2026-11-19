@@ -754,7 +754,6 @@
                 alert('Erro de conexão ao comunicar com a API do Google.');
             }
         }
-        }
 
         // Pré-preenche o onboarding com os dados vindos do Google
         function _preencherOnboardingComDadosGoogle(usuario) {
