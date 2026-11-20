@@ -61,18 +61,10 @@
 
         <div class="flex items-center gap-2.5">
             <!-- Badge "Você registra, o SEIVA organiza" -->
-            <div class="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/40 px-3.5 py-1.5 text-xs font-semibold shadow-2xs">
+            <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/40 px-3.5 py-1.5 text-xs font-semibold shadow-2xs">
                 <i data-lucide="info" class="size-3.5 text-emerald-600"></i>
                 <span>Você registra, o SEIVA organiza</span>
             </div>
-
-            <!-- Botão de Notificações com Badge -->
-            <button onclick="abrirModalNotificacoes()" aria-label="Notificações" class="relative size-10 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs">
-                <i data-lucide="bell" class="size-4"></i>
-                <span id="dashBadgeNotifCount" class="absolute -top-1 -right-1 size-4 rounded-full bg-rose-600 text-white font-bold text-[10px] flex items-center justify-center">
-                    2
-                </span>
-            </button>
         </div>
     </header>
 
@@ -128,7 +120,7 @@
         </div>
 
         <!-- Seletor em Pílulas: [ Minha renda ] vs [ Custo do Lar ] -->
-        <div class="flex items-center rounded-2xl bg-muted/60 p-1 border border-border max-w-md">
+        <div id="heroToggleTabsContainer" class="flex items-center rounded-2xl bg-muted/60 p-1 border border-border max-w-md">
             <button type="button" id="tabHeroMinhaRenda" onclick="alternarAbaHero('renda')" 
                     class="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs">
                 <i data-lucide="trending-up" class="size-3.5 text-emerald-600"></i>
@@ -276,7 +268,7 @@
         </div>
 
         <!-- Indicador de Slide / Pontinhos de Navegação -->
-        <div class="flex items-center justify-center gap-1.5 pt-1">
+        <div id="sliderNavContainer" class="flex items-center justify-center gap-1.5 pt-1">
             <span id="sliderDotRenda" class="size-2 rounded-full bg-emerald-600 transition-all"></span>
             <span id="sliderDotLar" class="size-2 rounded-full bg-muted transition-all"></span>
             <span id="sliderTextoDica" class="text-[11px] text-muted-foreground ml-2">Arraste para o lado para ver o Custo do Lar</span>
@@ -442,37 +434,13 @@
         </p>
 
         <!-- Itens de Registro Rápido -->
-        <div class="space-y-2.5 pt-1">
-            <!-- Item 1: Fatura Nubank -->
-            <div class="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-rose-200/60 shadow-2xs">
-                <div class="flex items-center gap-3">
-                    <span class="size-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
-                        <i data-lucide="credit-card" class="size-4"></i>
-                    </span>
-                    <div>
-                        <h4 class="text-xs font-extrabold text-foreground">Fatura Nubank · R$ 890,00</h4>
-                        <p class="text-[11px] text-muted-foreground">Seus gastos pessoais do mês no cartão · vence hoje</p>
-                    </div>
+        <div id="dashPraRegistrarHojeList" class="space-y-2.5 pt-1">
+            <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-muted/30 animate-pulse">
+                <div class="size-9 rounded-xl bg-muted shrink-0"></div>
+                <div class="flex-1 space-y-1.5">
+                    <div class="h-3 bg-muted rounded w-1/2"></div>
+                    <div class="h-2.5 bg-muted rounded w-1/3"></div>
                 </div>
-                <button type="button" onclick="confirmarRegistroRapido('Fatura Nubank', 890.00)" class="px-4 py-1.5 rounded-xl bg-[#c84b31] hover:bg-[#b03d25] text-white font-bold text-xs transition shadow-2xs">
-                    Registrar
-                </button>
-            </div>
-
-            <!-- Item 2: Geladeira Samsung -->
-            <div class="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-rose-200/60 shadow-2xs">
-                <div class="flex items-center gap-3">
-                    <span class="size-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                        <i data-lucide="snowflake" class="size-4"></i>
-                    </span>
-                    <div>
-                        <h4 class="text-xs font-extrabold text-foreground">Geladeira Samsung · R$ 500,00</h4>
-                        <p class="text-[11px] text-muted-foreground">Sua parte da parcela do mês, dividida com o Ian · vence 15/07</p>
-                    </div>
-                </div>
-                <button type="button" onclick="confirmarRegistroRapido('Geladeira Samsung', 500.00)" class="px-4 py-1.5 rounded-xl bg-[#c84b31] hover:bg-[#b03d25] text-white font-bold text-xs transition shadow-2xs">
-                    Registrar
-                </button>
             </div>
         </div>
     </section>
@@ -489,61 +457,14 @@
             </button>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <!-- Meta 1: Notebook Dell -->
-            <div class="rounded-3xl border border-border bg-card p-5 shadow-card space-y-3">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="size-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                            <i data-lucide="laptop" class="size-4"></i>
-                        </span>
-                        <h4 class="text-xs font-bold text-foreground">Notebook Dell</h4>
-                    </div>
-                    <span class="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                        Individual
-                    </span>
-                </div>
-                <!-- Barra de Progresso 90% -->
-                <div class="space-y-1">
-                    <div class="h-2.5 w-full rounded-full bg-muted overflow-hidden">
-                        <div class="h-full bg-emerald-600 rounded-full" style="width: 90%"></div>
-                    </div>
-                    <div class="flex items-center justify-between text-xs font-extrabold text-foreground pt-0.5">
-                        <span>R$ 4.050,00 de R$ 4.500,00</span>
-                        <span class="text-emerald-700">90%</span>
-                    </div>
-                </div>
-                <p class="text-[11px] text-muted-foreground flex items-center gap-1">
-                    <i data-lucide="piggy-bank" class="size-3 text-primary"></i> Guardado em Poupança Caixa
-                </p>
+        <div id="dashMetasGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div class="rounded-3xl border border-border bg-card p-5 shadow-card space-y-3 animate-pulse">
+                <div class="h-4 bg-muted rounded w-1/3"></div>
+                <div class="h-2.5 bg-muted rounded w-full"></div>
             </div>
-
-            <!-- Meta 2: Geladeira Samsung -->
-            <div class="rounded-3xl border border-border bg-card p-5 shadow-card space-y-3">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="size-8 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center">
-                            <i data-lucide="snowflake" class="size-4"></i>
-                        </span>
-                        <h4 class="text-xs font-bold text-foreground">Geladeira Samsung</h4>
-                    </div>
-                    <span class="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-bold">
-                        Do Lar
-                    </span>
-                </div>
-                <!-- Barra de Progresso 31% -->
-                <div class="space-y-1">
-                    <div class="h-2.5 w-full rounded-full bg-muted overflow-hidden">
-                        <div class="h-full bg-emerald-600 rounded-full" style="width: 31%"></div>
-                    </div>
-                    <div class="flex items-center justify-between text-xs font-extrabold text-foreground pt-0.5">
-                        <span>R$ 1.000,00 de R$ 3.200,00</span>
-                        <span class="text-emerald-700">31%</span>
-                    </div>
-                </div>
-                <p class="text-[11px] text-muted-foreground flex items-center gap-1">
-                    <i data-lucide="home" class="size-3 text-emerald-600"></i> Guardado em Conta conjunta do Lar
-                </p>
+            <div class="rounded-3xl border border-border bg-card p-5 shadow-card space-y-3 animate-pulse">
+                <div class="h-4 bg-muted rounded w-1/3"></div>
+                <div class="h-2.5 bg-muted rounded w-full"></div>
             </div>
         </div>
     </section>
@@ -646,73 +567,14 @@
             Despesas fixas do mês
         </h3>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <!-- Card 1: Fatura Nubank -->
-            <div class="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="size-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
-                        <i data-lucide="credit-card" class="size-3.5"></i>
-                    </span>
-                    <span class="inline-flex items-center gap-1 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-bold">
-                        ⚠️ Vence em breve
-                    </span>
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-foreground">Fatura Nubank</h4>
-                    <strong class="text-base font-extrabold text-foreground">R$ 890,00</strong>
-                    <span class="text-[10px] text-muted-foreground block mt-0.5">Vence 12/06</span>
-                </div>
+        <div id="dashDespesasFixasGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2 animate-pulse">
+                <div class="h-3 bg-muted rounded w-1/2"></div>
+                <div class="h-5 bg-muted rounded w-3/4"></div>
             </div>
-
-            <!-- Card 2: Minha parte no Lar -->
-            <div class="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="size-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                        <i data-lucide="home" class="size-3.5"></i>
-                    </span>
-                    <span class="inline-flex items-center gap-1 rounded-md bg-muted text-muted-foreground px-1.5 py-0.5 text-[10px] font-bold">
-                        Pendente
-                    </span>
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-foreground">Minha parte no Lar</h4>
-                    <strong class="text-base font-extrabold text-foreground">R$ 480,00</strong>
-                    <span class="text-[10px] text-muted-foreground block mt-0.5">Vence dia 5</span>
-                </div>
-            </div>
-
-            <!-- Card 3: Academia Bio Ritmo -->
-            <div class="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="size-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                        <i data-lucide="activity" class="size-3.5"></i>
-                    </span>
-                    <span class="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 text-emerald-700 px-1.5 py-0.5 text-[10px] font-bold">
-                        ✅ Pago
-                    </span>
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-foreground">Academia Bio Ritmo</h4>
-                    <strong class="text-base font-extrabold text-foreground">R$ 119,90</strong>
-                    <span class="text-[10px] text-muted-foreground block mt-0.5">Vence dia 8</span>
-                </div>
-            </div>
-
-            <!-- Card 4: Netflix + Spotify -->
-            <div class="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="size-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
-                        <i data-lucide="film" class="size-3.5"></i>
-                    </span>
-                    <span class="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 text-emerald-700 px-1.5 py-0.5 text-[10px] font-bold">
-                        ✅ Pago
-                    </span>
-                </div>
-                <div>
-                    <h4 class="text-xs font-bold text-foreground">Netflix + Spotify</h4>
-                    <strong class="text-base font-extrabold text-foreground">R$ 59,80</strong>
-                    <span class="text-[10px] text-muted-foreground block mt-0.5">Vence dia 7</span>
-                </div>
+            <div class="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2 animate-pulse">
+                <div class="h-3 bg-muted rounded w-1/2"></div>
+                <div class="h-5 bg-muted rounded w-3/4"></div>
             </div>
         </div>
     </section>

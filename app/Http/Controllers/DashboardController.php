@@ -171,9 +171,9 @@ class DashboardController extends Controller
         $sobraMes = max(0, $entradasMesValor - $totalSaidas);
 
         $heroMes = [
-            'mes_nome' => ucfirst(Carbon::parse($mesAtual . '-01')->translatedFormat('F')),
+            'mes_nome' => ucfirst(Carbon::parse($mesAtual . '-01')->locale('pt_BR')->translatedFormat('F')),
             'ano' => Carbon::parse($mesAtual . '-01')->format('Y'),
-            'data_extenso' => ucfirst(Carbon::now()->translatedFormat('l, d \d\e F \d\e Y')),
+            'data_extenso' => ucfirst(Carbon::now()->locale('pt_BR')->translatedFormat('l, d \d\e F \d\e Y')),
             'minha_renda' => [
                 'recebido_mes' => $entradasMesValor,
                 'fontes' => $fontes,
@@ -312,8 +312,8 @@ class DashboardController extends Controller
 
         // 10. Fluxo dos 2 Meses reais no SQLite
         $mesPassado = Carbon::now()->subMonth()->format('Y-m');
-        $nomeMesPassado = ucfirst(Carbon::now()->subMonth()->translatedFormat('F'));
-        $nomeMesAtual = ucfirst(Carbon::now()->translatedFormat('F'));
+        $nomeMesPassado = ucfirst(Carbon::now()->subMonth()->locale('pt_BR')->translatedFormat('F'));
+        $nomeMesAtual = ucfirst(Carbon::now()->locale('pt_BR')->translatedFormat('F'));
 
         $entMesPassado = (float)Transacao::where('usuario_id', $userId)
             ->where('tipo', 'entrada')

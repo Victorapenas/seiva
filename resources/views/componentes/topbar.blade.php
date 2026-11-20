@@ -17,11 +17,9 @@
         <button onclick="trocarAbaApp('perfil')" aria-label="Configurações" class="flex size-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:text-foreground lg:hidden shadow-soft">
             <i data-lucide="settings" class="size-5"></i>
         </button>
-        <button onclick="seivaNotificar('Cobrador diplomata ativo e sincronização das contas do Lar em tempo real.', 'info', 'Notificações do Lar');" aria-label="Notificações" class="relative flex size-10 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-soft transition hover:bg-muted">
+        <button onclick="abrirModalNotificacoes()" aria-label="Notificações" id="btnTopbarNotificacoes" class="relative flex size-10 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-soft transition hover:bg-muted">
             <i data-lucide="bell" class="size-5"></i>
-            <span class="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
-                1
-            </span>
+            <span id="topbarBadgeNotif" class="hidden absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-rose-600 text-[9px] font-bold text-white"></span>
         </button>
     </div>
 </header>
