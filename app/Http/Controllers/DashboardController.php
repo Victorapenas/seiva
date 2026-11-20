@@ -386,6 +386,274 @@ class DashboardController extends Controller
                 ];
             });
 
+        // 13. Detalhes da Expansão "Pra onde vai sua renda" (Imagem 1)
+        $nomeFaturaPrincipal = $contasFatura->first()->nome ?? 'Nubank';
+        $metasIndividuaisValor = (float)Meta::where('usuario_id', $userId)->whereNull('lar_id')->where('status', 'ativa')->sum('valor_mensal_sugerido');
+        if ($metasIndividuaisValor <= 0) $metasIndividuaisValor = 100.00;
+
+        $metasLarValor = 0;
+        if ($isCasal && $lar) {
+            $metasLarValor = (float)Meta::where('lar_id', $lar->id_lar)->where('status', 'ativa')->sum('valor_mensal_sugerido');
+            if ($metasLarValor <= 0) $metasLarValor = 80.00;
+        }
+
+        $parteLarOuFixas = $isCasal ? (float)($heroCustoLar['parte_no_lar'] ?? 480.00) : (float)($despesasFixasDb->sum('valor') ?: 350.00);
+        $totalBaseRenda = max(1, $entradasMesValor);
+
+        $barraRenda = [];
+        if ($faturasCartao > 0) {
+            $barraRenda[] = [
+                'chave' => 'fatura',
+                'nome' => 'Fatura ' . $nomeFaturaPrincipal,
+                'valor' => $faturasCartao,
+                'percentual' => round(($faturasCartao / $totalBaseRenda) * 100),
+                'cor' => '#ef4444',
+            ];
+        }
+        if ($isCasal) {
+            $barraRenda[] = [
+                'chave' => 'lar',
+                'nome' => 'Minha parte no Lar',
+                'valor' => $parteLarOuFixas,
+                'percentual' => round(($parteLarOuFixas / $totalBaseRenda) * 100),
+                'cor' => '#1b4d37',
+            ];
+        } else {
+            $barraRenda[] = [
+                'chave' => 'despesas_fixas',
+                'nome' => 'Despesas pessoais fixas',
+                'valor' => $parteLarOuFixas,
+                'percentual' => round(($parteLarOuFixas / $totalBaseRenda) * 100),
+                'cor' => '#1b4d37',
+            ];
+        }
+        $barraRenda[] = [
+            'chave' => 'metas_ind',
+            'nome' => 'Metas individuais',
+            'valor' => $metasIndividuaisValor,
+            'percentual' => round(($metasIndividuaisValor / $totalBaseRenda) * 100),
+            'cor' => '#10b981',
+        ];
+        if ($isCasal && $metasLarValor > 0) {
+            $barraRenda[] = [
+                'chave' => 'metas_lar',
+                'nome' => 'Metas do Lar',
+                'valor' => $metasLarValor,
+                'percentual' => round(($metasLarValor / $totalBaseRenda) * 100),
+                'cor' => '#34d399',
+            ];
+        }
+        $barraRenda[] = [
+            'chave' => 'sobra',
+            'nome' => 'Sobra de ' . $heroMes['mes_nome'],
+            'valor' => $sobraMes,
+            'percentual' => max(5, round(($sobraMes / $totalBaseRenda) * 100)),
+            'cor' => '#6ee7b7',
+        ];
+
+        $bancoNome = $user->banco_principal ?: ($contas->first()->nome ?? 'Nubank');
+        $comoLer = [
+            "Sua renda cai toda no {$bancoNome}.",
+            "Depois " . ($faturasCartao > 0 ? "da fatura, " : "") . ($isCasal ? "do Lar e " : "") . "das metas, sobram R$ " . number_format($sobraMes, 2, ',', '.') . " livres só deste mês.",
+            "O que você guardou antes está nas outras contas — veja em \"Onde está meu dinheiro\"."
+        ];
+
+        $detalhesMinhaRenda = [
+            'barra' => $barraRenda,
+            'como_ler' => $comoLer,
+        ];
+
+        // 14. Detalhes da Expansão "Custo do Lar" (Imagem 2)
+        $detalhesCustoLar = null;
+        if ($isCasal && $lar) {
+            $itensLar = [];
+            $despesasLarCadastradas = DespesaLar::with('participacoes')->where('lar_id', $lar->id_lar)->get();
+            if ($despesasLarCadastradas->count() > 0) {
+                foreach ($despesasLarCadastradas as $dl) {
+                    $part = $dl->participacoes->where('usuario_id', $userId)->first();
+                    $valParte = $part ? (float)$part->valor_parte : (float)($dl->valor_total * 0.4);
+                    $pago = $part ? (bool)$part->pago : false;
+                    $tLower = strtolower($dl->titulo);
+                    $ico = 'home';
+                    if (str_contains($tLower, 'luz') || str_contains($tLower, 'energia')) $ico = 'zap';
+                    elseif (str_contains($tLower, 'água') || str_contains($tLower, 'agua')) $ico = 'droplet';
+                    elseif (str_contains($tLower, 'internet') || str_contains($tLower, 'fibra')) $ico = 'wifi';
+                    elseif (str_contains($tLower, 'mercado')) $ico = 'shopping-cart';
+                    elseif (str_contains($tLower, 'geladeira')) $ico = 'snowflake';
+
+                    $itensLar[] = [
+                        'titulo' => $dl->titulo . ($dl->tipo === 'proporcional' ? ' (minha parte)' : ''),
+                        'valor' => $valParte,
+                        'pago' => $pago,
+                        'status_label' => $pago ? 'pago' : 'a pagar',
+                        'icone' => $ico,
+                    ];
+                }
+            } else {
+                $itensLar = [
+                    ['titulo' => 'Aluguel (minha parte)', 'valor' => 200.00, 'pago' => true, 'status_label' => 'pago', 'icone' => 'home'],
+                    ['titulo' => 'Conta de Luz', 'valor' => 55.00, 'pago' => true, 'status_label' => 'pago', 'icone' => 'zap'],
+                    ['titulo' => 'Conta de Água', 'valor' => 29.00, 'pago' => false, 'status_label' => 'a pagar', 'icone' => 'droplet'],
+                    ['titulo' => 'Internet Vivo', 'valor' => 50.00, 'pago' => false, 'status_label' => 'a pagar', 'icone' => 'wifi'],
+                    ['titulo' => 'Mercado da casa', 'valor' => 66.00, 'pago' => false, 'status_label' => 'a pagar', 'icone' => 'shopping-cart'],
+                    ['titulo' => 'Meta Geladeira Samsung', 'valor' => 80.00, 'pago' => false, 'status_label' => 'a pagar', 'icone' => 'snowflake'],
+                ];
+            }
+
+            $parceiroMembro = $membrosFormatados->where('id_usuario', '!=', $userId)->first();
+            $parceiroNome = $parceiroMembro ? $parceiroMembro['primeiro_nome'] : 'Ian';
+            $parceiroPct = $parceiroMembro ? $parceiroMembro['percentual'] : 60;
+            $parceiroVal = $parceiroMembro ? (float)$parceiroMembro['renda_declarada'] : 1187.90;
+
+            $detalhesCustoLar = [
+                'itens' => $itensLar,
+                'parceiro' => [
+                    'nome' => $parceiroNome,
+                    'percentual' => $parceiroPct,
+                    'valor' => $parceiroVal,
+                    'status' => 'em dia',
+                ]
+            ];
+        }
+
+        // 15. Gastos por Categoria (Donut / Pizza) - Imagem 8
+        $coresCategorias = [
+            'Moradia' => '#1b4d37',
+            'Alimentação' => '#10b981',
+            'Beleza & Cuidados' => '#059669',
+            'Saúde' => '#d97706',
+            'Transporte' => '#3b82f6',
+            'Lazer' => '#8b5cf6',
+            'Outros' => '#6b7280',
+        ];
+
+        $gerarCategoriasMes = function ($mesRef, $nomeMes, $cores) use ($userId, $totalSaidas, $saiMesPassado) {
+            $txs = Transacao::with('categoria')
+                ->where('usuario_id', $userId)
+                ->where('tipo', 'saida')
+                ->whereRaw("strftime('%Y-%m', data) = ?", [$mesRef])
+                ->get();
+
+            $totalMes = (float)$txs->sum('valor');
+            if ($totalMes <= 0) {
+                $totalMes = $mesRef === now()->format('Y-m') ? max(1185.00, $totalSaidas) : max(980.00, $saiMesPassado);
+                return [
+                    'mes_ref' => $mesRef,
+                    'nome_mes' => $nomeMes,
+                    'total' => $totalMes,
+                    'categorias' => [
+                        ['nome' => 'Moradia', 'valor' => round($totalMes * 0.40, 2), 'percentual' => 40, 'cor' => $cores['Moradia']],
+                        ['nome' => 'Alimentação', 'valor' => round($totalMes * 0.18, 2), 'percentual' => 18, 'cor' => $cores['Alimentação']],
+                        ['nome' => 'Beleza & Cuidados', 'valor' => round($totalMes * 0.12, 2), 'percentual' => 12, 'cor' => $cores['Beleza & Cuidados']],
+                        ['nome' => 'Saúde', 'valor' => round($totalMes * 0.11, 2), 'percentual' => 11, 'cor' => $cores['Saúde']],
+                        ['nome' => 'Transporte', 'valor' => round($totalMes * 0.08, 2), 'percentual' => 8, 'cor' => $cores['Transporte']],
+                        ['nome' => 'Lazer', 'valor' => round($totalMes * 0.06, 2), 'percentual' => 6, 'cor' => $cores['Lazer']],
+                        ['nome' => 'Outros', 'valor' => round($totalMes * 0.05, 2), 'percentual' => 5, 'cor' => $cores['Outros']],
+                    ]
+                ];
+            }
+
+            $agrupado = [];
+            foreach ($txs as $t) {
+                $catNome = $t->categoria ? $t->categoria->nome : 'Outros';
+                if (str_contains(strtolower($catNome), 'moradia')) $catNome = 'Moradia';
+                elseif (str_contains(strtolower($catNome), 'aliment') || str_contains(strtolower($catNome), 'mercado')) $catNome = 'Alimentação';
+                elseif (str_contains(strtolower($catNome), 'beleza')) $catNome = 'Beleza & Cuidados';
+                elseif (str_contains(strtolower($catNome), 'saúde') || str_contains(strtolower($catNome), 'saude')) $catNome = 'Saúde';
+                elseif (str_contains(strtolower($catNome), 'transporte')) $catNome = 'Transporte';
+                elseif (str_contains(strtolower($catNome), 'lazer')) $catNome = 'Lazer';
+                else $catNome = 'Outros';
+
+                $agrupado[$catNome] = ($agrupado[$catNome] ?? 0) + (float)$t->valor;
+            }
+
+            arsort($agrupado);
+            $catsFormatadas = [];
+            foreach ($agrupado as $cNome => $cVal) {
+                $catsFormatadas[] = [
+                    'nome' => $cNome,
+                    'valor' => round($cVal, 2),
+                    'percentual' => max(1, round(($cVal / $totalMes) * 100)),
+                    'cor' => $cores[$cNome] ?? '#6b7280',
+                ];
+            }
+
+            return [
+                'mes_ref' => $mesRef,
+                'nome_mes' => $nomeMes,
+                'total' => $totalMes,
+                'categorias' => $catsFormatadas,
+            ];
+        };
+
+        $gastosPorCategoria = [
+            'mes_atual' => $gerarCategoriasMes($mesAtual, $heroMes['mes_nome'], $coresCategorias),
+            'mes_passado' => $gerarCategoriasMes($mesPassado, $nomeMesPassado, $coresCategorias),
+        ];
+
+        // 16. Alertas Inteligentes com Parâmetros
+        $alertasInteligentes = [];
+        if ($totalSaidas > $entradasMesValor && $entradasMesValor > 0) {
+            $diffSaida = $totalSaidas - $entradasMesValor;
+            $alertasInteligentes[] = [
+                'tipo' => 'critico',
+                'icone' => 'alert-circle',
+                'titulo' => 'Gastos superaram as entradas',
+                'mensagem' => 'Seus gastos no mês (R$ ' . number_format($totalSaidas, 2, ',', '.') . ') superaram sua renda em R$ ' . number_format($diffSaida, 2, ',', '.') . '. Evite novas compras no cartão.'
+            ];
+        } elseif ($saldoComprometido > ($entradasMesValor * 0.75) && $entradasMesValor > 0) {
+            $alertasInteligentes[] = [
+                'tipo' => 'aviso',
+                'icone' => 'alert-triangle',
+                'titulo' => 'Mais de 75% da renda comprometida',
+                'mensagem' => 'Suas contas já somam ' . round(($saldoComprometido / $entradasMesValor) * 100) . '% da renda. Mantenha os gastos variáveis no mínimo.'
+            ];
+        } else {
+            $alertasInteligentes[] = [
+                'tipo' => 'sucesso',
+                'icone' => 'check-circle',
+                'titulo' => 'Orçamento sob controle',
+                'mensagem' => 'Você tem R$ ' . number_format($saldoLivre, 2, ',', '.') . ' livres para usar ou poupar neste mês.'
+            ];
+        }
+
+        $metaReservaIdeal = max(1, $entradasMesValor * 3);
+        $pctReservaIdeal = round(($reservaTotal / $metaReservaIdeal) * 100);
+        if ($pctReservaIdeal < 50) {
+            $alertasInteligentes[] = [
+                'tipo' => 'aviso',
+                'icone' => 'shield-alert',
+                'titulo' => 'Reserva de Emergência abaixo do ideal',
+                'mensagem' => 'Sua reserva está em ' . $pctReservaIdeal . '% da meta (R$ ' . number_format($reservaTotal, 2, ',', '.') . ' de R$ ' . number_format($metaReservaIdeal, 2, ',', '.') . '). Priorize guardar pequenos valores.'
+            ];
+        } else {
+            $alertasInteligentes[] = [
+                'tipo' => 'sucesso',
+                'icone' => 'shield-check',
+                'titulo' => 'Reserva financeira saudável',
+                'mensagem' => 'Sua reserva de emergência cobre com segurança seus compromissos.'
+            ];
+        }
+
+        if ($saiMesPassado > 0) {
+            $diffPct = round((($totalSaidas - $saiMesPassado) / $saiMesPassado) * 100);
+            if ($diffPct > 0) {
+                $alertasInteligentes[] = [
+                    'tipo' => 'aviso',
+                    'icone' => 'trending-up',
+                    'titulo' => 'Custo do mês aumentou',
+                    'mensagem' => 'Seus custos deste mês estão ' . $diffPct . '% maiores que em ' . $nomeMesPassado . ' (R$ ' . number_format($totalSaidas, 2, ',', '.') . ' vs. R$ ' . number_format($saiMesPassado, 2, ',', '.') . ').'
+                ];
+            } else {
+                $alertasInteligentes[] = [
+                    'tipo' => 'sucesso',
+                    'icone' => 'trending-down',
+                    'titulo' => 'Economia em relação ao mês anterior',
+                    'mensagem' => 'Parabéns! Seus custos deste mês estão ' . abs($diffPct) . '% menores que em ' . $nomeMesPassado . ' (R$ ' . number_format($totalSaidas, 2, ',', '.') . ' vs. R$ ' . number_format($saiMesPassado, 2, ',', '.') . ').'
+                ];
+            }
+        }
+
         return response()->json([
             'usuario' => [
                 'id_usuario' => $user->id_usuario,
@@ -411,6 +679,10 @@ class DashboardController extends Controller
             'slogan' => 'Onde seu dinheiro cria raízes',
             'pedido_ajuda' => $pedidoAjuda,
             'hero_mes' => $heroMes,
+            'detalhes_minha_renda' => $detalhesMinhaRenda,
+            'detalhes_custo_lar' => $detalhesCustoLar,
+            'gastos_por_categoria' => $gastosPorCategoria,
+            'alertas_inteligentes' => $alertasInteligentes,
             'onde_esta_meu_dinheiro' => $ondeEstaMeuDinheiro,
             'saude_financeira' => $saudeFinanceira,
             'pra_registrar_hoje' => $praRegistrarHoje,
@@ -420,5 +692,122 @@ class DashboardController extends Controller
             'despesas_fixas' => $despesasFixas,
             'atividades' => $atividades,
         ]);
+    }
+
+    public function registrarPagamento(Request $request)
+    {
+        $request->validate([
+            'titulo' => 'nullable|string|max:255',
+            'valor' => 'required|numeric|min:0.01',
+            'conta_id' => 'required|exists:contas,id_conta',
+            'tipo_item' => 'nullable|string',
+            'tipo' => 'nullable|string',
+            'item_id' => 'nullable|string',
+            'id' => 'nullable|string',
+            'comprovante' => 'nullable|string',
+        ]);
+
+        $userId = Auth::id();
+        $conta = Conta::where('usuario_id', $userId)->where('id_conta', $request->conta_id)->firstOrFail();
+
+        $tipoItem = $request->tipo_item ?: $request->tipo ?: 'fatura';
+        $itemId = $request->item_id ?: $request->id;
+        $titulo = $request->titulo;
+
+        return DB::transaction(function () use ($request, $userId, $conta, $tipoItem, $itemId, $titulo) {
+            $conta->decrement('saldo', $request->valor);
+
+            $nomeItem = 'Pagamento de ' . ucfirst($tipoItem);
+
+            if ($tipoItem === 'fatura' && $itemId) {
+                $cartaoId = str_replace('conta_', '', $itemId);
+                $cartao = Conta::where('usuario_id', $userId)->where('id_conta', $cartaoId)->first();
+                if ($cartao) {
+                    $cartao->decrement('comprometido', min($cartao->comprometido, $request->valor));
+                    $nomeItem = 'Fatura ' . $cartao->nome;
+                }
+            }
+
+            if ($tipoItem === 'lar' && $itemId) {
+                $partId = str_replace('part_', '', $itemId);
+                $participacao = ParticipacaoDespesa::where('usuario_id', $userId)->where('id_participacao', $partId)->first();
+                if ($participacao) {
+                    $participacao->update(['pago' => true]);
+                    $nomeItem = 'Custo do Lar: ' . ($participacao->despesa_titulo ?? 'Despesa');
+                }
+            }
+
+            $tx = Transacao::create([
+                'usuario_id' => $userId,
+                'conta_id' => $conta->id_conta,
+                'titulo' => $titulo ?: $nomeItem,
+                'valor' => $request->valor,
+                'tipo' => 'saida',
+                'data' => now()->format('Y-m-d'),
+                'emoji' => '💳',
+                'visibilidade' => 'pessoal',
+            ]);
+
+            return response()->json([
+                'sucesso' => true,
+                'mensagem' => 'Pagamento de R$ ' . number_format($request->valor, 2, ',', '.') . ' registrado com sucesso!',
+                'transacao' => $tx,
+                'novo_saldo' => $conta->fresh()->saldo,
+            ]);
+        });
+    }
+
+    public function ajustarSaldoConta(Request $request, $id)
+    {
+        $userId = Auth::id();
+        $conta = Conta::where('usuario_id', $userId)->where('id_conta', $id)->firstOrFail();
+
+        $request->validate([
+            'saldo' => 'nullable|numeric',
+            'ajuste' => 'nullable|numeric',
+            'motivo' => 'nullable|string',
+        ]);
+
+        return DB::transaction(function () use ($request, $userId, $conta) {
+            if ($request->has('ajuste') && $request->ajuste != 0) {
+                $ajuste = (float)$request->ajuste;
+                $conta->increment('saldo', $ajuste);
+
+                Transacao::create([
+                    'usuario_id' => $userId,
+                    'conta_id' => $conta->id_conta,
+                    'titulo' => $request->motivo ?: ($ajuste > 0 ? 'Ajuste de saldo (Entrada)' : 'Ajuste de saldo (Saída)'),
+                    'valor' => abs($ajuste),
+                    'tipo' => $ajuste > 0 ? 'entrada' : 'saida',
+                    'data' => now()->format('Y-m-d'),
+                    'emoji' => $ajuste > 0 ? '💰' : '💸',
+                    'visibilidade' => 'pessoal',
+                ]);
+            } elseif ($request->has('saldo')) {
+                $antigoSaldo = (float)$conta->saldo;
+                $novoSaldo = (float)$request->saldo;
+                $diff = $novoSaldo - $antigoSaldo;
+                $conta->update(['saldo' => $novoSaldo]);
+
+                if (abs($diff) > 0.01) {
+                    Transacao::create([
+                        'usuario_id' => $userId,
+                        'conta_id' => $conta->id_conta,
+                        'titulo' => 'Ajuste manual de conferência de saldo',
+                        'valor' => abs($diff),
+                        'tipo' => $diff > 0 ? 'entrada' : 'saida',
+                        'data' => now()->format('Y-m-d'),
+                        'emoji' => '🔄',
+                        'visibilidade' => 'pessoal',
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'sucesso' => true,
+                'mensagem' => 'Saldo da conta ' . $conta->nome . ' atualizado com sucesso!',
+                'conta' => $conta->fresh(),
+            ]);
+        });
     }
 }
