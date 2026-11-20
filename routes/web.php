@@ -45,11 +45,13 @@ Route::prefix('api')->group(function () {
     Route::middleware('auth')->group(function () {
         // RF009: Painéis Consolidados
         Route::get('/dashboard', [DashboardController::class, 'index']);
+        Route::post('/pagamentos/registrar', [DashboardController::class, 'registrarPagamento']);
 
         // RF003: Contas e Transações
         Route::get('/contas', [ContaController::class, 'index']);
         Route::post('/contas', [ContaController::class, 'store']);
         Route::put('/contas/{id}', [ContaController::class, 'update']);
+        Route::post('/contas/{id}/saldo', [DashboardController::class, 'ajustarSaldoConta']);
         Route::delete('/contas/{id}', [ContaController::class, 'destroy']);
 
         Route::get('/transacoes', [TransacaoController::class, 'index']);

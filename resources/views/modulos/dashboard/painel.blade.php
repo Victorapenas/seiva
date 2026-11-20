@@ -138,9 +138,11 @@
             <div class="flex items-center justify-between text-xs text-gray-300">
                 <div class="flex items-center gap-2 font-medium">
                     <i data-lucide="trending-up" class="size-4 text-emerald-400"></i>
-                    <span>Recebido em junho</span>
+                    <span id="heroRendaTituloCard">Recebido em junho</span>
                 </div>
-                <i data-lucide="chevron-down" class="size-4 text-gray-400"></i>
+                <button type="button" onclick="alternarExpansaoHeroRenda()" id="btnExpandirHeroRenda" class="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition" title="Ver para onde vai sua renda">
+                    <i id="iconeChevronHeroRenda" data-lucide="chevron-down" class="size-4 transition-transform duration-300"></i>
+                </button>
             </div>
 
             <!-- Valor Principal da Renda -->
@@ -196,6 +198,38 @@
                     </strong>
                 </div>
             </div>
+
+            <!-- Seção Expansível: Pra onde vai sua renda (Imagem 1) -->
+            <div id="heroRendaExpansivel" class="hidden border-t border-white/10 pt-4 space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-300">Pra onde vai sua renda</span>
+                    <button type="button" onclick="abrirModalAtualizarSaldo()" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition">
+                        <i data-lucide="edit-3" class="size-3"></i>
+                        <span>Atualizar</span>
+                    </button>
+                </div>
+
+                <!-- Barra multicolorida horizontal segmentada -->
+                <div id="heroRendaBarraContainer" class="h-3 w-full rounded-full bg-white/10 flex overflow-hidden">
+                    <!-- Preenchido via JS dinamicamente com as fatias proporcionais -->
+                </div>
+
+                <!-- Legenda com bolinhas coloridas (2 colunas) -->
+                <div id="heroRendaLegenda" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <!-- Preenchido via JS dinamicamente -->
+                </div>
+
+                <!-- Bloco "Como ler isso" -->
+                <div class="rounded-2xl bg-white/5 border border-white/10 p-3.5 space-y-2">
+                    <div class="flex items-center gap-1.5 text-xs text-gray-300 font-bold">
+                        <i data-lucide="info" class="size-3.5 text-emerald-400"></i>
+                        <span>Como ler isso</span>
+                    </div>
+                    <ul id="heroRendaComoLerLista" class="text-xs text-gray-300 space-y-1.5">
+                        <!-- Preenchido via JS -->
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <!-- CARD 2: CUSTO DO LAR (DEEP FOREST GREEN - IMAGE 3) -->
@@ -212,7 +246,9 @@
                     <i data-lucide="home" class="size-4 text-emerald-300"></i>
                     <span>Sua parte no Lar em junho</span>
                 </div>
-                <i data-lucide="chevron-down" class="size-4 text-emerald-300"></i>
+                <button type="button" onclick="alternarExpansaoHeroLar()" id="btnExpandirHeroLar" class="p-1 rounded-lg text-emerald-300 hover:text-white hover:bg-white/10 transition" title="Ver por que você deve isso">
+                    <i id="iconeChevronHeroLar" data-lucide="chevron-down" class="size-4 transition-transform duration-300"></i>
+                </button>
             </div>
 
             <!-- Valor Principal do Lar -->
@@ -265,6 +301,27 @@
                     </strong>
                 </div>
             </div>
+
+            <!-- Seção Expansível: Por que você deve isso (Imagem 2) -->
+            <div id="heroLarExpansivel" class="hidden border-t border-white/15 pt-4 space-y-3.5">
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-200 block">Por que você deve isso</span>
+
+                <!-- Lista de despesas do Lar com status e cotas -->
+                <div id="heroLarListaDespesas" class="space-y-2">
+                    <!-- Preenchido dinamicamente via JS -->
+                </div>
+
+                <!-- Resumo da contribuição do parceiro -->
+                <div id="heroLarParceiroResumo" class="flex items-center justify-between p-3 rounded-2xl bg-white/10 border border-white/15 text-xs">
+                    <!-- Preenchido via JS: "Ian contribui com 71% · R$ 1.187,90 · em dia" -->
+                </div>
+
+                <!-- Botão de atalho para Área do Lar -->
+                <button type="button" onclick="trocarAbaApp('lar')" class="w-full py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-soft">
+                    <span>Abrir Área do Lar</span>
+                    <i data-lucide="arrow-right" class="size-3.5"></i>
+                </button>
+            </div>
         </div>
 
         <!-- Indicador de Slide / Pontinhos de Navegação -->
@@ -278,7 +335,7 @@
     <!-- 4. QUATRO AÇÕES RÁPIDAS (IMAGE 4) -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <!-- Ação 1: Registrar gasto -->
-        <button type="button" onclick="abrirModalGasto()" 
+        <button type="button" onclick="abrirModalLancarGasto()" 
                 class="flex items-center justify-center gap-2.5 p-3.5 rounded-2xl border border-border bg-card hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 hover:border-emerald-500/30 shadow-soft transition group">
             <span class="size-7 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
                 <i data-lucide="trending-down" class="size-3.5"></i>
@@ -287,7 +344,7 @@
         </button>
 
         <!-- Ação 2: Registrar entrada -->
-        <button type="button" onclick="abrirModalEntrada()" 
+        <button type="button" onclick="abrirModalRegistrarRecebimento()" 
                 class="flex items-center justify-center gap-2.5 p-3.5 rounded-2xl border border-border bg-card hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 hover:border-emerald-500/30 shadow-soft transition group">
             <span class="size-7 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
                 <i data-lucide="trending-up" class="size-3.5"></i>
@@ -304,11 +361,11 @@
             <span class="text-xs font-bold text-foreground">Ver extrato</span>
         </button>
 
-        <!-- Ação 4: Relatórios -->
-        <button type="button" onclick="seivaNotificar('Relatório gerencial consolidado de junho disponível!', 'info', 'Relatórios')" 
+        <!-- Ação 4: Relatórios / Gastos por Categoria -->
+        <button type="button" onclick="alternarModoGrafico('donut')" 
                 class="flex items-center justify-center gap-2.5 p-3.5 rounded-2xl border border-border bg-card hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 hover:border-emerald-500/30 shadow-soft transition group">
             <span class="size-7 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                <i data-lucide="bar-chart-2" class="size-3.5"></i>
+                <i data-lucide="pie-chart" class="size-3.5"></i>
             </span>
             <span class="text-xs font-bold text-foreground">Relatórios</span>
         </button>
@@ -321,7 +378,7 @@
                 <i data-lucide="wallet" class="size-4 text-emerald-700"></i>
                 <span>Onde está meu dinheiro</span>
             </h3>
-            <button type="button" onclick="adicionarContaPrompt()" class="flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline">
+            <button type="button" onclick="abrirModalAtualizarSaldo()" class="flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline">
                 <i data-lucide="refresh-cw" class="size-3"></i> Atualizar saldo
             </button>
         </div>
@@ -414,7 +471,7 @@
                 </div>
 
                 <div class="pt-2">
-                    <button type="button" onclick="seivaNotificar('Diagnóstico completo: Seu controle está equilibrado e no caminho certo!', 'sucesso', 'Saúde Financeira')" class="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-1">
+                    <button type="button" onclick="abrirModalSaudeFinanceira()" class="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-1">
                         Ver análise completa <i data-lucide="arrow-right" class="size-3.5"></i>
                     </button>
                 </div>
@@ -512,51 +569,95 @@
         </div>
     </div>
 
-    <!-- 10. SEÇÃO: "FLUXO DOS 2 MESES NO SEIVA" (IMAGE 6) -->
+    <!-- 10. SEÇÃO: "FLUXO DOS 2 MESES / GASTOS POR CATEGORIA" (IMAGES 6, 7 & 8) -->
     <section class="rounded-3xl border border-border bg-card p-6 shadow-card space-y-4">
         <div class="flex items-center justify-between">
             <div>
-                <h3 class="text-sm font-bold text-foreground">Fluxo dos 2 meses no SEIVA</h3>
-                <p class="text-xs text-muted-foreground">Maio e Junho · entradas vs. saídas</p>
+                <h3 id="tituloGraficoDashboard" class="text-sm font-bold text-foreground">Fluxo dos 2 meses no SEIVA</h3>
+                <p id="subtituloGraficoDashboard" class="text-xs text-muted-foreground">Maio e Junho · entradas vs. saídas</p>
             </div>
-            <div class="flex items-center gap-2">
-                <button type="button" class="p-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground">
+            <!-- Toggle Barras vs Donut / Pizza -->
+            <div class="flex items-center rounded-xl bg-muted/60 p-1 border border-border">
+                <button type="button" id="btnToggleGraficoBarras" onclick="alternarModoGrafico('barras')" 
+                        class="p-1.5 rounded-lg font-bold text-xs transition-all bg-card text-foreground shadow-2xs" title="Gráfico de Barras">
                     <i data-lucide="bar-chart-2" class="size-4"></i>
                 </button>
-                <button type="button" class="p-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground">
+                <button type="button" id="btnToggleGraficoDonut" onclick="alternarModoGrafico('donut')" 
+                        class="p-1.5 rounded-lg font-bold text-xs transition-all text-muted-foreground hover:text-foreground" title="Gráfico em Pizza (Donut)">
                     <i data-lucide="pie-chart" class="size-4"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Legenda -->
-        <div class="flex items-center gap-4 text-xs">
-            <span class="flex items-center gap-1.5 font-medium text-foreground">
-                <span class="size-2.5 rounded-full bg-[#1b4d37]"></span> Entradas
-            </span>
-            <span class="flex items-center gap-1.5 font-medium text-foreground">
-                <span class="size-2.5 rounded-full bg-[#d97706]"></span> Saídas
-            </span>
-        </div>
-
-        <!-- Gráfico de Colunas Duplas (Maio vs Junho) -->
-        <div class="flex items-end justify-center gap-12 sm:gap-20 h-44 pt-4 border-b border-border pb-2">
-            <!-- Mês Maio -->
-            <div class="flex flex-col items-center gap-2">
-                <div class="flex items-end gap-2.5 h-32">
-                    <div class="w-8 sm:w-10 bg-[#1b4d37] rounded-t-lg transition-all hover:opacity-90" style="height: 85%" title="Maio Entradas: R$ 1.600,00"></div>
-                    <div class="w-8 sm:w-10 bg-[#d97706] rounded-t-lg transition-all hover:opacity-90" style="height: 60%" title="Maio Saídas: R$ 1.100,00"></div>
-                </div>
-                <span class="text-xs font-bold text-muted-foreground">Maio</span>
+        <!-- MODO 1: GRÁFICO DE BARRAS (FLUXO DOS 2 MESES) -->
+        <div id="graficoBarrasContainer" class="space-y-4">
+            <!-- Legenda -->
+            <div class="flex items-center gap-4 text-xs">
+                <span class="flex items-center gap-1.5 font-medium text-foreground">
+                    <span class="size-2.5 rounded-full bg-[#1b4d37]"></span> Entradas
+                </span>
+                <span class="flex items-center gap-1.5 font-medium text-foreground">
+                    <span class="size-2.5 rounded-full bg-[#d97706]"></span> Saídas
+                </span>
             </div>
 
-            <!-- Mês Junho -->
-            <div class="flex flex-col items-center gap-2">
-                <div class="flex items-end gap-2.5 h-32">
-                    <div class="w-8 sm:w-10 bg-[#1b4d37] rounded-t-lg transition-all hover:opacity-90" style="height: 92%" title="Junho Entradas: R$ 1.700,00"></div>
-                    <div class="w-8 sm:w-10 bg-[#d97706] rounded-t-lg transition-all hover:opacity-90" style="height: 68%" title="Junho Saídas: R$ 1.185,00"></div>
+            <!-- Gráfico de Colunas Duplas (Maio vs Junho) -->
+            <div id="graficoBarrasColunas" class="flex items-end justify-center gap-12 sm:gap-20 h-44 pt-4 border-b border-border pb-2">
+                <!-- Mês Maio -->
+                <div class="flex flex-col items-center gap-2">
+                    <div class="flex items-end gap-2.5 h-32">
+                        <div id="barraEntradaMesPassado" class="w-8 sm:w-10 bg-[#1b4d37] rounded-t-lg transition-all hover:opacity-90" style="height: 85%" title="Entradas Mês Passado"></div>
+                        <div id="barraSaidaMesPassado" class="w-8 sm:w-10 bg-[#d97706] rounded-t-lg transition-all hover:opacity-90" style="height: 60%" title="Saídas Mês Passado"></div>
+                    </div>
+                    <span id="labelNomeMesPassado" class="text-xs font-bold text-muted-foreground">Maio</span>
                 </div>
-                <span class="text-xs font-bold text-muted-foreground">Junho</span>
+
+                <!-- Mês Junho -->
+                <div class="flex flex-col items-center gap-2">
+                    <div class="flex items-end gap-2.5 h-32">
+                        <div id="barraEntradaMesAtual" class="w-8 sm:w-10 bg-[#1b4d37] rounded-t-lg transition-all hover:opacity-90" style="height: 92%" title="Entradas Mês Atual"></div>
+                        <div id="barraSaidaMesAtual" class="w-8 sm:w-10 bg-[#d97706] rounded-t-lg transition-all hover:opacity-90" style="height: 68%" title="Saídas Mês Atual"></div>
+                    </div>
+                    <span id="labelNomeMesAtual" class="text-xs font-bold text-muted-foreground">Junho</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODO 2: GRÁFICO DONUT / PIZZA (GASTOS POR CATEGORIA - IMAGEM 8) -->
+        <div id="graficoDonutContainer" class="hidden space-y-4">
+            <!-- Seletor em Pílulas: Mês Atual vs Mês Passado -->
+            <div class="flex items-center justify-center">
+                <div class="inline-flex items-center rounded-2xl bg-muted/60 p-1 border border-border">
+                    <button type="button" id="btnDonutMesAtual" onclick="selecionarMesDonut('atual')" 
+                            class="py-1.5 px-4 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs">
+                        Junho
+                    </button>
+                    <button type="button" id="btnDonutMesPassado" onclick="selecionarMesDonut('passado')" 
+                            class="py-1.5 px-4 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground">
+                        Maio
+                    </button>
+                </div>
+            </div>
+
+            <!-- Layout Lado a Lado: Donut SVG + Legenda Categorias -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center pt-2">
+                <!-- Donut SVG com corte no meio e valor total central -->
+                <div class="flex flex-col items-center justify-center relative">
+                    <div class="relative size-48 flex items-center justify-center">
+                        <svg id="svgDonutCategorias" class="size-48 -rotate-90" viewBox="0 0 100 100">
+                            <!-- Círculos dinâmicos via JS -->
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-2 pointer-events-none">
+                            <span id="donutRotuloMes" class="text-[11px] font-bold text-muted-foreground uppercase">Total Junho</span>
+                            <span id="donutTotalMesValor" class="text-lg font-black text-foreground">R$ 1.185,00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de Categorias com porcentagem e valor -->
+                <div id="donutListaCategorias" class="space-y-2">
+                    <!-- Injetado dinamicamente via JS -->
+                </div>
             </div>
         </div>
     </section>

@@ -201,6 +201,11 @@
     @include('componentes.modais.modal-transacao')
     @include('componentes.modais.modal-despesa-lar')
     @include('componentes.modais.modal-boas-vindas')
+    @include('componentes.modais.modal-atualizar-saldo')
+    @include('componentes.modais.modal-saude-financeira')
+    @include('componentes.modais.modal-registrar-pagamento')
+    @include('componentes.modais.modal-lancar-gasto')
+    @include('componentes.modais.modal-registrar-recebimento')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -1318,6 +1323,7 @@
                 });
                 if (!res.ok) return;
                 const data = await res.json();
+                dashboardDadosCache = data;
 
                 listaContas = data.contas || [];
                 popularSelectsContas(listaContas);
@@ -2476,7 +2482,7 @@
                                     <p class="text-[11px] text-muted-foreground">${item.descricao}</p>
                                 </div>
                             </div>
-                            <button type="button" onclick="confirmarRegistroRapido('${item.titulo.replace(/'/g,"\\'")}', ${item.valor})"
+                            <button type="button" onclick="abrirModalRegistrarPagamento('${item.id}')"
                                     class="px-4 py-1.5 rounded-xl bg-[#c84b31] hover:bg-[#b03d25] text-white font-bold text-xs transition shadow-2xs">
                                 Registrar
                             </button>
@@ -2614,6 +2620,656 @@
             }
 
             lucide.createIcons();
+        }
+
+        // ── ESTADO E FUNÇÕES DO NOVO DASHBOARD SEIVA (PROTÓTIPO DE 10 TELAS) ──
+        let dashboardDadosCache = null;
+        let modoGraficoAtual = 'barras';
+        let donutMesSelecionado = 'atual';
+        let contaAjusteSaldoId = null;
+        let itemPagamentoAtual = null;
+        let contaSaidaPagamentoId = null;
+        let comprovantePagamentoBase64 = null;
+        let categoriaGastoAtual = 'Moradia';
+        let contaGastoAtual = null;
+        let visibilidadeGastoAtual = 'privado';
+        let tipoRecebimentoAtual = 'Salário';
+        let contaRecebimentoAtual = null;
+
+        // 1. Expansão "Minha Renda" (Imagem 1)
+        function alternarExpansaoHeroRenda() {
+            const exp = document.getElementById('heroRendaExpansivel');
+            const ico = document.getElementById('iconeChevronHeroRenda');
+            if (!exp) return;
+            const abrindo = exp.classList.contains('hidden');
+            exp.classList.toggle('hidden');
+            if (ico) {
+                ico.classList.toggle('rotate-180', abrindo);
+            }
+            if (abrindo) {
+                renderizarDetalhesMinhaRenda();
+            }
+        }
+
+        function renderizarDetalhesMinhaRenda() {
+            if (!dashboardDadosCache) return;
+            const d = dashboardDadosCache.detalhes_minha_renda;
+            if (!d) return;
+
+            // Barra multicolorida
+            const barraContainer = document.getElementById('heroRendaBarraContainer');
+            if (barraContainer && d.barra?.length) {
+                barraContainer.innerHTML = d.barra.map(item => `
+                    <div style="width: ${Math.max(4, item.percentual)}%; background-color: ${item.cor}; height: 100%;" 
+                         class="transition-all duration-500 hover:opacity-90"
+                         title="${item.nome}: ${BRL(item.valor)} (${item.percentual}%)"></div>
+                `).join('');
+            }
+
+            // Legenda
+            const legendaContainer = document.getElementById('heroRendaLegenda');
+            if (legendaContainer && d.barra?.length) {
+                legendaContainer.innerHTML = d.barra.map(item => `
+                    <div class="flex items-center gap-2">
+                        <span class="size-2 rounded-full shrink-0" style="background-color: ${item.cor}"></span>
+                        <div class="min-w-0">
+                            <p class="font-medium text-gray-300 leading-tight truncate text-[11px]">${item.nome}</p>
+                            <strong class="font-extrabold text-white text-xs">${saldosVisiveis ? BRL(item.valor) : '••••'}</strong>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Como ler isso
+            const comoLerLista = document.getElementById('heroRendaComoLerLista');
+            if (comoLerLista && d.como_ler?.length) {
+                comoLerLista.innerHTML = d.como_ler.map(txt => `
+                    <li class="flex items-start gap-1.5 leading-relaxed">
+                        <span class="text-emerald-400 font-bold select-none">•</span>
+                        <span>${txt}</span>
+                    </li>
+                `).join('');
+            }
+        }
+
+        // 2. Expansão "Custo do Lar" (Imagem 2)
+        function alternarExpansaoHeroLar() {
+            const exp = document.getElementById('heroLarExpansivel');
+            const ico = document.getElementById('iconeChevronHeroLar');
+            if (!exp) return;
+            const abrindo = exp.classList.contains('hidden');
+            exp.classList.toggle('hidden');
+            if (ico) {
+                ico.classList.toggle('rotate-180', abrindo);
+            }
+            if (abrindo) {
+                renderizarDetalhesCustoLar();
+            }
+        }
+
+        function renderizarDetalhesCustoLar() {
+            if (!dashboardDadosCache) return;
+            const d = dashboardDadosCache.detalhes_custo_lar;
+            if (!d) return;
+
+            // Lista de despesas do Lar com status e cotas
+            const listaDesp = document.getElementById('heroLarListaDespesas');
+            if (listaDesp && d.itens?.length) {
+                listaDesp.innerHTML = d.itens.map(item => `
+                    <div class="flex items-center justify-between p-3 rounded-2xl bg-white/10 border border-white/10 text-xs">
+                        <div class="flex items-center gap-2.5">
+                            <span class="size-7 rounded-xl bg-white/15 flex items-center justify-center shrink-0 text-emerald-200">
+                                <i data-lucide="${item.icone || 'home'}" class="size-3.5"></i>
+                            </span>
+                            <span class="font-medium text-white">${item.titulo}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${item.pago ? 'bg-emerald-400/20 text-emerald-300' : 'bg-white/10 text-emerald-200'}">
+                                ${item.pago ? '✓ pago' : 'a pagar'}
+                            </span>
+                            <strong class="font-bold text-white">${saldosVisiveis ? BRL(item.valor) : '••••'}</strong>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Resumo do parceiro
+            const resumoParc = document.getElementById('heroLarParceiroResumo');
+            if (resumoParc && d.parceiro) {
+                resumoParc.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="size-6 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-black text-white">
+                            ${d.parceiro.nome.substring(0, 2).toUpperCase()}
+                        </span>
+                        <span class="text-emerald-100 font-medium">
+                            ${d.parceiro.nome} contribui com ${d.parceiro.percentual}%
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <strong class="font-extrabold text-white">${saldosVisiveis ? BRL(d.parceiro.valor) : '••••'}</strong>
+                        <span class="text-[10px] font-bold text-emerald-300 bg-white/15 px-2 py-0.5 rounded-full">✓ ${d.parceiro.status}</span>
+                    </div>
+                `;
+            }
+
+            lucide.createIcons();
+        }
+
+        // 3. Toggle de Gráfico: Barras vs Donut / Pizza (Imagens 7 e 8)
+        function alternarModoGrafico(modo) {
+            modoGraficoAtual = modo;
+            const containerBarras = document.getElementById('graficoBarrasContainer');
+            const containerDonut = document.getElementById('graficoDonutContainer');
+            const btnBarras = document.getElementById('btnToggleGraficoBarras');
+            const btnDonut = document.getElementById('btnToggleGraficoDonut');
+            const titulo = document.getElementById('tituloGraficoDashboard');
+            const subtitulo = document.getElementById('subtituloGraficoDashboard');
+
+            if (modo === 'barras') {
+                if (containerBarras) containerBarras.classList.remove('hidden');
+                if (containerDonut) containerDonut.classList.add('hidden');
+                if (btnBarras) {
+                    btnBarras.className = 'p-1.5 rounded-lg font-bold text-xs transition-all bg-card text-foreground shadow-2xs';
+                }
+                if (btnDonut) {
+                    btnDonut.className = 'p-1.5 rounded-lg font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+                }
+                if (titulo) titulo.innerText = 'Fluxo dos 2 meses no SEIVA';
+                if (subtitulo) {
+                    const m0 = dashboardDadosCache?.fluxo_meses?.[0]?.mes || 'Maio';
+                    const m1 = dashboardDadosCache?.fluxo_meses?.[1]?.mes || 'Junho';
+                    subtitulo.innerText = `${m0} e ${m1} · entradas vs. saídas`;
+                }
+            } else {
+                if (containerBarras) containerBarras.classList.add('hidden');
+                if (containerDonut) containerDonut.classList.remove('hidden');
+                if (btnDonut) {
+                    btnDonut.className = 'p-1.5 rounded-lg font-bold text-xs transition-all bg-card text-foreground shadow-2xs';
+                }
+                if (btnBarras) {
+                    btnBarras.className = 'p-1.5 rounded-lg font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+                }
+                if (titulo) titulo.innerText = 'Gastos por categoria';
+                if (subtitulo) {
+                    const mesNome = donutMesSelecionado === 'atual' 
+                        ? (dashboardDadosCache?.gastos_por_categoria?.mes_atual?.nome_mes || 'Junho') 
+                        : (dashboardDadosCache?.gastos_por_categoria?.mes_passado?.nome_mes || 'Maio');
+                    subtitulo.innerText = `${mesNome} · onde foi seu dinheiro`;
+                }
+                renderizarDonutCategorias();
+            }
+        }
+
+        function selecionarMesDonut(tipo) {
+            donutMesSelecionado = tipo;
+            const btnAtual = document.getElementById('btnDonutMesAtual');
+            const btnPassado = document.getElementById('btnDonutMesPassado');
+            if (tipo === 'atual') {
+                if (btnAtual) btnAtual.className = 'py-1.5 px-4 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs';
+                if (btnPassado) btnPassado.className = 'py-1.5 px-4 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+            } else {
+                if (btnPassado) btnPassado.className = 'py-1.5 px-4 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs';
+                if (btnAtual) btnAtual.className = 'py-1.5 px-4 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+            }
+            const subtitulo = document.getElementById('subtituloGraficoDashboard');
+            if (subtitulo) {
+                const mesNome = tipo === 'atual' 
+                    ? (dashboardDadosCache?.gastos_por_categoria?.mes_atual?.nome_mes || 'Junho') 
+                    : (dashboardDadosCache?.gastos_por_categoria?.mes_passado?.nome_mes || 'Maio');
+                subtitulo.innerText = `${mesNome} · onde foi seu dinheiro`;
+            }
+            renderizarDonutCategorias();
+        }
+
+        function renderizarDonutCategorias() {
+            if (!dashboardDadosCache?.gastos_por_categoria) return;
+            const dadosMes = dashboardDadosCache.gastos_por_categoria[donutMesSelecionado === 'atual' ? 'mes_atual' : 'mes_passado'];
+            if (!dadosMes) return;
+
+            // Labels dos botões com o nome do mês real
+            const btnAtual = document.getElementById('btnDonutMesAtual');
+            const btnPassado = document.getElementById('btnDonutMesPassado');
+            if (btnAtual && dashboardDadosCache.gastos_por_categoria.mes_atual?.nome_mes) {
+                btnAtual.innerText = dashboardDadosCache.gastos_por_categoria.mes_atual.nome_mes;
+            }
+            if (btnPassado && dashboardDadosCache.gastos_por_categoria.mes_passado?.nome_mes) {
+                btnPassado.innerText = dashboardDadosCache.gastos_por_categoria.mes_passado.nome_mes;
+            }
+
+            // Centro do Donut
+            const rotuloMes = document.getElementById('donutRotuloMes');
+            const totalMes = document.getElementById('donutTotalMesValor');
+            if (rotuloMes) rotuloMes.innerText = `Total ${dadosMes.nome_mes}`;
+            if (totalMes) totalMes.innerText = saldosVisiveis ? BRL(dadosMes.total) : '••••';
+
+            // SVG Donut (Circunferência 251.327)
+            const svgEl = document.getElementById('svgDonutCategorias');
+            if (svgEl && dadosMes.categorias?.length) {
+                const C = 251.327;
+                let offsetAcumulado = 0;
+                let svgContent = '';
+
+                dadosMes.categorias.forEach(cat => {
+                    const strokeLen = (cat.percentual / 100) * C;
+                    const strokeGap = C - strokeLen;
+                    svgContent += `
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="${cat.cor}" stroke-width="12"
+                                stroke-dasharray="${strokeLen.toFixed(2)} ${strokeGap.toFixed(2)}"
+                                stroke-dashoffset="${(-offsetAcumulado).toFixed(2)}"
+                                class="transition-all duration-500 hover:opacity-80">
+                            <title>${cat.nome}: ${BRL(cat.valor)} (${cat.percentual}%)</title>
+                        </circle>
+                    `;
+                    offsetAcumulado += strokeLen;
+                });
+                svgEl.innerHTML = svgContent;
+            }
+
+            // Lista lateral de categorias com percentuais
+            const listaCats = document.getElementById('donutListaCategorias');
+            if (listaCats && dadosMes.categorias?.length) {
+                listaCats.innerHTML = dadosMes.categorias.map(cat => `
+                    <div class="flex items-center justify-between p-2 rounded-xl hover:bg-muted/40 transition text-xs">
+                        <div class="flex items-center gap-2.5">
+                            <span class="size-2.5 rounded-full shrink-0" style="background-color: ${cat.cor}"></span>
+                            <span class="font-medium text-foreground">${cat.nome}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold text-muted-foreground">${cat.percentual}%</span>
+                            <strong class="font-extrabold text-foreground">${saldosVisiveis ? BRL(cat.valor) : '••••'}</strong>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // 4. Modal Atualizar Saldo (Imagem 3)
+        function abrirModalAtualizarSaldo() {
+            const contas = dashboardDadosCache?.contas || listaContas || [];
+            const containerChips = document.getElementById('modalSaldoChipsContas');
+            if (containerChips && contas.length) {
+                contaAjusteSaldoId = contas[0].id_conta;
+                containerChips.innerHTML = contas.map((c, i) => `
+                    <button type="button" onclick="selecionarContaAjusteSaldo(${c.id_conta}, '${c.nome.replace(/'/g, "\\'")}', ${c.saldo})" 
+                            class="chip-conta-saldo flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${i === 0 ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300' : 'border-border bg-card text-muted-foreground hover:text-foreground'}">
+                        <span class="size-2 rounded-full" style="background-color: ${c.cor || '#10b981'}"></span>
+                        <span>${c.nome}</span>
+                    </button>
+                `).join('');
+                selecionarContaAjusteSaldo(contas[0].id_conta, contas[0].nome, contas[0].saldo);
+            }
+            document.getElementById('modalAtualizarSaldo')?.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function selecionarContaAjusteSaldo(id, nome, saldo) {
+            contaAjusteSaldoId = id;
+            document.querySelectorAll('.chip-conta-saldo').forEach(btn => {
+                if (btn.innerText.includes(nome)) {
+                    btn.className = 'chip-conta-saldo flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition';
+                } else {
+                    btn.className = 'chip-conta-saldo flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground text-xs font-bold transition';
+                }
+            });
+            const inputVal = document.getElementById('modalSaldoInputValor');
+            if (inputVal) inputVal.value = (parseFloat(saldo) || 0).toFixed(2).replace('.', ',');
+            const textoReg = document.getElementById('modalSaldoRegistradoTexto');
+            if (textoReg) textoReg.innerText = `Saldo registrado: ${BRL(saldo)}`;
+            const btnSalvar = document.getElementById('modalSaldoBtnSalvarTexto');
+            if (btnSalvar) btnSalvar.innerText = `Salvar saldo de ${nome}`;
+        }
+
+        function aplicarAjusteRapidoSaldo(delta, motivo) {
+            const inputVal = document.getElementById('modalSaldoInputValor');
+            if (!inputVal) return;
+            let val = parseFloat(inputVal.value.replace(/\./g, '').replace(',', '.')) || 0;
+            val = Math.max(0, val + delta);
+            inputVal.value = val.toFixed(2).replace('.', ',');
+            seivaNotificar(`${delta > 0 ? '+' : ''}${BRL(delta)} (${motivo}) aplicado!`, 'info', 'Ajuste Rápido');
+        }
+
+        async function salvarNovoSaldoConta() {
+            if (!contaAjusteSaldoId) return;
+            const inputVal = document.getElementById('modalSaldoInputValor');
+            const novoSaldo = parseFloat(inputVal.value.replace(/\./g, '').replace(',', '.'));
+            if (isNaN(novoSaldo) || novoSaldo < 0) {
+                return seivaNotificar('Informe um saldo válido.', 'aviso', 'Valor inválido');
+            }
+
+            try {
+                const res = await fetch(`/api/contas/${contaAjusteSaldoId}/saldo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ saldo: novoSaldo, motivo: 'Atualização rápida de saldo' })
+                });
+                if (res.ok) {
+                    fecharModalId('modalAtualizarSaldo');
+                    seivaNotificar('Saldo atualizado com sucesso!', 'sucesso', 'Saldo Atualizado');
+                    carregarDashboardDados();
+                } else {
+                    const err = await res.json();
+                    seivaNotificar(err.erro || 'Não foi possível atualizar o saldo.', 'erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao atualizar saldo.', 'erro');
+            }
+        }
+
+        // 5. Modal Saúde Financeira (Imagem 4)
+        function abrirModalSaudeFinanceira() {
+            const sf = dashboardDadosCache?.saude_financeira;
+            if (sf) {
+                const scoreTxt = document.getElementById('modalSaudeScoreTxt');
+                const statusTxt = document.getElementById('modalSaudeStatusTxt');
+                const notaTxt = document.getElementById('modalSaudeNotaTxt');
+                const circle = document.getElementById('modalSaudeCircleProgress');
+
+                if (scoreTxt) scoreTxt.innerText = `${sf.score}%`;
+                if (statusTxt) {
+                    statusTxt.innerText = sf.status;
+                    statusTxt.className = `text-xs font-bold ${sf.score >= 80 ? 'text-emerald-600' : (sf.score >= 60 ? 'text-amber-600' : 'text-red-500')}`;
+                }
+                if (notaTxt) {
+                    notaTxt.innerText = `Seu score é ${sf.score}% — ${sf.status.toLowerCase()} ao equilíbrio. Veja o que compõe essa nota:`;
+                }
+                if (circle) {
+                    const C = 251.2;
+                    const offset = C - (sf.score / 100) * C;
+                    circle.setAttribute('stroke-dashoffset', Math.round(offset));
+                    circle.setAttribute('stroke', sf.score >= 80 ? '#10b981' : (sf.score >= 60 ? '#f59e0b' : '#ef4444'));
+                }
+
+                // Preencher insights específicos
+                if (sf.insights && sf.insights.length >= 3) {
+                    const p1 = document.getElementById('modalSaudePilar1Titulo');
+                    if (p1) p1.innerText = sf.insights[0].texto;
+                    const p2 = document.getElementById('modalSaudePilar2Titulo');
+                    if (p2) p2.innerText = sf.insights[1].texto;
+                    const p3 = document.getElementById('modalSaudePilar3Titulo');
+                    if (p3) p3.innerText = sf.insights[2].texto;
+                }
+            }
+            document.getElementById('modalSaudeFinanceira')?.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        // 6. Modal Registrar Pagamento (Imagem 6)
+        function abrirModalRegistrarPagamento(itemId) {
+            const itens = dashboardDadosCache?.pra_registrar_hoje || [];
+            itemPagamentoAtual = itens.find(it => it.id === itemId) || itens[0] || { id: itemId, titulo: 'Fatura', valor: 890, tipo: 'fatura' };
+
+            const tit = document.getElementById('modalPagItemTitulo');
+            const val = document.getElementById('modalPagItemValor');
+            const prog = document.getElementById('modalPagItemProgresso');
+            const btnConfirmar = document.getElementById('modalPagBtnConfirmarTexto');
+
+            if (tit) tit.innerText = itemPagamentoAtual.titulo;
+            if (val) val.innerText = BRL(itemPagamentoAtual.valor);
+            if (prog) prog.innerText = `Valor a quitar: ${BRL(itemPagamentoAtual.valor)} · pendente`;
+            if (btnConfirmar) btnConfirmar.innerText = `Confirmar que paguei ${BRL(itemPagamentoAtual.valor)}`;
+
+            // Renderiza contas para selecionar saída
+            const contas = dashboardDadosCache?.contas || listaContas || [];
+            const containerContas = document.getElementById('modalPagChipsContas');
+            if (containerContas && contas.length) {
+                contaSaidaPagamentoId = contas[0].id_conta;
+                containerContas.innerHTML = contas.map((c, i) => `
+                    <button type="button" onclick="selecionarContaSaidaPagamento(${c.id_conta})"
+                            id="chipPagConta_${c.id_conta}"
+                            class="chip-pag-conta flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${i === 0 ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300' : 'border-border bg-card text-muted-foreground hover:text-foreground'}">
+                        <span class="size-2 rounded-full" style="background-color: ${c.cor || '#10b981'}"></span>
+                        <span>${c.nome}</span>
+                        <span class="text-[10px] text-muted-foreground">(${BRL(c.saldo)})</span>
+                    </button>
+                `).join('');
+            }
+
+            document.getElementById('modalRegistrarPagamento')?.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function selecionarContaSaidaPagamento(id) {
+            contaSaidaPagamentoId = id;
+            document.querySelectorAll('.chip-pag-conta').forEach(btn => {
+                btn.className = 'chip-pag-conta flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground text-xs font-bold transition';
+            });
+            const ativo = document.getElementById(`chipPagConta_${id}`);
+            if (ativo) {
+                ativo.className = 'chip-pag-conta flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition';
+            }
+        }
+
+        function previewComprovantePagamento(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    comprovantePagamentoBase64 = e.target.result;
+                    const txt = document.getElementById('modalPagFotoTexto');
+                    if (txt) txt.innerText = `Anexado: ${input.files[0].name.substring(0, 20)}`;
+                    seivaNotificar('Comprovante anexado com sucesso!', 'sucesso', 'Anexo');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        async function executarConfirmacaoPagamento() {
+            if (!itemPagamentoAtual) return;
+            try {
+                const res = await fetch('/api/pagamentos/registrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        id: itemPagamentoAtual.id,
+                        tipo: itemPagamentoAtual.tipo,
+                        valor: itemPagamentoAtual.valor,
+                        conta_id: contaSaidaPagamentoId,
+                        comprovante: comprovantePagamentoBase64
+                    })
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalRegistrarPagamento');
+                    seivaNotificar(`Pagamento de ${itemPagamentoAtual.titulo} (${BRL(itemPagamentoAtual.valor)}) registrado e liquidado!`, 'sucesso', 'Pagamento Confirmado');
+                    carregarDashboardDados();
+                } else {
+                    const err = await res.json();
+                    seivaNotificar(err.erro || 'Não foi possível registrar o pagamento.', 'erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao registrar pagamento.', 'erro');
+            }
+        }
+
+        // 7. Modal Lançar Gasto Rápido (Imagem 9)
+        function abrirModalLancarGasto() {
+            const contas = dashboardDadosCache?.contas || listaContas || [];
+            const containerContas = document.getElementById('gastoChipsContas');
+            if (containerContas && contas.length) {
+                contaGastoAtual = contas[0].id_conta;
+                document.getElementById('gastoContaIdSelecionada').value = contas[0].id_conta;
+                containerContas.innerHTML = contas.map((c, i) => `
+                    <button type="button" onclick="selecionarContaGasto(${c.id_conta})"
+                            id="chipGastoConta_${c.id_conta}"
+                            class="chip-gasto-conta flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${i === 0 ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300' : 'border-border bg-card text-muted-foreground hover:text-foreground'}">
+                        <span class="size-2 rounded-full" style="background-color: ${c.cor || '#10b981'}"></span>
+                        <span>${c.nome}</span>
+                    </button>
+                `).join('');
+            }
+
+            // Ocultar seletor de compartilhar se usuário for Individual
+            const compContainer = document.getElementById('gastoContainerCompartilhar');
+            if (compContainer) {
+                const isCasal = Boolean(dashboardDadosCache?.is_casal && dashboardDadosCache?.lar);
+                compContainer.style.display = isCasal ? 'block' : 'none';
+            }
+
+            document.getElementById('modalLancarGasto')?.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function selecionarCategoriaGasto(btn, nomeCat, icon) {
+            categoriaGastoAtual = nomeCat;
+            document.getElementById('gastoCategoriaSelecionada').value = nomeCat;
+            document.querySelectorAll('#gastoChipsCategorias .cat-chip').forEach(b => {
+                b.className = 'cat-chip flex flex-col items-center justify-center p-2.5 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-[11px] transition';
+            });
+            btn.className = 'cat-chip active flex flex-col items-center justify-center p-2.5 rounded-2xl border border-emerald-600 bg-emerald-800 text-white font-bold text-[11px] transition';
+        }
+
+        function selecionarContaGasto(id) {
+            contaGastoAtual = id;
+            document.getElementById('gastoContaIdSelecionada').value = id;
+            document.querySelectorAll('.chip-gasto-conta').forEach(b => {
+                b.className = 'chip-gasto-conta flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground text-xs font-bold transition';
+            });
+            const ativo = document.getElementById(`chipGastoConta_${id}`);
+            if (ativo) {
+                ativo.className = 'chip-gasto-conta flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition';
+            }
+        }
+
+        function selecionarVisibilidadeGasto(tipo) {
+            visibilidadeGastoAtual = tipo;
+            const btnPriv = document.getElementById('btnGastoPrivado');
+            const btnComp = document.getElementById('btnGastoCompartilhar');
+            if (tipo === 'privado') {
+                if (btnPriv) btnPriv.className = 'flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs';
+                if (btnComp) btnComp.className = 'flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+            } else {
+                if (btnComp) btnComp.className = 'flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs';
+                if (btnPriv) btnPriv.className = 'flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+            }
+        }
+
+        async function executarSalvarGastoRapido(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('gastoInputValor');
+            const inputTit = document.getElementById('gastoInputTitulo');
+            const valor = parseFloat(inputVal.value.replace(/\./g, '').replace(',', '.'));
+            const titulo = inputTit.value.trim();
+
+            if (!valor || valor <= 0) {
+                return seivaNotificar('Informe um valor válido maior que zero.', 'aviso', 'Valor obrigatório');
+            }
+            if (!titulo) {
+                return seivaNotificar('Informe a descrição do gasto.', 'aviso', 'Descrição obrigatória');
+            }
+
+            const isImprevisto = document.getElementById('gastoIsImprevisto')?.checked || false;
+            const compartilhado = visibilidadeGastoAtual === 'compartilhado';
+
+            try {
+                const res = await fetch('/api/transacoes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        tipo: 'saida',
+                        titulo,
+                        valor,
+                        conta_id: contaGastoAtual,
+                        categoria_nome: categoriaGastoAtual,
+                        is_imprevisto: isImprevisto,
+                        compartilhado: compartilhado
+                    })
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalLancarGasto');
+                    inputVal.value = '';
+                    inputTit.value = '';
+                    seivaNotificar(`Gasto de ${BRL(valor)} registrado com sucesso!`, 'sucesso', 'Gasto Lançado');
+                    carregarDashboardDados();
+                } else {
+                    const err = await res.json();
+                    seivaNotificar(err.erro || 'Não foi possível registrar o gasto.', 'erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao salvar gasto.', 'erro');
+            }
+        }
+
+        // 8. Modal Registrar Recebimento (Imagem 10)
+        function abrirModalRegistrarRecebimento() {
+            const contas = dashboardDadosCache?.contas || listaContas || [];
+            const containerContas = document.getElementById('recebimentoChipsContas');
+            if (containerContas && contas.length) {
+                contaRecebimentoAtual = contas[0].id_conta;
+                document.getElementById('recebimentoContaIdSelecionada').value = contas[0].id_conta;
+                containerContas.innerHTML = contas.map((c, i) => `
+                    <button type="button" onclick="selecionarContaRecebimento(${c.id_conta})"
+                            id="chipRecConta_${c.id_conta}"
+                            class="chip-rec-conta flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${i === 0 ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300' : 'border-border bg-card text-muted-foreground hover:text-foreground'}">
+                        <span class="size-2 rounded-full" style="background-color: ${c.cor || '#10b981'}"></span>
+                        <span>${c.nome}</span>
+                    </button>
+                `).join('');
+            }
+            document.getElementById('modalRegistrarRecebimento')?.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function selecionarTipoRecebimento(btn, tipo) {
+            tipoRecebimentoAtual = tipo;
+            document.getElementById('recebimentoTipoSelecionado').value = tipo;
+            document.querySelectorAll('#modalRegistrarRecebimento .chip-tipo-recebimento').forEach(b => {
+                b.className = 'chip-tipo-recebimento px-3 py-1.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition';
+            });
+            btn.className = 'chip-tipo-recebimento active px-3 py-1.5 rounded-xl border border-emerald-600 bg-emerald-800 text-white font-bold text-xs transition';
+        }
+
+        function selecionarContaRecebimento(id) {
+            contaRecebimentoAtual = id;
+            document.getElementById('recebimentoContaIdSelecionada').value = id;
+            document.querySelectorAll('.chip-rec-conta').forEach(b => {
+                b.className = 'chip-rec-conta flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground text-xs font-bold transition';
+            });
+            const ativo = document.getElementById(`chipRecConta_${id}`);
+            if (ativo) {
+                ativo.className = 'chip-rec-conta flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition';
+            }
+        }
+
+        async function executarSalvarRecebimentoRapido(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('recebimentoInputValor');
+            const inputTit = document.getElementById('recebimentoInputTitulo');
+            const valor = parseFloat(inputVal.value.replace(/\./g, '').replace(',', '.'));
+            const origem = inputTit.value.trim() || tipoRecebimentoAtual;
+
+            if (!valor || valor <= 0) {
+                return seivaNotificar('Informe um valor válido maior que zero.', 'aviso', 'Valor obrigatório');
+            }
+
+            const recorrente = document.getElementById('recebimentoIsRecorrente')?.checked || false;
+
+            try {
+                const res = await fetch('/api/transacoes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        tipo: 'entrada',
+                        titulo: `${tipoRecebimentoAtual} (${origem})`,
+                        valor,
+                        conta_id: contaRecebimentoAtual,
+                        categoria_nome: 'Receitas',
+                        recorrente: recorrente
+                    })
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalRegistrarRecebimento');
+                    inputVal.value = '';
+                    inputTit.value = '';
+                    seivaNotificar(`Recebimento de ${BRL(valor)} registrado com sucesso!`, 'sucesso', 'Entrada Registrada');
+                    carregarDashboardDados();
+                } else {
+                    const err = await res.json();
+                    seivaNotificar(err.erro || 'Não foi possível registrar o recebimento.', 'erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao salvar recebimento.', 'erro');
+            }
         }
     </script>
 </body>
