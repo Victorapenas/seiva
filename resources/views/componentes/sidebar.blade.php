@@ -43,7 +43,7 @@
             </div>
         </div>
 
-        <div>
+        <div id="secaoLarSidebar">
             <p id="labelGrupoLarSidebar" class="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <i data-lucide="home" class="size-3 text-emerald-600"></i> Nosso Cantinho
             </p>

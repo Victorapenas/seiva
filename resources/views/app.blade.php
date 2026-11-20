@@ -1184,7 +1184,7 @@
             if (elDashAv) elDashAv.innerText = iniciais;
 
             const elDashGreet = document.getElementById('dashGreeting');
-            if (elDashGreet) elDashGreet.innerText = `Olá, ${primeiroNome}`;
+            if (elDashGreet) elDashGreet.innerText = `${getSaudacao()}, ${primeiroNome}`;
 
             const elPerfNome = document.getElementById('perfilNomeTxt');
             if (elPerfNome) elPerfNome.innerText = usuarioSessao.nome;
@@ -1195,15 +1195,26 @@
             const elPerfAv = document.getElementById('perfilAvatarCircle');
             if (elPerfAv) elPerfAv.innerText = iniciais;
 
+            const secaoLarSide = document.getElementById('secaoLarSidebar');
+            const elLarPill = document.getElementById('userLarPillSidebar');
             if (larSessao) {
-                const elLarPill = document.getElementById('userLarPillSidebar');
-                if (elLarPill) elLarPill.innerText = `${larSessao.nome} 🌿`;
+                if (secaoLarSide) secaoLarSide.classList.remove('hidden');
+                if (elLarPill) {
+                    elLarPill.innerText = `${larSessao.nome} 🌿`;
+                    elLarPill.className = 'mt-0.5 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground';
+                }
 
                 const elGrpLar = document.getElementById('labelGrupoLarSidebar');
                 if (elGrpLar) elGrpLar.innerText = `🌿 ${larSessao.nome}`;
 
                 const elLarHead = document.getElementById('larHeaderTitle');
                 if (elLarHead) elLarHead.innerText = larSessao.nome;
+            } else {
+                if (secaoLarSide) secaoLarSide.classList.add('hidden');
+                if (elLarPill) {
+                    elLarPill.innerText = 'Individual 👤';
+                    elLarPill.className = 'mt-0.5 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground';
+                }
             }
 
             carregarDashboardDados();
@@ -1328,12 +1339,12 @@
                 const greetingEl = document.getElementById('dashGreeting');
                 if (greetingEl) {
                     const primeiroNome = data.usuario.nome.split(' ')[0];
-                    greetingEl.innerText = `Boa tarde, ${primeiroNome}`;
+                    greetingEl.innerText = `${getSaudacao()}, ${primeiroNome}`;
                 }
 
                 const dateEl = document.getElementById('dashDateSub');
                 if (dateEl) {
-                    dateEl.innerText = data.hero_mes?.data_extenso || 'Quinta, 12 de junho de 2026';
+                    dateEl.innerText = data.hero_mes?.data_extenso || 'Hoje';
                 }
 
                 // 2. Banner de Pedido de Ajuda
@@ -1373,10 +1384,10 @@
                     rendaDevEl.innerText = saldosVisiveis ? BRL(d) : '••••';
                 }
 
-                const画像SobraEl = document.getElementById('heroRendaSobraMes');
-                if (画像SobraEl) {
+                const dashSobraEl = document.getElementById('heroRendaSobraMes');
+                if (dashSobraEl) {
                     const s = data.hero_mes?.minha_renda?.sobra_mes ?? data.resumo.saldo_livre;
-                    画像SobraEl.innerText = saldosVisiveis ? BRL(s) : '••••';
+                    dashSobraEl.innerText = saldosVisiveis ? BRL(s) : '••••';
                 }
 
                 // 3. Hero Card: Custo do Lar
@@ -2046,25 +2057,37 @@
             { id: 'entrada',    icone: 'trending-up',    label: 'Registrar entrada',   cor: '#2e6b4f', bg: '#f0fdf4', fn: 'abrirModalEntrada()',       padrao: true  },
             { id: 'extrato',    icone: 'receipt',        label: 'Ver extrato',         cor: '#6366f1', bg: '#eef2ff', fn: "trocarAbaApp('transacoes')", padrao: true  },
             { id: 'metas',      icone: 'target',         label: 'Minhas metas',        cor: '#0891b2', bg: '#ecfeff', fn: "trocarAbaApp('metas')",      padrao: false },
-            { id: 'lar',        icone: 'home',           label: 'Área do Lar',         cor: '#059669', bg: '#ecfdf5', fn: "trocarAbaApp('lar')",        padrao: false },
-            { id: 'acordos',    icone: 'handshake',      label: 'Mesa de Acordos',     cor: '#d97706', bg: '#fffbeb', fn: "trocarAbaApp('acordos')",    padrao: false },
-            { id: 'cobrador',   icone: 'bell-ring',      label: 'Cobrador Diplomata',  cor: '#7c3aed', bg: '#f5f3ff', fn: "trocarAbaApp('cobrador')",   padrao: false },
+            { id: 'lar',        icone: 'home',           label: 'Área do Lar',         cor: '#059669', bg: '#ecfdf5', fn: "trocarAbaApp('lar')",        padrao: false, casalOnly: true },
+            { id: 'acordos',    icone: 'handshake',      label: 'Mesa de Acordos',     cor: '#d97706', bg: '#fffbeb', fn: "trocarAbaApp('acordos')",    padrao: false, casalOnly: true },
+            { id: 'cobrador',   icone: 'bell-ring',      label: 'Cobrador Diplomata',  cor: '#7c3aed', bg: '#f5f3ff', fn: "trocarAbaApp('cobrador')",   padrao: false, casalOnly: true },
             { id: 'relatorio',  icone: 'bar-chart-2',   label: 'Relatórios',          cor: '#1d4ed8', bg: '#eff6ff', fn: "seivaNotificar('Relatórios em breve!','info')", padrao: false },
         ];
 
+        function getAcoesCatalogoFiltrado() {
+            const isCasal = Boolean(larSessao || (usuarioSessao?.lares && usuarioSessao.lares.length));
+            return ACOES_CATALOGO.filter(a => !a.casalOnly || isCasal);
+        }
+
+        function getAcoesStorageKey() {
+            const uid = usuarioSessao?.id_usuario || usuarioSessao?.id || 'default';
+            return `seiva_bv_acoes_${uid}`;
+        }
+
         function getAcoesSalvas() {
+            const catalogo = getAcoesCatalogoFiltrado();
             try {
-                const salvo = localStorage.getItem('seiva_bv_acoes');
+                const salvo = localStorage.getItem(getAcoesStorageKey());
                 if (salvo) {
                     const ids = JSON.parse(salvo);
-                    return ACOES_CATALOGO.filter(a => ids.includes(a.id));
+                    const filtradas = catalogo.filter(a => ids.includes(a.id));
+                    if (filtradas.length) return filtradas;
                 }
             } catch(e) {}
-            return ACOES_CATALOGO.filter(a => a.padrao);
+            return catalogo.filter(a => a.padrao);
         }
 
         function salvarAcoesBV(ids) {
-            localStorage.setItem('seiva_bv_acoes', JSON.stringify(ids));
+            localStorage.setItem(getAcoesStorageKey(), JSON.stringify(ids));
         }
 
         function deveExibirBoasVindas() {
@@ -2147,7 +2170,7 @@
                 const notifs = data.notificacoes || [];
                 const totalNaoLidas = data.total_nao_lidas || 0;
 
-                // Atualiza badge
+                // Atualiza badge no modal e na topbar
                 if (badge) {
                     if (totalNaoLidas > 0) {
                         badge.innerText = totalNaoLidas > 9 ? '9+' : totalNaoLidas;
@@ -2155,6 +2178,19 @@
                         badge.classList.add('flex');
                     } else {
                         badge.classList.add('hidden');
+                        badge.classList.remove('flex');
+                    }
+                }
+
+                const topbarBadge = document.getElementById('topbarBadgeNotif');
+                if (topbarBadge) {
+                    if (totalNaoLidas > 0) {
+                        topbarBadge.innerText = totalNaoLidas > 9 ? '9+' : totalNaoLidas;
+                        topbarBadge.classList.remove('hidden');
+                        topbarBadge.classList.add('flex');
+                    } else {
+                        topbarBadge.classList.add('hidden');
+                        topbarBadge.classList.remove('flex');
                     }
                 }
 
@@ -2259,7 +2295,7 @@
 
             const lista = document.getElementById('listaPersonalizacaoBV');
             if (lista) {
-                lista.innerHTML = ACOES_CATALOGO.map(a => `
+                lista.innerHTML = getAcoesCatalogoFiltrado().map(a => `
                     <label class="flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-muted/40 cursor-pointer transition">
                         <div class="flex items-center gap-2.5">
                             <span class="size-8 rounded-xl flex items-center justify-center shrink-0"
@@ -2292,8 +2328,8 @@
                 let ids = getAcoesSalvas().map(a => a.id);
                 if (ativo && !ids.includes(id)) ids.push(id);
                 if (!ativo) ids = ids.filter(x => x !== id);
-                // Mantém a ordem do catálogo
-                ids = ACOES_CATALOGO.map(a => a.id).filter(i => ids.includes(i));
+                // Mantém a ordem do catálogo filtrado
+                ids = getAcoesCatalogoFiltrado().map(a => a.id).filter(i => ids.includes(i));
                 salvarAcoesBV(ids);
             } catch(e) {}
         }
@@ -2333,42 +2369,38 @@
             const isCasal = Boolean(data.is_casal && data.lar);
 
             // — Ocultar/Exibir aba "Custo do Lar" conforme tipo de usuário —
-            const tabLar  = document.getElementById('tabHeroCustoLar');
-            const sliderDotLar  = document.getElementById('sliderDotLar');
-            const sliderDica    = document.getElementById('sliderTextoDica');
-            const cardLar       = document.getElementById('cardHeroCustoLar');
-            const heroTituloSec = document.getElementById('heroTituloSecao');
-            const bannerAjuda   = document.getElementById('bannerPedidoAjuda');
+            const tabLar         = document.getElementById('tabHeroCustoLar');
+            const tabsContainer  = document.getElementById('heroToggleTabsContainer');
+            const sliderNav      = document.getElementById('sliderNavContainer');
+            const sliderDotLar   = document.getElementById('sliderDotLar');
+            const sliderDica     = document.getElementById('sliderTextoDica');
+            const cardLar        = document.getElementById('cardHeroCustoLar');
+            const heroTituloSec  = document.getElementById('heroTituloSecao');
+            const bannerAjuda    = document.getElementById('bannerPedidoAjuda');
+            const secaoLarSide   = document.getElementById('secaoLarSidebar');
 
             if (!isCasal) {
                 // Individual: ocultar tudo do Lar
-                if (tabLar)       tabLar.classList.add('hidden');
-                if (sliderDotLar) sliderDotLar.classList.add('hidden');
-                if (sliderDica)   sliderDica.innerText = '';
-                if (cardLar)      cardLar.classList.add('hidden');
-                if (bannerAjuda)  bannerAjuda.classList.add('hidden');
+                if (tabLar)        tabLar.classList.add('hidden');
+                if (tabsContainer) tabsContainer.classList.add('hidden');
+                if (sliderNav)     sliderNav.classList.add('hidden');
+                if (sliderDotLar)  sliderDotLar.classList.add('hidden');
+                if (sliderDica)    sliderDica.innerText = '';
+                if (cardLar)       cardLar.classList.add('hidden');
+                if (bannerAjuda)   bannerAjuda.classList.add('hidden');
                 if (heroTituloSec) heroTituloSec.innerText = 'Meu mês financeiro';
+                if (secaoLarSide)  secaoLarSide.classList.add('hidden');
                 // Garante aba de renda ativa
                 alternarAbaHero('renda');
-
-                // Ocultar grupo do Lar na sidebar
-                const grpLar = document.getElementById('labelGrupoLarSidebar');
-                if (grpLar) {
-                    const secaoLar = grpLar.closest('div');
-                    if (secaoLar) secaoLar.classList.add('hidden');
-                }
             } else {
                 // Casal: garantir visibilidade
-                if (tabLar)       tabLar.classList.remove('hidden');
-                if (sliderDotLar) sliderDotLar.classList.remove('hidden');
-                if (sliderDica)   sliderDica.innerText = 'Arraste para o lado para ver o Custo do Lar';
-                if (heroTituloSec) heroTituloSec.innerText = `Seu mês de ${data.hero_mes?.mes_nome || 'junho'}`;
-
-                const grpLar = document.getElementById('labelGrupoLarSidebar');
-                if (grpLar) {
-                    const secaoLar = grpLar.closest('div');
-                    if (secaoLar) secaoLar.classList.remove('hidden');
-                }
+                if (tabLar)        tabLar.classList.remove('hidden');
+                if (tabsContainer) tabsContainer.classList.remove('hidden');
+                if (sliderNav)     sliderNav.classList.remove('hidden');
+                if (sliderDotLar)  sliderDotLar.classList.remove('hidden');
+                if (sliderDica)    sliderDica.innerText = 'Arraste para o lado para ver o Custo do Lar';
+                if (heroTituloSec) heroTituloSec.innerText = `Seu mês de ${data.hero_mes?.mes_nome || 'novembro'}`;
+                if (secaoLarSide)  secaoLarSide.classList.remove('hidden');
             }
 
             // — Atualizar fontes de renda no hero card —
@@ -2420,45 +2452,41 @@
             }
 
             // — Pra registrar hoje —
-            const praRegList = document.getElementById('dashPraRegistrarList');
-            if (!praRegList) {
-                // Seção existe com HTML estático – atualizar diretamente o container pai
-                const secaoPraReg = document.querySelector('#pane-dashboard section .space-y-2\\.5.pt-1');
-                if (secaoPraReg) {
-                    const itens = data.pra_registrar_hoje || [];
-                    if (!itens.length) {
-                        secaoPraReg.innerHTML = `
-                            <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/60 text-xs text-emerald-800 font-medium">
-                                <i data-lucide="check-circle" class="size-4 text-emerald-600 shrink-0"></i>
-                                Tudo em dia! Nenhuma conta pendente por aqui.
-                            </div>`;
-                    } else {
-                        secaoPraReg.innerHTML = itens.map(item => {
-                            const isFatura = item.tipo === 'fatura';
-                            const iconeCor = isFatura ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
-                            return `
-                            <div class="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-rose-200/60 shadow-2xs">
-                                <div class="flex items-center gap-3">
-                                    <span class="size-9 rounded-xl ${iconeCor} flex items-center justify-center shrink-0">
-                                        <i data-lucide="${item.icone || 'credit-card'}" class="size-4"></i>
-                                    </span>
-                                    <div>
-                                        <h4 class="text-xs font-extrabold text-foreground">${item.titulo} · ${BRL(item.valor)}</h4>
-                                        <p class="text-[11px] text-muted-foreground">${item.descricao}</p>
-                                    </div>
+            const secaoPraReg = document.getElementById('dashPraRegistrarHojeList');
+            if (secaoPraReg) {
+                const itens = data.pra_registrar_hoje || [];
+                if (!itens.length) {
+                    secaoPraReg.innerHTML = `
+                        <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/60 text-xs text-emerald-800 font-medium">
+                            <i data-lucide="check-circle" class="size-4 text-emerald-600 shrink-0"></i>
+                            Tudo em dia! Nenhuma conta pendente por aqui.
+                        </div>`;
+                } else {
+                    secaoPraReg.innerHTML = itens.map(item => {
+                        const isFatura = item.tipo === 'fatura';
+                        const iconeCor = isFatura ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
+                        return `
+                        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-rose-200/60 shadow-2xs">
+                            <div class="flex items-center gap-3">
+                                <span class="size-9 rounded-xl ${iconeCor} flex items-center justify-center shrink-0">
+                                    <i data-lucide="${item.icone || 'credit-card'}" class="size-4"></i>
+                                </span>
+                                <div>
+                                    <h4 class="text-xs font-extrabold text-foreground">${item.titulo} · ${BRL(item.valor)}</h4>
+                                    <p class="text-[11px] text-muted-foreground">${item.descricao}</p>
                                 </div>
-                                <button type="button" onclick="confirmarRegistroRapido('${item.titulo.replace(/'/g,"\\'")}', ${item.valor})"
-                                        class="px-4 py-1.5 rounded-xl bg-[#c84b31] hover:bg-[#b03d25] text-white font-bold text-xs transition shadow-2xs">
-                                    Registrar
-                                </button>
-                            </div>`;
-                        }).join('');
-                    }
+                            </div>
+                            <button type="button" onclick="confirmarRegistroRapido('${item.titulo.replace(/'/g,"\\'")}', ${item.valor})"
+                                    class="px-4 py-1.5 rounded-xl bg-[#c84b31] hover:bg-[#b03d25] text-white font-bold text-xs transition shadow-2xs">
+                                Registrar
+                            </button>
+                        </div>`;
+                    }).join('');
                 }
             }
 
             // — Metas —
-            const metasGrid = document.querySelector('#pane-dashboard section .grid.grid-cols-1.sm\\:grid-cols-2.gap-3\\.5');
+            const metasGrid = document.getElementById('dashMetasGrid');
             if (metasGrid) {
                 const metas = data.metas || [];
                 if (!metas.length) {
@@ -2468,8 +2496,7 @@
                         const pct = m.percentual || 0;
                         const isLar = m.tipo === 'Do Lar';
                         const badgeCls = isLar ? 'bg-emerald-100 text-emerald-800' : 'bg-muted text-muted-foreground';
-                        const iconMap = { laptop: 'laptop', shield: 'shield', target: 'target', snowflake: 'snowflake' };
-                        const ico = iconMap[m.icone] || 'target';
+                        const ico = m.icone || 'target';
                         return `
                         <div class="rounded-3xl border border-border bg-card p-5 shadow-card space-y-3">
                             <div class="flex items-center justify-between">
@@ -2499,7 +2526,7 @@
             }
 
             // — Despesas Fixas —
-            const despFixasGrid = document.querySelector('#pane-dashboard .grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-4.gap-3');
+            const despFixasGrid = document.getElementById('dashDespesasFixasGrid');
             if (despFixasGrid) {
                 const fixas = data.despesas_fixas || [];
                 if (!fixas.length) {
@@ -2565,21 +2592,23 @@
 
             // — Seção Hero: título mês —
             if (heroTituloSec && isCasal) {
-                heroTituloSec.innerText = `Seu mês de ${data.hero_mes?.mes_nome || 'junho'}`;
+                heroTituloSec.innerText = `Seu mês de ${data.hero_mes?.mes_nome || 'novembro'}`;
             }
 
-            // — Badge de notificações no sino do dashboard —
-            const badgeNotifDash = document.getElementById('dashBadgeNotifCount');
-            if (badgeNotifDash) {
-                // Carrega contagem de não lidas de forma leve
+            // — Badge de notificações no sino da topbar —
+            const topbarBadge = document.getElementById('topbarBadgeNotif');
+            if (topbarBadge) {
                 fetch('/api/notificacoes', { headers: { 'Accept': 'application/json' } })
                     .then(r => r.ok ? r.json() : null)
                     .then(nd => {
-                        if (nd && nd.total_nao_lidas > 0) {
-                            badgeNotifDash.innerText = nd.total_nao_lidas > 9 ? '9+' : nd.total_nao_lidas;
-                            badgeNotifDash.classList.remove('hidden');
+                        const count = nd?.total_nao_lidas || 0;
+                        if (count > 0) {
+                            topbarBadge.innerText = count > 9 ? '9+' : count;
+                            topbarBadge.classList.remove('hidden');
+                            topbarBadge.classList.add('flex');
                         } else {
-                            badgeNotifDash.classList.add('hidden');
+                            topbarBadge.classList.add('hidden');
+                            topbarBadge.classList.remove('flex');
                         }
                     }).catch(() => {});
             }
