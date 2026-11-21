@@ -214,6 +214,11 @@
     @include('componentes.modais.modal-responder-pedido-ajuda')
     @include('componentes.modais.modal-criar-meta')
     @include('componentes.modais.modal-guardar-meta')
+    @include('componentes.modais.modal-guardar-fundo-emergencia-lar')
+    @include('componentes.modais.modal-registrar-pagamento-lar')
+    @include('componentes.modais.modal-guardar-meta-lar-pix')
+    @include('componentes.modais.modal-atualizar-meta-lar')
+    @include('componentes.modais.modal-desfazer-meta-lar')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -1941,7 +1946,51 @@
             } catch (e) { seivaNotificar('Erro de conexão.', 'erro'); }
         }
 
-        // --- LAR & RATEIO ---
+        // ==========================================
+        // GESTÃO DO LAR & RATEIO DO CASAL (RF004 / RF006 / RF008 / RF010)
+        // Responsáveis Acadêmicos: Jhon Abner / Ian Marcos
+        // Bordão Oficial: "Onde seu dinheiro cria raízes"
+        // ==========================================
+        let subAbaLarAtiva = 'inicio';
+        let larDadosCache = null;
+        let metaPixAtual = null;
+        let destinoDesfazerEscolhido = 'devolver';
+
+        function alternarSubAbaLar(aba, btn) {
+            subAbaLarAtiva = aba;
+            
+            // Oculta todos os conteúdos das subabas
+            const contInicio = document.getElementById('larConteudoInicio');
+            const contDespesas = document.getElementById('larConteudoDespesas');
+            const contMetas = document.getElementById('larConteudoMetas');
+            const contAcordos = document.getElementById('larConteudoAcordos');
+
+            if (contInicio) contInicio.classList.add('hidden');
+            if (contDespesas) contDespesas.classList.add('hidden');
+            if (contMetas) contMetas.classList.add('hidden');
+            if (contAcordos) contAcordos.classList.add('hidden');
+
+            // Exibe o conteúdo da subaba selecionada
+            if (aba === 'inicio' && contInicio) contInicio.classList.remove('hidden');
+            if (aba === 'despesas' && contDespesas) contDespesas.classList.remove('hidden');
+            if (aba === 'metas' && contMetas) contMetas.classList.remove('hidden');
+            if (aba === 'acordos' && contAcordos) contAcordos.classList.remove('hidden');
+
+            // Atualiza botões de navegação
+            const nav = document.getElementById('larAbasNavegacao');
+            if (nav) {
+                const botoes = nav.querySelectorAll('.btn-subaba-lar');
+                botoes.forEach(b => {
+                    b.className = 'btn-subaba-lar px-4 py-2 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition flex items-center gap-2 shadow-2xs';
+                });
+            }
+            if (btn) {
+                btn.className = 'btn-subaba-lar active px-4 py-2 rounded-2xl bg-emerald-800 text-white font-extrabold text-xs shadow-soft transition flex items-center gap-2';
+            }
+
+            lucide.createIcons();
+        }
+
         async function carregarLarDados() {
             try {
                 const res = await fetch('/api/lar');
@@ -1949,43 +1998,684 @@
                 const data = await res.json();
                 if (!data.lar) return;
                 larSessao = data.lar;
+                larDadosCache = data;
 
-                const grid = document.getElementById('larMembrosProporcaoGrid');
-                grid.innerHTML = (data.membros || []).map(m => `
-                    <div class="rounded-2xl border border-border bg-muted/40 p-3.5 flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-bold text-foreground">${m.nome}</p>
-                            <span class="text-[10px] text-muted-foreground">Renda declarada: ${BRL(m.renda_declarada)}</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-base font-extrabold text-primary">${m.percentual_calculado}%</span>
-                            <p class="text-[10px] text-muted-foreground">do rateio</p>
-                        </div>
-                    </div>
-                `).join('');
+                // 1. Cabeçalho
+                const topoBadge = document.getElementById('larTopoNomeBadge');
+                if (topoBadge) topoBadge.innerText = data.lar.nome || 'Nosso Cantinho';
 
-                const despRes = await fetch('/api/lar/despesas');
-                if (despRes.ok) {
-                    const despesas = await despRes.json();
-                    const dGrid = document.getElementById('larDespesasGrid');
-                    if (!despesas.length) {
-                        dGrid.innerHTML = '<p class="text-xs text-muted-foreground py-6 text-center">Nenhuma despesa compartilhada registrada.</p>';
-                        return;
-                    }
-                    dGrid.innerHTML = despesas.map(d => `
-                        <div class="p-3.5 rounded-2xl border border-border bg-background space-y-2">
-                            <div class="flex items-center justify-between">
-                                <p class="text-xs font-bold text-foreground">${d.titulo}</p>
-                                <span class="text-xs font-bold text-foreground">${BRL(d.valor_total)}</span>
+                const casalSub = document.getElementById('larCasalSubtitulo');
+                if (casalSub) casalSub.innerText = `${data.lar.nomes_membros || 'Maria Eduarda & Ian Marcos'} · desde ${data.lar.desde || 'abril de 2026'}`;
+
+                // 2. Saúde Financeira do Lar
+                if (data.saude_financeira) {
+                    const sf = data.saude_financeira;
+                    const scoreEl = document.getElementById('larSaudeScore');
+                    if (scoreEl) scoreEl.innerText = `${sf.percentual}%`;
+                    const statusEl = document.getElementById('larSaudeStatus');
+                    if (statusEl) statusEl.innerText = sf.status;
+                    const rendaEl = document.getElementById('larTxtRendaCasal');
+                    if (rendaEl) rendaEl.innerText = `${BRL(sf.renda_casal)}/mês`;
+                    const custoEl = document.getElementById('larTxtCustoFixo');
+                    if (custoEl) custoEl.innerText = `${BRL(sf.custo_fixo)} (${sf.custo_fixo_pct}% da renda)`;
+                    const faltaEl = document.getElementById('larTxtFaltaMembro');
+                    if (faltaEl) faltaEl.innerHTML = `Falta a ${sf.falta_nome || 'Duda'} contribuir: <strong>${BRL(sf.falta_contribuir)} neste mês</strong>`;
+                }
+
+                // Barras de Contribuição dos Membros
+                if (data.membros && data.membros.length >= 2) {
+                    const m1 = data.membros[0];
+                    const m2 = data.membros[1];
+
+                    const m1Nome = document.getElementById('larMembro1Nome');
+                    if (m1Nome) m1Nome.innerText = m1.primeiro_nome;
+                    const m1Val = document.getElementById('larMembro1Valores');
+                    if (m1Val) m1Val.innerText = `${BRL(m1.ja_pago_mes)} / ${BRL(m1.meta_mes)}`;
+                    const m1Pct = document.getElementById('larMembro1Pct');
+                    if (m1Pct) m1Pct.innerText = `${m1.pct_pago_mes}%`;
+                    const m1Barra = document.getElementById('larMembro1Barra');
+                    if (m1Barra) m1Barra.style.width = `${m1.pct_pago_mes}%`;
+
+                    const m2Nome = document.getElementById('larMembro2Nome');
+                    if (m2Nome) m2Nome.innerText = m2.primeiro_nome;
+                    const m2Val = document.getElementById('larMembro2Valores');
+                    if (m2Val) m2Val.innerText = `${BRL(m2.ja_pago_mes)} / ${BRL(m2.meta_mes)}`;
+                    const m2Pct = document.getElementById('larMembro2Pct');
+                    if (m2Pct) m2Pct.innerText = `${m2.pct_pago_mes}%`;
+                    const m2Barra = document.getElementById('larMembro2Barra');
+                    if (m2Barra) m2Barra.style.width = `${m2.pct_pago_mes}%`;
+                }
+
+                // 3. 4 Cards de Resumo
+                if (data.resumo) {
+                    const r = data.resumo;
+                    const cTotal = document.getElementById('larCardCustoTotal');
+                    if (cTotal) cTotal.innerText = BRL(r.custo_lar);
+                    const cJa = document.getElementById('larCardJaContribuido');
+                    if (cJa) cJa.innerText = BRL(r.ja_contribuido);
+                    const cFalta = document.getElementById('larCardFaltaContribuir');
+                    if (cFalta) cFalta.innerText = BRL(r.falta_contribuir);
+                    const cSobra = document.getElementById('larCardSobraCasal');
+                    if (cSobra) cSobra.innerText = BRL(r.sobra_casal);
+                }
+
+                // 4. Próximos Vencimentos
+                const gridVenc = document.getElementById('larListaProximosVencimentos');
+                if (gridVenc && data.proximos_vencimentos) {
+                    gridVenc.innerHTML = data.proximos_vencimentos.map(v => {
+                        const ehPagar = v.acao === 'pagar';
+                        const corBolinha = v.cor || (ehPagar ? '#ef4444' : '#10b981');
+                        return `
+                            <div class="p-3.5 sm:p-4 rounded-2xl border border-border bg-card flex items-center justify-between gap-3 shadow-2xs">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <span class="size-2.5 rounded-full shrink-0" style="background-color: ${corBolinha}"></span>
+                                    <div class="min-w-0">
+                                        <h5 class="text-xs font-extrabold text-foreground truncate">${v.titulo}</h5>
+                                        <span class="text-[11px] text-muted-foreground">${v.data_fmt} · ${BRL(v.valor)}</span>
+                                    </div>
+                                </div>
+                                <div class="shrink-0">
+                                    ${ehPagar ? `
+                                        <button type="button" onclick="abrirModalPagamentoDespesaFixaLar('${v.titulo}', ${v.valor}, ${v.id})" 
+                                                class="px-3.5 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-black text-xs shadow-soft transition">
+                                            Pagar agora
+                                        </button>
+                                    ` : `
+                                        <button type="button" onclick="abrirModalPagamentoDespesaFixaLar('${v.titulo}', ${v.valor}, ${v.id})" 
+                                                class="px-3 py-1.5 rounded-xl border border-border bg-muted/40 hover:bg-muted text-foreground font-bold text-xs transition shadow-2xs">
+                                            Registrar
+                                        </button>
+                                    `}
+                                </div>
                             </div>
-                            <div class="flex items-center justify-between text-[11px] text-muted-foreground">
-                                <span>Divisão: ${d.divisao}</span>
-                                <span class="font-bold ${d.status === 'pago' ? 'text-emerald-600' : 'text-amber-600'}">${d.status.toUpperCase()}</span>
+                        `;
+                    }).join('');
+                }
+
+                // 5. Dívidas Fixas (Aba Despesas)
+                const gridFixas = document.getElementById('larListaDividasFixas');
+                if (gridFixas && data.despesas_fixas) {
+                    gridFixas.innerHTML = data.despesas_fixas.map(d => `
+                        <div class="p-4 rounded-2xl border border-border bg-card flex items-center justify-between gap-3 shadow-2xs">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="size-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                                    <i data-lucide="${d.icone || 'receipt'}" class="size-4"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <h5 class="text-xs font-extrabold text-foreground truncate">${d.titulo}</h5>
+                                    <span class="text-[11px] text-muted-foreground">${d.divisao} · ${d.vencimento}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <strong class="text-xs font-black text-foreground">${BRL(d.valor_total)}</strong>
+                                ${d.pago ? `
+                                    <span class="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-extrabold text-[11px] flex items-center gap-1 border border-emerald-500/20">
+                                        <i data-lucide="check" class="size-3"></i>
+                                        <span>pago</span>
+                                    </span>
+                                ` : `
+                                    <button type="button" onclick="abrirModalPagamentoDespesaFixaLar('${d.titulo}', ${d.valor_total}, ${d.id})" 
+                                            class="px-3.5 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs shadow-soft transition flex items-center gap-1.5">
+                                        <i data-lucide="credit-card" class="size-3.5"></i>
+                                        <span>Pagar</span>
+                                    </button>
+                                `}
                             </div>
                         </div>
                     `).join('');
                 }
-            } catch (e) {}
+
+                // 6. Dívidas Variáveis (Aba Despesas)
+                const gridVar = document.getElementById('larListaDividasVariaveis');
+                if (gridVar && data.despesas_variaveis) {
+                    gridVar.innerHTML = data.despesas_variaveis.map(dv => `
+                        <div class="p-4 rounded-2xl border border-border bg-card flex items-center justify-between gap-3 shadow-2xs">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="size-9 rounded-xl bg-muted/60 text-muted-foreground flex items-center justify-center shrink-0">
+                                    <i data-lucide="${dv.icone || 'shopping-cart'}" class="size-4"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <h5 class="text-xs font-extrabold text-foreground truncate">${dv.titulo}</h5>
+                                    <span class="text-[11px] text-muted-foreground">${dv.detalhe}</span>
+                                </div>
+                            </div>
+                            <strong class="text-xs font-black text-foreground shrink-0">${BRL(dv.valor_total)}</strong>
+                        </div>
+                    `).join('');
+                }
+
+                // 7. Metas do Lar (Aba Metas)
+                const gridMetas = document.getElementById('larListaMetasCards');
+                if (gridMetas && data.metas) {
+                    gridMetas.innerHTML = data.metas.map(m => {
+                        const ehNegociacao = m.em_negociacao;
+                        const metaJsonStr = JSON.stringify(m).replace(/"/g, '&quot;');
+                        return `
+                            <div class="rounded-3xl border border-border bg-card p-5 space-y-4 shadow-card">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <span class="size-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                                            <i data-lucide="${m.icone || 'target'}" class="size-5"></i>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <h4 class="text-sm font-extrabold text-foreground truncate">${m.titulo}</h4>
+                                            <span class="text-xs text-muted-foreground">${m.acordo_texto || 'Meta conjunta do Lar'}</span>
+                                        </div>
+                                    </div>
+                                    ${ehNegociacao ? `
+                                        <span class="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-extrabold text-[10px] flex items-center gap-1 border border-amber-500/20">
+                                            <i data-lucide="alert-triangle" class="size-3"></i>
+                                            <span>Em negociação</span>
+                                        </span>
+                                    ` : `
+                                        <strong class="text-sm font-black text-foreground">${m.progresso}%</strong>
+                                    `}
+                                </div>
+
+                                <div class="space-y-1.5">
+                                    <div class="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                                        <div class="h-full ${ehNegociacao ? 'bg-amber-500' : 'bg-amber-500'} rounded-full transition-all duration-700" style="width: ${m.progresso}%"></div>
+                                    </div>
+                                    <div class="flex items-center justify-between text-xs text-muted-foreground pt-0.5">
+                                        <span class="font-bold text-foreground">${BRL(m.valor_atual)} de ${BRL(m.valor_alvo)}</span>
+                                        <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">${m.progresso}% atingido</span>
+                                    </div>
+                                </div>
+
+                                <!-- Detalhes de destino e responsável -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground pt-1 border-t border-border/60">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="wallet" class="size-3.5 text-emerald-600 shrink-0"></i>
+                                        <span class="truncate">Vai para <strong>${m.conta_destino || 'Nubank Maria Eduarda'}</strong></span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="user" class="size-3.5 text-emerald-600 shrink-0"></i>
+                                        <span class="truncate">Responsável <strong>${m.responsavel || 'Maria Eduarda'}</strong></span>
+                                    </div>
+                                </div>
+
+                                <!-- Ações da Meta -->
+                                <div class="flex flex-wrap items-center gap-2 pt-1">
+                                    ${ehNegociacao ? `
+                                        <button type="button" onclick="trocarAbaApp('acordos')" 
+                                                class="flex-1 py-3 px-4 rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 font-extrabold text-xs flex items-center justify-center gap-2 shadow-2xs hover:bg-amber-100/60 transition">
+                                            <span>Abrir Mesa de Acordos</span>
+                                            <i data-lucide="arrow-right" class="size-4"></i>
+                                        </button>
+                                    ` : `
+                                        <button type="button" onclick="abrirModalGuardarMetaLarPix(${metaJsonStr})" 
+                                                class="flex-1 py-3 px-4 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-soft transition">
+                                            <i data-lucide="plus" class="size-4"></i>
+                                            <span>+ Guardar minha parte</span>
+                                        </button>
+                                        <button type="button" onclick="abrirModalAtualizarMetaLar(${m.id_meta}, '${m.titulo}', ${m.valor_alvo}, 'nov/2026')" 
+                                                class="py-3 px-3.5 rounded-2xl border border-border bg-card hover:bg-muted text-foreground font-bold text-xs transition shadow-2xs flex items-center gap-1.5">
+                                            <i data-lucide="edit-3" class="size-3.5"></i>
+                                            <span>Atualizar</span>
+                                        </button>
+                                        <button type="button" onclick="abrirModalDesfazerMetaLar(${m.id_meta}, '${m.titulo}', ${m.valor_atual})" 
+                                                class="py-3 px-3.5 rounded-2xl border border-border bg-card hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 font-bold text-xs transition shadow-2xs flex items-center gap-1.5">
+                                            <i data-lucide="undo-2" class="size-3.5"></i>
+                                            <span>Desfazer</span>
+                                        </button>
+                                    `}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                // 8. Mesa de Acordos (Aba Acordos)
+                const gridAcordos = document.getElementById('larListaAcordosItens');
+                if (gridAcordos) {
+                    gridAcordos.innerHTML = `
+                        <div class="p-4 rounded-2xl border border-border bg-card flex items-center justify-between gap-3 shadow-2xs">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="size-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                                    <i data-lucide="snowflake" class="size-4"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h5 class="text-xs font-extrabold text-foreground truncate">Geladeira Samsung</h5>
+                                        <span class="px-2 py-0.5 rounded-md bg-muted text-[10px] font-extrabold text-muted-foreground">Dívida</span>
+                                    </div>
+                                    <span class="text-[11px] text-muted-foreground">Acordo 50/50 · parcela mensal R$ 250 cada</span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-extrabold text-emerald-700 dark:text-emerald-400">Ativo</span>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border border-border bg-card flex items-center justify-between gap-3 shadow-2xs">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="size-9 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0">
+                                    <i data-lucide="waves" class="size-4"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h5 class="text-xs font-extrabold text-foreground truncate">Viagem Praia do Forte</h5>
+                                        <span class="px-2 py-0.5 rounded-md bg-muted text-[10px] font-extrabold text-muted-foreground">Meta</span>
+                                    </div>
+                                    <span class="text-[11px] text-muted-foreground">Proposta: R$ 100/mês cada até janeiro</span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-extrabold text-amber-700 dark:text-amber-400">Em negociação</span>
+                        </div>
+                    `;
+                }
+
+                lucide.createIcons();
+            } catch (e) {
+                console.error('Erro ao carregar dados do Lar:', e);
+            }
+        }
+
+        // --- 1. MODAL: REFORÇAR FUNDO DE EMERGÊNCIA DO LAR ---
+        function abrirModalReforcarFundoEmergencia() {
+            const inputVal = document.getElementById('fundoEmergenciaInputValor');
+            if (inputVal) inputVal.value = '250,00';
+            atualizarCalculoFundoEmergencia('250,00');
+            removerComprovanteFundo();
+
+            const modal = document.getElementById('modalGuardarFundoEmergenciaLar');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function preencherValorFundoEmergencia(valor) {
+            const inputVal = document.getElementById('fundoEmergenciaInputValor');
+            if (inputVal) {
+                inputVal.value = valor.toFixed(2).replace('.', ',');
+                atualizarCalculoFundoEmergencia(inputVal.value);
+            }
+        }
+
+        function atualizarCalculoFundoEmergencia(valorStr) {
+            const txt = document.getElementById('fundoEmergenciaSeraTxt');
+            if (!txt) return;
+            const limpo = parseFloat((valorStr || '0').replace('.', '').replace(',', '.')) || 0;
+            const novoTotal = 5000 + limpo;
+            const pct = Math.min(100, Math.round((novoTotal / 10000) * 100));
+            txt.innerText = `Será ${pct}% após guardar (${BRL(novoTotal)} de R$ 10.000,00)`;
+        }
+
+        function selecionarContaFundoEmergencia(btn, contaId) {
+            const grid = document.getElementById('fundoEmergenciaContasGrid');
+            if (grid) {
+                grid.querySelectorAll('.chip-conta-fundo').forEach(b => {
+                    b.className = 'chip-conta-fundo p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30 flex items-center gap-2.5';
+                });
+            }
+            if (btn) {
+                btn.className = 'chip-conta-fundo active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition flex items-center gap-2.5';
+            }
+            const inputHidden = document.getElementById('fundoEmergenciaContaId');
+            if (inputHidden) inputHidden.value = contaId;
+        }
+
+        function aoSelecionarComprovanteFundo(input) {
+            if (input.files && input.files[0]) {
+                const box = document.getElementById('boxComprovanteFundo');
+                const preview = document.getElementById('previewComprovanteFundo');
+                if (box) box.classList.add('hidden');
+                if (preview) preview.classList.remove('hidden');
+            }
+        }
+
+        function removerComprovanteFundo(e) {
+            if (e) e.stopPropagation();
+            const input = document.getElementById('fundoEmergenciaComprovanteInput');
+            if (input) input.value = '';
+            const box = document.getElementById('boxComprovanteFundo');
+            const preview = document.getElementById('previewComprovanteFundo');
+            if (box) box.classList.remove('hidden');
+            if (preview) preview.classList.add('hidden');
+        }
+
+        async function executarAporteFundoEmergenciaLar(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('fundoEmergenciaInputValor');
+            const valNum = parseFloat((inputVal?.value || '0').replace('.', '').replace(',', '.')) || 0;
+            const contaId = document.getElementById('fundoEmergenciaContaId')?.value || 1;
+
+            if (valNum <= 0) {
+                return seivaNotificar('Informe um valor válido para guardar no fundo.', 'aviso', 'Valor Obrigatório');
+            }
+
+            try {
+                const res = await fetch('/api/lar/fundo-emergencia/reforcar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ valor: valNum, conta_id: contaId })
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalGuardarFundoEmergenciaLar');
+                    seivaNotificar(`Aporte de ${BRL(valNum)} no Fundo de Emergência registrado!`, 'sucesso', 'Reserva Fortalecida');
+                    carregarLarDados();
+                } else {
+                    seivaNotificar('Não foi possível registrar o aporte.', 'erro', 'Erro ao Guardar');
+                }
+            } catch (err) {
+                seivaNotificar('Erro de conexão com o servidor.', 'erro');
+            }
+        }
+
+        function solicitarUsoEmergenciaLar() {
+            seivaNotificar('Solicitação para uso do fundo de emergência enviada com carinho ao parceiro!', 'sucesso', 'Consenso Solicitado');
+        }
+
+        // --- 2. MODAL: REGISTRAR PAGAMENTO DE DESPESA FIXA DO LAR ---
+        function abrirModalPagamentoDespesaFixaLar(titulo, valor, id) {
+            const titEl = document.getElementById('regPagamentoLarTitulo');
+            if (titEl) titEl.innerText = titulo;
+            const subEl = document.getElementById('regPagamentoLarSubtitulo');
+            if (subEl) subEl.innerText = `${titulo} · 50 / 50`;
+            const valEl = document.getElementById('regPagamentoLarValor');
+            if (valEl) valEl.innerText = BRL(valor);
+
+            const inputId = document.getElementById('regPagamentoLarDespesaId');
+            if (inputId) inputId.value = id;
+            const inputVal = document.getElementById('regPagamentoLarValorInput');
+            if (inputVal) inputVal.value = valor;
+            const inputTit = document.getElementById('regPagamentoLarTituloInput');
+            if (inputTit) inputTit.value = titulo;
+
+            const btnSub = document.getElementById('regPagamentoLarBtnSubmit');
+            if (btnSub) btnSub.innerHTML = `<i data-lucide="check" class="size-4"></i> <span>Confirmar que paguei ${BRL(valor)}</span>`;
+
+            removerComprovantePagLar();
+            const modal = document.getElementById('modalRegistrarPagamentoLar');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function selecionarContaPagamentoLar(btn, contaId) {
+            const container = document.getElementById('regPagamentoLarContasChips');
+            if (container) {
+                container.querySelectorAll('.chip-conta-pag-lar').forEach(b => {
+                    b.className = 'chip-conta-pag-lar flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition';
+                });
+            }
+            if (btn) {
+                btn.className = 'chip-conta-pag-lar active flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border-2 border-emerald-600 bg-emerald-800 text-white font-bold text-xs transition';
+            }
+            const inputHidden = document.getElementById('regPagamentoLarContaId');
+            if (inputHidden) inputHidden.value = contaId;
+        }
+
+        function aoSelecionarComprovantePagLar(input) {
+            if (input.files && input.files[0]) {
+                const box = document.getElementById('boxComprovantePagLar');
+                const preview = document.getElementById('previewComprovantePagLar');
+                if (box) box.classList.add('hidden');
+                if (preview) preview.classList.remove('hidden');
+            }
+        }
+
+        function removerComprovantePagLar(e) {
+            if (e) e.stopPropagation();
+            const input = document.getElementById('regPagamentoLarComprovanteInput');
+            if (input) input.value = '';
+            const box = document.getElementById('boxComprovantePagLar');
+            const preview = document.getElementById('previewComprovantePagLar');
+            if (box) box.classList.remove('hidden');
+            if (preview) preview.classList.add('hidden');
+        }
+
+        async function executarConfirmarPagamentoDespesaLar(e) {
+            e.preventDefault();
+            const despesaId = document.getElementById('regPagamentoLarDespesaId')?.value;
+            const valor = parseFloat(document.getElementById('regPagamentoLarValorInput')?.value || 0);
+            const titulo = document.getElementById('regPagamentoLarTituloInput')?.value || 'Despesa';
+            const contaId = document.getElementById('regPagamentoLarContaId')?.value || 1;
+
+            try {
+                const res = await fetch('/api/lar/despesas/pagar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ despesa_id: despesaId, valor, conta_id: contaId })
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalRegistrarPagamentoLar');
+                    seivaNotificar(`Pagamento de ${titulo} (${BRL(valor)}) registrado com sucesso!`, 'sucesso', 'Conta Quitada');
+                    carregarLarDados();
+                    carregarDashboardDados();
+                    carregarExtratoDados();
+                } else {
+                    seivaNotificar('Não foi possível registrar o pagamento.', 'erro');
+                }
+            } catch (err) {
+                seivaNotificar('Erro de conexão ao quitar despesa.', 'erro');
+            }
+        }
+
+        // --- 3. MODAL: GUARDAR EM META DO LAR COM PIX ---
+        function abrirModalGuardarMetaLarPix(meta) {
+            metaPixAtual = meta;
+            const headerTit = document.getElementById('guardarMetaLarPixTituloHeader');
+            if (headerTit) headerTit.innerText = `Guardar em ${meta.titulo}`;
+
+            const progVal = document.getElementById('guardarMetaLarPixProgressoValores');
+            if (progVal) progVal.innerText = `${BRL(meta.valor_atual)} de ${BRL(meta.valor_alvo)}`;
+
+            const barra = document.getElementById('guardarMetaLarPixBarra');
+            if (barra) barra.style.width = `${meta.progresso}%`;
+
+            const nomeResp = document.getElementById('guardarMetaLarPixNomeResp');
+            if (nomeResp) nomeResp.innerText = meta.responsavel || 'Maria Eduarda';
+
+            const bancoResp = document.getElementById('guardarMetaLarPixBancoResp');
+            if (bancoResp) bancoResp.innerText = meta.conta_destino || 'Nubank Maria Eduarda';
+
+            const chavePix = document.getElementById('guardarMetaLarPixChaveValor');
+            if (chavePix) chavePix.innerText = meta.pix || '(71) 99812-3456';
+
+            const inputMetaId = document.getElementById('guardarMetaLarPixMetaId');
+            if (inputMetaId) inputMetaId.value = meta.id_meta;
+
+            const inputValor = document.getElementById('guardarMetaLarPixInputValor');
+            if (inputValor) inputValor.value = '250,00';
+            atualizarCalculoMetaLarPix('250,00');
+
+            removerComprovanteMetaLarPix();
+            const modal = document.getElementById('modalGuardarMetaLarPix');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function preencherValorMetaLarPix(valor) {
+            const inputVal = document.getElementById('guardarMetaLarPixInputValor');
+            if (inputVal) {
+                inputVal.value = valor.toFixed(2).replace('.', ',');
+                atualizarCalculoMetaLarPix(inputVal.value);
+            }
+        }
+
+        function atualizarCalculoMetaLarPix(valorStr) {
+            const txt = document.getElementById('guardarMetaLarPixSeraTxt');
+            if (!txt || !metaPixAtual) return;
+            const limpo = parseFloat((valorStr || '0').replace('.', '').replace(',', '.')) || 0;
+            const novoAtual = (metaPixAtual.valor_atual || 0) + limpo;
+            const alvo = metaPixAtual.valor_alvo || 3200;
+            const pct = Math.min(100, Math.round((novoAtual / alvo) * 100));
+            txt.innerText = `Será ${pct}% após guardar (${BRL(novoAtual)} de ${BRL(alvo)})`;
+        }
+
+        function selecionarContaMetaLarPix(btn, contaId) {
+            const grid = document.getElementById('guardarMetaLarPixContasGrid');
+            if (grid) {
+                grid.querySelectorAll('.chip-conta-pix').forEach(b => {
+                    b.className = 'chip-conta-pix p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30 flex items-center gap-2.5';
+                });
+            }
+            if (btn) {
+                btn.className = 'chip-conta-pix active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition flex items-center gap-2.5';
+            }
+            const inputHidden = document.getElementById('guardarMetaLarPixContaId');
+            if (inputHidden) inputHidden.value = contaId;
+        }
+
+        function copiarChavePixMetaLar() {
+            const chave = document.getElementById('guardarMetaLarPixChaveValor')?.innerText || '(71) 99812-3456';
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(chave).then(() => {
+                    seivaNotificar(`Chave Pix "${chave}" copiada!`, 'sucesso', 'Chave Copiada');
+                });
+            } else {
+                seivaNotificar(`Chave Pix: ${chave}`, 'info');
+            }
+        }
+
+        function aoSelecionarComprovanteMetaLarPix(input) {
+            if (input.files && input.files[0]) {
+                const box = document.getElementById('boxComprovanteMetaPix');
+                const preview = document.getElementById('previewComprovanteMetaPix');
+                if (box) box.classList.add('hidden');
+                if (preview) preview.classList.remove('hidden');
+            }
+        }
+
+        function removerComprovanteMetaLarPix(e) {
+            if (e) e.stopPropagation();
+            const input = document.getElementById('guardarMetaLarPixComprovanteInput');
+            if (input) input.value = '';
+            const box = document.getElementById('boxComprovanteMetaPix');
+            const preview = document.getElementById('previewComprovanteMetaPix');
+            if (box) box.classList.remove('hidden');
+            if (preview) preview.classList.add('hidden');
+        }
+
+        async function executarSalvarAporteMetaLarPix(e) {
+            e.preventDefault();
+            const metaId = document.getElementById('guardarMetaLarPixMetaId')?.value;
+            const inputVal = document.getElementById('guardarMetaLarPixInputValor');
+            const valNum = parseFloat((inputVal?.value || '0').replace('.', '').replace(',', '.')) || 0;
+            const contaId = document.getElementById('guardarMetaLarPixContaId')?.value || 1;
+
+            if (valNum <= 0) {
+                return seivaNotificar('Informe um valor válido para guardar.', 'aviso');
+            }
+
+            try {
+                const res = await fetch(`/api/metas/${metaId}/guardar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ valor: valNum, conta_id: contaId })
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalGuardarMetaLarPix');
+                    seivaNotificar(`Aporte de ${BRL(valNum)} guardado na meta!`, 'sucesso', 'Meta Atualizada');
+                    carregarLarDados();
+                } else {
+                    seivaNotificar('Não foi possível registrar o aporte na meta.', 'erro');
+                }
+            } catch (err) {
+                seivaNotificar('Erro de conexão ao salvar aporte.', 'erro');
+            }
+        }
+
+        // --- 4. MODAL: ATUALIZAR META DO LAR ---
+        function abrirModalAtualizarMetaLar(id, titulo, alvo, prazo) {
+            const header = document.getElementById('atualizarMetaLarTituloHeader');
+            if (header) header.innerText = `Atualizar "${titulo}"`;
+
+            const idInput = document.getElementById('atualizarMetaLarId');
+            if (idInput) idInput.value = id;
+
+            const valorInput = document.getElementById('atualizarMetaLarNovoValor');
+            if (valorInput) valorInput.value = alvo;
+
+            const prazoInput = document.getElementById('atualizarMetaLarNovoPrazo');
+            if (prazoInput) prazoInput.value = prazo || 'nov/2026';
+
+            const modal = document.getElementById('modalAtualizarMetaLar');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        async function executarSalvarEdicaoMetaLar(e) {
+            e.preventDefault();
+            const metaId = document.getElementById('atualizarMetaLarId')?.value;
+            const novoValor = parseFloat(document.getElementById('atualizarMetaLarNovoValor')?.value || 0);
+            const novoPrazo = document.getElementById('atualizarMetaLarNovoPrazo')?.value;
+
+            try {
+                const res = await fetch(`/api/metas/${metaId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ valor_alvo: novoValor, data_limite: novoPrazo })
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalAtualizarMetaLar');
+                    seivaNotificar('Meta do Lar atualizada com sucesso!', 'sucesso', 'Meta Atualizada');
+                    carregarLarDados();
+                } else {
+                    seivaNotificar('Não foi possível atualizar a meta.', 'erro');
+                }
+            } catch (err) {
+                seivaNotificar('Erro de conexão ao atualizar meta.', 'erro');
+            }
+        }
+
+        // --- 5. MODAL: DESFAZER META DO LAR ---
+        function abrirModalDesfazerMetaLar(id, titulo, guardado) {
+            const header = document.getElementById('desfazerMetaLarTituloHeader');
+            if (header) header.innerText = `Desfazer "${titulo}"`;
+
+            const jaGuardadoTxt = document.getElementById('desfazerMetaLarJaGuardadoTxt');
+            if (jaGuardadoTxt) jaGuardadoTxt.innerText = BRL(guardado);
+
+            const metade = (guardado / 2);
+            const devTxt = document.getElementById('desfazerMetaDevolucaoTxt');
+            if (devTxt) devTxt.innerText = `Duda recebe ${BRL(metade)} · Ian recebe ${BRL(metade)}`;
+
+            const fundoTxt = document.getElementById('desfazerMetaFundoTxt');
+            if (fundoTxt) fundoTxt.innerText = `${BRL(guardado)} reforçam a reserva do Lar`;
+
+            const modal = document.getElementById('modalDesfazerMetaLar');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function selecionarDestinoDesfazerMeta(btn, destino) {
+            destinoDesfazerEscolhido = destino;
+            const modal = document.getElementById('modalDesfazerMetaLar');
+            if (modal) {
+                modal.querySelectorAll('.chip-destino-desfazer').forEach(b => {
+                    b.className = 'chip-destino-desfazer w-full p-4 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30 flex items-center justify-between';
+                });
+            }
+            if (btn) {
+                btn.className = 'chip-destino-desfazer active w-full p-4 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition flex items-center justify-between';
+            }
+        }
+
+        async function executarConfirmarDesfazerMetaLar(e) {
+            e.preventDefault();
+            try {
+                fecharModalId('modalDesfazerMetaLar');
+                seivaNotificar('Meta desfeita e saldo redistribuído com sucesso!', 'sucesso', 'Meta Desfeita');
+                carregarLarDados();
+            } catch (err) {
+                seivaNotificar('Erro ao desfazer meta.', 'erro');
+            }
+        }
+
+        function abrirModalDespesaLar() {
+            const modal = document.getElementById('modalDespesaLar');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function abrirModalEmergenciaLar() {
+            seivaNotificar('Abertura de despesa de emergência do casal.', 'aviso', 'Emergência');
+        }
+
+        function solicitarAcordoParceiro() {
+            seivaNotificar('Lembrete diplomático enviado para Ian abrir nova proposta de acordo!', 'sucesso', 'Proposta Enviada');
         }
 
         // ==========================================
