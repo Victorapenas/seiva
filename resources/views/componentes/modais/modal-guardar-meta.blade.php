@@ -50,17 +50,24 @@
 
                 <!-- Chips de Atalho Rápido (Protótipo Imagem 12) -->
                 <div class="grid grid-cols-4 gap-2 pt-1">
-                    <button type="button" onclick="definirValorAporteMeta(50)" class="py-2 rounded-xl border border-border bg-card hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-foreground text-xs font-bold transition text-center shadow-2xs">
+                    <button type="button" onclick="definirValorAporteMeta(50)" class="chip-aporte-val py-2 rounded-xl border border-border bg-card hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-foreground text-xs font-bold transition text-center shadow-2xs">
                         R$ 50
                     </button>
-                    <button type="button" onclick="definirValorAporteMeta(100)" class="py-2 rounded-xl border border-border bg-card hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-foreground text-xs font-bold transition text-center shadow-2xs">
+                    <button type="button" onclick="definirValorAporteMeta(100)" class="chip-aporte-val py-2 rounded-xl border border-border bg-card hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-foreground text-xs font-bold transition text-center shadow-2xs">
                         R$ 100
                     </button>
-                    <button type="button" onclick="definirValorAporteMeta(200)" class="py-2 rounded-xl border-2 border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs font-black transition text-center shadow-2xs">
+                    <button type="button" onclick="definirValorAporteMeta(200)" class="chip-aporte-val py-2 rounded-xl border-2 border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs font-black transition text-center shadow-2xs">
                         R$ 200
                     </button>
-                    <button type="button" onclick="definirValorAporteMeta(500)" class="py-2 rounded-xl border border-border bg-card hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-foreground text-xs font-bold transition text-center shadow-2xs">
+                    <button type="button" onclick="definirValorAporteMeta(500)" class="chip-aporte-val py-2 rounded-xl border border-border bg-card hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-foreground text-xs font-bold transition text-center shadow-2xs">
                         R$ 500
+                    </button>
+                </div>
+
+                <!-- Atalho "Usar minha parte do mês" (Protótipo Imagem 6) -->
+                <div class="pt-0.5">
+                    <button type="button" onclick="definirValorAporteMeta(250)" class="text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline inline-flex items-center gap-1">
+                        <span>Usar minha parte do mês (R$ 250,00)</span>
                     </button>
                 </div>
             </div>
@@ -70,7 +77,7 @@
                 <label class="text-xs font-bold text-foreground block">De qual conta você está tirando?</label>
                 <p class="text-[11px] text-muted-foreground">O valor será descontado da conta escolhida.</p>
                 <div id="guardarMetaChipsContas" class="grid grid-cols-2 gap-2 pt-1">
-                    <!-- Injetado dinamicamente via JS -->
+                    <!-- Injetado dinamicamente via JS com cards de conta -->
                 </div>
                 <input type="hidden" id="guardarMetaContaId" value="">
                 <input type="hidden" id="guardarMetaId" value="">
@@ -81,28 +88,37 @@
                 Quase lá. Você vai conseguir.
             </div>
 
-            <!-- Seção de destino Pix (metas do lar) – oculta por padrão -->
-            <div id="guardarMetaSecaoLar" class="hidden space-y-3">
-                <div class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 space-y-2">
-                    <p class="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                        <i data-lucide="send" class="size-3.5"></i>
-                        Para onde vai o dinheiro
-                    </p>
-                    <p id="guardarMetaDestinoNome" class="text-sm font-extrabold text-foreground"></p>
-                    <div class="flex items-center justify-between gap-2">
+            <!-- Seção de destino (metas do lar) -->
+            <div id="guardarMetaSecaoLar" class="space-y-3">
+                <div class="p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-2">
+                    <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                        <i data-lucide="arrow-right" class="size-3.5"></i>
+                        <span>Para onde o dinheiro vai</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-foreground">
+                        <i data-lucide="users" class="size-4 text-emerald-600 shrink-0"></i>
+                        <span>Conta de <strong id="guardarMetaDestinoNome" class="font-extrabold">Conta conjunta</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                        <i data-lucide="wallet" class="size-4 text-emerald-600 shrink-0"></i>
+                        <span id="guardarMetaDestinoSub">Poupança Caixa (conjunta)</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-emerald-200/50 dark:border-emerald-800/40">
                         <p id="guardarMetaDestinoPix" class="text-xs text-muted-foreground font-medium"></p>
                         <button type="button" onclick="copiarPixMeta()" class="px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-100 transition flex items-center gap-1.5">
-                            <i data-lucide="copy" class="size-3"></i> Copiar
+                            <i data-lucide="copy" class="size-3"></i> Copiar Chave Pix
                         </button>
                     </div>
                 </div>
 
-                <!-- Comprovante para metas do lar -->
+                <!-- Comprovante da transferência (opcional, mas recomendado) (Imagem 6) -->
                 <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-foreground">Comprovante (opcional)</label>
-                    <div class="flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-dashed border-border bg-muted/20 text-center cursor-pointer hover:border-emerald-500 transition" onclick="document.getElementById('guardarMetaComprovante').click()">
-                        <i data-lucide="camera" class="size-5 text-muted-foreground mb-1"></i>
-                        <span class="text-xs font-bold text-foreground">Adicionar foto do comprovante</span>
+                    <label class="text-xs font-bold text-foreground">Comprovante da transferência (opcional, mas recomendado)</label>
+                    <div class="flex flex-col items-center justify-center p-3.5 rounded-2xl border-2 border-dashed border-border bg-muted/20 text-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/10 transition group" onclick="document.getElementById('guardarMetaComprovante').click()">
+                        <div class="size-8 rounded-xl bg-muted/60 text-muted-foreground group-hover:text-emerald-600 group-hover:bg-emerald-100 flex items-center justify-center mb-1 transition">
+                            <i data-lucide="image-plus" class="size-4"></i>
+                        </div>
+                        <span class="text-xs font-bold text-foreground">Adicionar comprovante</span>
                         <input type="file" id="guardarMetaComprovante" accept="image/*" class="hidden">
                     </div>
                 </div>

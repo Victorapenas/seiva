@@ -7,7 +7,7 @@
     <!-- Menu Expansível do FAB -->
     <div id="fabDropdown" class="hidden flex flex-col items-end gap-2.5 transition-all">
         <!-- 1. Lançar gasto -->
-        <button onclick="abrirModalGasto(); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
+        <button onclick="abrirModalLancarGasto(); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
             <span class="size-8 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
                 <i data-lucide="trending-down" class="size-4"></i>
             </span>
@@ -15,7 +15,7 @@
         </button>
 
         <!-- 2. Registrar recebimento -->
-        <button onclick="abrirModalEntrada(); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
+        <button onclick="abrirModalRegistrarRecebimento(); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
             <span class="size-8 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
                 <i data-lucide="trending-up" class="size-4"></i>
             </span>
@@ -23,7 +23,7 @@
         </button>
 
         <!-- 3. Novo acordo -->
-        <button onclick="trocarAbaApp('acordos'); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
+        <button onclick="abrirModalNovoAcordo(); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
             <span class="size-8 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
                 <i data-lucide="handshake" class="size-4"></i>
             </span>
@@ -31,7 +31,7 @@
         </button>
 
         <!-- 4. Nova meta -->
-        <button onclick="trocarAbaApp('metas'); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
+        <button onclick="abrirModalCriarMeta(); alternarFab();" class="group flex items-center gap-2.5 rounded-full bg-card py-2 pl-3 pr-4 text-xs font-bold text-foreground shadow-elevated border border-border hover:bg-emerald-50/50 dark:hover:bg-emerald-950/40 transition">
             <span class="size-8 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
                 <i data-lucide="target" class="size-4"></i>
             </span>

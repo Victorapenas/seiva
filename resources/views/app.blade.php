@@ -220,6 +220,8 @@
     @include('componentes.modais.modal-atualizar-meta-lar')
     @include('componentes.modais.modal-desfazer-meta-lar')
     @include('componentes.modais.modal-novo-acordo-passos')
+    @include('componentes.modais.modal-notificacoes-popup')
+    @include('componentes.modais.modal-editar-meta')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -1237,6 +1239,7 @@
             }
 
             carregarDashboardDados();
+            carregarNotificacoesPopup();
             // Exibe o painel de boas-vindas ao entrar (respeitando "não mostrar hoje")
             setTimeout(() => abrirBoasVindas(), 700);
         }
@@ -1499,9 +1502,12 @@
                                         </div>
                                     ` : ''}
                                 </div>
-                                <span class="text-[10px] text-muted-foreground block pt-1 border-t border-border/50">
-                                    ${c.atualizado || 'Atualizado hoje'}
-                                </span>
+                                <div class="flex items-center justify-between pt-1 border-t border-border/50 text-[10px] text-muted-foreground">
+                                    <span>${c.atualizado || 'Atualizado hoje'}</span>
+                                    <button type="button" onclick="abrirModalAtualizarSaldo('${c.id_conta}')" class="text-emerald-700 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1">
+                                        <i data-lucide="refresh-cw" class="size-3"></i> Atualizar
+                                    </button>
+                                </div>
                             </div>
                         `).join('');
                     }
@@ -1524,10 +1530,10 @@
                 const atividadeList = document.getElementById('dashAtividadeRecenteList');
                 if (atividadeList) {
                     const itens = data.atividades || [
-                        { titulo: 'Salário Florais Design', sub: '05/06 · Nubank', valor: 1500, tipo: 'entrada', icone: 'briefcase' },
-                        { titulo: 'Sephora', sub: 'Hoje · Nubank', valor: -187, tipo: 'saida', icone: 'sparkles' },
-                        { titulo: 'Rappi', sub: 'Ontem · Nubank', valor: -67.4, tipo: 'saida', icone: 'utensils' },
-                        { titulo: 'Academia Bio Ritmo', sub: 'Ontem · Nubank', valor: -119.9, tipo: 'saida', icone: 'dumbbell' }
+                        { titulo: 'Salário Florais Design', sub: '05/06 · Nubank', categoria: 'Trabalho', valor: 1500, tipo: 'entrada', icone: 'briefcase' },
+                        { titulo: 'Sephora', sub: 'Hoje · Nubank', categoria: 'Beleza', valor: -187, tipo: 'saida', icone: 'sparkles' },
+                        { titulo: 'Rappi', sub: 'Ontem · Nubank', categoria: 'Alimentação', valor: -67.4, tipo: 'saida', icone: 'utensils' },
+                        { titulo: 'Academia Bio Ritmo', sub: 'Ontem · Nubank', categoria: 'Saúde', valor: -119.9, tipo: 'saida', icone: 'dumbbell' }
                     ];
 
                     atividadeList.innerHTML = itens.map(item => `
@@ -1538,7 +1544,10 @@
                                 </span>
                                 <div>
                                     <h4 class="text-xs font-bold text-foreground">${item.titulo}</h4>
-                                    <p class="text-[11px] text-muted-foreground">${item.sub}</p>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <p class="text-[11px] text-muted-foreground">${item.sub}</p>
+                                        ${item.categoria ? `<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold border border-emerald-200/50">${item.categoria}</span>` : ''}
+                                    </div>
                                 </div>
                             </div>
                             <span class="text-xs sm:text-sm font-black ${item.valor > 0 ? 'text-emerald-600' : 'text-foreground'}">
@@ -1628,8 +1637,9 @@
                 const txs = await res.json();
                 txDadosCache = txs;
 
-                // Popular chips de conta dinamicamente
+                // Popular chips de conta e categorias dinamicamente
                 _popularChipsContaTransacoes();
+                _popularChipsCategoriaTransacoes();
 
                 // Resumos
                 const entradas = txs.filter(t => t.tipo === 'entrada').reduce((s, t) => s + parseFloat(t.valor), 0);
@@ -1652,16 +1662,53 @@
 
         function _popularChipsContaTransacoes() {
             const contas = dashboardDadosCache?.contas || listaContas || [];
-            const container = document.getElementById('txChipContasDinamicas');
+            const container = document.getElementById('txChipsConta') || document.getElementById('txChipContasDinamicas');
             if (!container || !contas.length) return;
-            container.innerHTML = contas.map(c => `
+            container.innerHTML = `
+                <button onclick="filtrarTransacoesConta('', this)"
+                        class="tx-conta-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border ${!txContaAtiva ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground hover:text-foreground'} text-xs font-bold transition">
+                    Todas
+                </button>
+            ` + contas.map(c => `
                 <button onclick="filtrarTransacoesConta('${c.id_conta}', this)"
                         data-conta="${c.id_conta}"
-                        class="tx-conta-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border bg-card text-muted-foreground text-xs font-bold transition hover:text-foreground">
+                        class="tx-conta-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border ${String(txContaAtiva) === String(c.id_conta) ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground hover:text-foreground'} text-xs font-bold transition">
                     <span class="size-2 rounded-full" style="background-color:${c.cor || '#10b981'}"></span>
                     ${c.nome}
                 </button>
             `).join('');
+        }
+
+        function _popularChipsCategoriaTransacoes() {
+            const container = document.getElementById('txChipsCategoria');
+            if (!container) return;
+            const categorias = [
+                { nome: 'Moradia', icone: 'home' },
+                { nome: 'Alimentação', icone: 'utensils' },
+                { nome: 'Transporte', icone: 'car' },
+                { nome: 'Saúde', icone: 'pill' },
+                { nome: 'Lazer', icone: 'film' },
+                { nome: 'Mercado', icone: 'shopping-cart' },
+                { nome: 'Beleza', icone: 'sparkles' },
+                { nome: 'Presente', icone: 'gift' },
+                { nome: 'Salário', icone: 'briefcase' },
+            ];
+
+            container.innerHTML = `
+                <button onclick="filtrarTransacoesCategoria('', this)"
+                        class="tx-cat-chip inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${!txCategoriaAtiva ? 'bg-primary text-primary-foreground shadow-soft' : 'border border-border bg-card text-muted-foreground hover:text-foreground'}"
+                        data-cat="">
+                    Todos
+                </button>
+            ` + categorias.map(c => `
+                <button onclick="filtrarTransacoesCategoria('${c.nome}', this)"
+                        data-cat="${c.nome}"
+                        class="tx-cat-chip inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition ${txCategoriaAtiva === c.nome ? 'bg-primary text-primary-foreground shadow-soft' : 'border border-border bg-card text-muted-foreground hover:text-foreground'}">
+                    <i data-lucide="${c.icone}" class="size-3.5"></i>
+                    <span>${c.nome}</span>
+                </button>
+            `).join('');
+            lucide.createIcons();
         }
 
         function _renderizarListaAgrupada(txs) {
@@ -4051,26 +4098,44 @@
                 <div class="rounded-3xl border border-border bg-card shadow-2xs overflow-hidden">
                     <!-- Cabeçalho do card -->
                     <div class="p-4 pb-3 flex items-start justify-between gap-3">
-                        <div class="flex items-start gap-3 min-w-0">
+                        <div class="flex items-start gap-3 min-w-0 flex-1">
                             ${visualProduto}
                             <div class="min-w-0 flex-1">
                                 <h4 class="text-sm font-extrabold text-foreground truncate">${m.titulo}</h4>
                                 ${dataLabel ? `<span class="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5"><i data-lucide="calendar" class="size-3"></i> ${dataLabel}</span>` : ''}
                                 ${m.link_referencia ? `
-                                    <a href="${m.link_referencia}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline mt-0.5">
-                                        <i data-lucide="external-link" class="size-3"></i>
-                                        <span>${m.loja || 'Link do produto'} · Acompanhar preço</span>
-                                    </a>
-                                ` : ''}
+                                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                        <a href="${m.link_referencia}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline">
+                                            <i data-lucide="external-link" class="size-3"></i>
+                                            <span>${m.loja || 'Link'}</span>
+                                        </a>
+                                        <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-300/40">
+                                            <i data-lucide="bell" class="size-3 text-emerald-600"></i>
+                                            <span>Monitorando</span>
+                                        </span>
+                                    </div>
+                                ` : `
+                                    <button type="button" onclick="abrirModalEditarMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${alvo}, '${m.categoria||'produto'}', '', '', '', true)"
+                                            class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline mt-0.5">
+                                        <i data-lucide="link" class="size-3"></i> Adicionar link para monitorar
+                                    </button>
+                                `}
                             </div>
                         </div>
 
-                        ${m.em_negociacao ? `
-                            <span class="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-300 text-amber-800 dark:text-amber-300 text-[10px] font-bold inline-flex items-center gap-1 shrink-0">
-                                <i data-lucide="alert-triangle" class="size-3 text-amber-600"></i>
-                                <span>Em negociação</span>
-                            </span>
-                        ` : ''}
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            ${m.em_negociacao ? `
+                                <span class="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-300 text-amber-800 dark:text-amber-300 text-[10px] font-bold inline-flex items-center gap-1">
+                                    <i data-lucide="alert-triangle" class="size-3 text-amber-600"></i>
+                                    <span>Em negociação</span>
+                                </span>
+                            ` : ''}
+                            <button type="button" onclick="abrirModalEditarMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${alvo}, '${m.categoria||'produto'}', '${(m.link_referencia||'').replace(/'/g, "\\'")}', '${(m.imagem||'').replace(/'/g, "\\'")}', '${(m.loja||'').replace(/'/g, "\\'")}', ${m.monitorar_promocao !== false})"
+                                    class="size-8 rounded-xl border border-border bg-muted/30 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs"
+                                    title="Editar objetivo, imagem ou link">
+                                <i data-lucide="edit-3" class="size-3.5"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Barra de progresso -->
@@ -4538,15 +4603,11 @@
         }
 
         function abrirModalGasto() {
-            document.getElementById('modalTransacaoHeader').innerText = 'Registrar Gasto';
-            document.getElementById('formTransTipo').value = 'saida';
-            document.getElementById('modalTransacao').classList.remove('hidden');
+            abrirModalLancarGasto();
         }
 
         function abrirModalEntrada() {
-            document.getElementById('modalTransacaoHeader').innerText = 'Registrar Entrada';
-            document.getElementById('formTransTipo').value = 'entrada';
-            document.getElementById('modalTransacao').classList.remove('hidden');
+            abrirModalRegistrarRecebimento();
         }
 
         function abrirModalDespesaLar() {
@@ -4683,14 +4744,14 @@
 
         // Catálogo completo de ações disponíveis
         const ACOES_CATALOGO = [
-            { id: 'gasto',      icone: 'trending-down',  label: 'Lançar gasto',       cor: '#c84b31', bg: '#fff5f5', fn: 'abrirModalGasto()',         padrao: true  },
-            { id: 'entrada',    icone: 'trending-up',    label: 'Registrar entrada',   cor: '#2e6b4f', bg: '#f0fdf4', fn: 'abrirModalEntrada()',       padrao: true  },
+            { id: 'gasto',      icone: 'trending-down',  label: 'Lançar gasto',       cor: '#c84b31', bg: '#fff5f5', fn: 'abrirModalLancarGasto()',         padrao: true  },
+            { id: 'entrada',    icone: 'trending-up',    label: 'Registrar entrada',   cor: '#2e6b4f', bg: '#f0fdf4', fn: 'abrirModalRegistrarRecebimento()', padrao: true  },
             { id: 'extrato',    icone: 'receipt',        label: 'Ver extrato',         cor: '#6366f1', bg: '#eef2ff', fn: "trocarAbaApp('transacoes')", padrao: true  },
             { id: 'metas',      icone: 'target',         label: 'Minhas metas',        cor: '#0891b2', bg: '#ecfeff', fn: "trocarAbaApp('metas')",      padrao: false },
             { id: 'lar',        icone: 'home',           label: 'Área do Lar',         cor: '#059669', bg: '#ecfdf5', fn: "trocarAbaApp('lar')",        padrao: false, casalOnly: true },
             { id: 'acordos',    icone: 'handshake',      label: 'Mesa de Acordos',     cor: '#d97706', bg: '#fffbeb', fn: "trocarAbaApp('acordos')",    padrao: false, casalOnly: true },
             { id: 'cobrador',   icone: 'bell-ring',      label: 'Cobrador Diplomata',  cor: '#7c3aed', bg: '#f5f3ff', fn: "trocarAbaApp('cobrador')",   padrao: false, casalOnly: true },
-            { id: 'relatorio',  icone: 'bar-chart-2',   label: 'Relatórios',          cor: '#1d4ed8', bg: '#eff6ff', fn: "seivaNotificar('Relatórios em breve!','info')", padrao: false },
+            { id: 'relatorio',  icone: 'bar-chart-2',   label: 'Relatórios',          cor: '#1d4ed8', bg: '#eff6ff', fn: "trocarAbaApp('recebimentos')", padrao: false },
         ];
 
         function getAcoesCatalogoFiltrado() {
@@ -4898,7 +4959,7 @@
             const acoes = getAcoesSalvas();
 
             if (!acoes.length) {
-                container.innerHTML = '<p class="text-xs text-muted-foreground col-span-2 text-center py-2">Nenhuma ação selecionada. Clique em ⚙ para personalizar.</p>';
+                container.innerHTML = '<p class="text-xs text-muted-foreground col-span-2 text-center py-2">Nenhuma ação selecionada. Clique no botão de configurações acima para personalizar.</p>';
                 return;
             }
 
@@ -4976,9 +5037,26 @@
             } catch(e) {}
         }
 
-        // ── Alias: o sino do dashboard abre o painel de boas-vindas ──────────
+        // ── Pop-up Dedicado de Notificações SEIVA ──────────────────────────
         function abrirModalNotificacoes() {
-            // Reseta o "não mostrar hoje" para que o painel abra mesmo se já foi visto
+            abrirModalNotificacoesPopup();
+        }
+
+        function abrirModalNotificacoesPopup() {
+            const modal = document.getElementById('modalNotificacoesPopup');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            carregarNotificacoesPopup();
+            lucide.createIcons();
+        }
+
+        function fecharModalNotificacoesPopup() {
+            const modal = document.getElementById('modalNotificacoesPopup');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function abrirModalBoasVindasCompleto() {
+            fecharModalNotificacoesPopup();
             const modal = document.getElementById('modalBoasVindas');
             if (!modal) return;
             modal.classList.remove('hidden');
@@ -4990,6 +5068,284 @@
             renderizarAcoesBV();
             Promise.all([carregarNotificacoesBV(), carregarResumoBV()]).catch(console.error);
             lucide.createIcons();
+        }
+
+        async function carregarNotificacoesPopup() {
+            try {
+                const res = await fetch('/api/notificacoes', {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const notifs = data.notificacoes || [];
+                const totalNaoLidas = data.total_nao_lidas || 0;
+
+                // Atualizar badges
+                const badgePopup = document.getElementById('popupNotifBadgeContador');
+                const badgeTop = document.getElementById('topbarBadgeNotif');
+
+                [badgePopup, badgeTop].forEach(b => {
+                    if (b) {
+                        if (totalNaoLidas > 0) {
+                            b.innerText = totalNaoLidas > 9 ? '9+' : totalNaoLidas;
+                            b.classList.remove('hidden');
+                            b.classList.add('flex');
+                        } else {
+                            b.classList.add('hidden');
+                            b.classList.remove('flex');
+                        }
+                    }
+                });
+
+                const lista = document.getElementById('popupNotificacoesLista');
+                if (!lista) return;
+
+                if (!notifs.length) {
+                    lista.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-8 text-center gap-2">
+                            <span class="size-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <i data-lucide="check-circle-2" class="size-5"></i>
+                            </span>
+                            <p class="text-xs font-bold text-foreground">Tudo em dia!</p>
+                            <p class="text-[11px] text-muted-foreground">Nenhuma notificação pendente no momento.</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+
+                const iconesPorTipo = {
+                    sucesso:  { icon: 'check-circle', bg: 'bg-emerald-50 dark:bg-emerald-950/60', cor: 'text-emerald-700 dark:text-emerald-300', borda: 'border-emerald-200/60 dark:border-emerald-800/40' },
+                    alerta:   { icon: 'alert-triangle', bg: 'bg-amber-50 dark:bg-amber-950/60',   cor: 'text-amber-700 dark:text-amber-300',   borda: 'border-amber-200/60 dark:border-amber-800/40' },
+                    cobranca: { icon: 'hand-coins',    bg: 'bg-purple-50 dark:bg-purple-950/60', cor: 'text-purple-700 dark:text-purple-300', borda: 'border-purple-200/60 dark:border-purple-800/40' },
+                    info:     { icon: 'info',          bg: 'bg-blue-50 dark:bg-blue-950/60',     cor: 'text-blue-700 dark:text-blue-300',       borda: 'border-blue-200/60 dark:border-blue-800/40' },
+                    erro:     { icon: 'x-circle',      bg: 'bg-rose-50 dark:bg-rose-950/60',     cor: 'text-rose-700 dark:text-rose-300',       borda: 'border-rose-200/60 dark:border-rose-800/40' },
+                };
+
+                lista.innerHTML = notifs.map(n => {
+                    const cfg = iconesPorTipo[n.tipo] || iconesPorTipo.info;
+                    const opacidade = n.lida ? 'opacity-50' : '';
+                    const acaoBotao = n.acao
+                        ? `<button type="button" onclick="${n.acao.fn}; fecharModalNotificacoesPopup();"
+                               class="mt-2 px-3 py-1.5 rounded-xl bg-card border border-border hover:bg-muted text-[11px] font-bold text-foreground transition flex items-center gap-1.5 shadow-2xs">
+                               <span>${n.acao.label}</span>
+                               <i data-lucide="arrow-right" class="size-3 text-primary"></i>
+                           </button>`
+                        : '';
+
+                    return `
+                        <div class="flex items-start gap-3 p-3.5 rounded-2xl border ${cfg.borda} ${cfg.bg} ${opacidade} transition hover:brightness-95">
+                            <span class="size-9 rounded-xl ${cfg.bg} ${cfg.cor} flex items-center justify-center shrink-0 border ${cfg.borda}">
+                                <i data-lucide="${cfg.icon}" class="size-4"></i>
+                            </span>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-1">
+                                    <p class="text-xs font-black text-foreground leading-snug">${n.titulo}</p>
+                                    <span class="text-[10px] text-muted-foreground shrink-0">${n.tempo || ''}</span>
+                                </div>
+                                <p class="text-[11px] text-muted-foreground leading-relaxed mt-0.5">${n.texto}</p>
+                                ${acaoBotao}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                lucide.createIcons();
+            } catch (e) {
+                console.error('Erro ao carregar pop-up de notificações:', e);
+            }
+        }
+
+        async function marcarTodasLidasPopup() {
+            try {
+                await fetch('/api/notificacoes/ler', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+                });
+                await carregarNotificacoesPopup();
+                await carregarNotificacoesBV();
+                seivaNotificar('Todas as notificações foram marcadas como lidas.', 'sucesso', 'Notificações');
+            } catch(e) {}
+        }
+
+        // ── Funções de Edição de Metas (RF007, RF008) ────────────────────────
+        function abrirModalEditarMeta(id, titulo, valorAlvo, categoria, link, imagem, loja, monitorar) {
+            document.getElementById('editMetaId').value = id;
+            document.getElementById('editMetaNome').value = titulo || '';
+            const numAlvo = typeof valorAlvo === 'number' ? valorAlvo : parseFloat(valorAlvo) || 0;
+            document.getElementById('editMetaValor').value = numAlvo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('editMetaCategoria').value = categoria || 'produto';
+            document.getElementById('editMetaLinkProduto').value = link || '';
+            document.getElementById('editMetaLoja').value = loja || '';
+            document.getElementById('editMetaFotoUrl').value = imagem || '';
+            const chkMon = document.getElementById('editMetaMonitorarPromocao');
+            if (chkMon) chkMon.checked = monitorar !== false;
+
+            // Atualiza chips de categoria
+            document.querySelectorAll('.chip-cat-meta-edit').forEach(btn => {
+                btn.className = 'chip-cat-meta-edit flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition';
+            });
+            const chipAtivo = document.querySelector(`.chip-cat-meta-edit[onclick*="'${categoria}'"]`);
+            if (chipAtivo) {
+                chipAtivo.className = 'chip-cat-meta-edit flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-emerald-600 bg-emerald-800 text-white font-bold text-xs transition';
+            }
+
+            // Preview de foto
+            const previewCont = document.getElementById('previewFotoMetaEditContainer');
+            const previewImg  = document.getElementById('previewFotoMetaEditImg');
+            const boxUpload   = document.getElementById('boxUploadFotoMetaEdit');
+            const previewTit  = document.getElementById('previewFotoMetaEditTitulo');
+
+            if (imagem) {
+                if (previewImg) previewImg.src = imagem;
+                if (previewTit) previewTit.innerText = titulo || 'Foto do produto';
+                if (previewCont) previewCont.classList.remove('hidden');
+                if (boxUpload) boxUpload.classList.add('hidden');
+            } else {
+                if (previewCont) previewCont.classList.add('hidden');
+                if (boxUpload) boxUpload.classList.remove('hidden');
+            }
+
+            abrirModalId('modalEditarMeta');
+            lucide.createIcons();
+        }
+
+        function selecionarTipoMetaEdicao(btn, cat, icone) {
+            document.querySelectorAll('.chip-cat-meta-edit').forEach(b => {
+                b.className = 'chip-cat-meta-edit flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition';
+            });
+            btn.className = 'chip-cat-meta-edit flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-emerald-600 bg-emerald-800 text-white font-bold text-xs transition';
+            document.getElementById('editMetaCategoria').value = cat;
+        }
+
+        async function buscarDadosLinkProdutoEdit() {
+            const url = document.getElementById('editMetaLinkProduto')?.value?.trim();
+            if (!url) return seivaNotificar('Cole a URL de um produto antes de buscar.', 'aviso');
+
+            const btn = document.getElementById('btnBuscarLinkMetaEdit');
+            const textoOriginal = btn ? btn.innerHTML : 'Buscar';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i data-lucide="loader-2" class="size-3.5 animate-spin"></i><span>Buscando...</span>`;
+                lucide.createIcons();
+            }
+
+            try {
+                const res = await fetch('/api/metas/consultar-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.titulo) document.getElementById('editMetaNome').value = data.titulo;
+                    if (data.preco) {
+                        const valFmt = typeof data.preco === 'number'
+                            ? data.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : data.preco;
+                        document.getElementById('editMetaValor').value = valFmt;
+                    }
+                    if (data.loja) document.getElementById('editMetaLoja').value = data.loja;
+                    if (data.imagem) {
+                        document.getElementById('editMetaFotoUrl').value = data.imagem;
+                        const previewCont = document.getElementById('previewFotoMetaEditContainer');
+                        const previewImg = document.getElementById('previewFotoMetaEditImg');
+                        const boxUpload = document.getElementById('boxUploadFotoMetaEdit');
+                        const previewTit = document.getElementById('previewFotoMetaEditTitulo');
+                        if (previewImg) previewImg.src = data.imagem;
+                        if (previewTit) previewTit.innerText = data.titulo || 'Foto do produto';
+                        if (previewCont) previewCont.classList.remove('hidden');
+                        if (boxUpload) boxUpload.classList.add('hidden');
+                    }
+                    seivaNotificar(`Dados atualizados via ${data.loja || 'loja'}!`, 'sucesso', 'Wishlist');
+                } else {
+                    seivaNotificar('Não foi possível buscar os dados automaticamente deste link.', 'aviso');
+                }
+            } catch (e) {
+                seivaNotificar('Erro ao consultar link do produto.', 'erro');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        function aoSelecionarFotoMetaEdit(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                document.getElementById('editMetaFotoUrl').value = dataUrl;
+                const previewCont = document.getElementById('previewFotoMetaEditContainer');
+                const previewImg = document.getElementById('previewFotoMetaEditImg');
+                const boxUpload = document.getElementById('boxUploadFotoMetaEdit');
+                const previewTit = document.getElementById('previewFotoMetaEditTitulo');
+                if (previewImg) previewImg.src = dataUrl;
+                if (previewTit) previewTit.innerText = file.name;
+                if (previewCont) previewCont.classList.remove('hidden');
+                if (boxUpload) boxUpload.classList.add('hidden');
+                lucide.createIcons();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removerFotoMetaEdit(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('editMetaFotoUrl').value = '';
+            const inpFile = document.getElementById('editMetaFotoArquivo');
+            if (inpFile) inpFile.value = '';
+            const previewCont = document.getElementById('previewFotoMetaEditContainer');
+            const boxUpload = document.getElementById('boxUploadFotoMetaEdit');
+            if (previewCont) previewCont.classList.add('hidden');
+            if (boxUpload) boxUpload.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        async function executarSalvarEdicaoMeta(event) {
+            event.preventDefault();
+            const id = document.getElementById('editMetaId').value;
+            const titulo = document.getElementById('editMetaNome').value.trim();
+            const categoria = document.getElementById('editMetaCategoria').value;
+            const valorRaw = document.getElementById('editMetaValor').value.replace(/\./g, '').replace(',', '.');
+            const valor_alvo = parseFloat(valorRaw) || 0;
+            const link_referencia = document.getElementById('editMetaLinkProduto')?.value?.trim() || null;
+            const loja = document.getElementById('editMetaLoja')?.value?.trim() || null;
+            const imagem = document.getElementById('editMetaFotoUrl')?.value || null;
+            const monitorar_promocao = document.getElementById('editMetaMonitorarPromocao')?.checked ?? true;
+
+            if (!valor_alvo) return seivaNotificar('Informe um valor planejado válido.', 'aviso');
+
+            try {
+                const res = await fetch(`/api/metas/${id}/atualizar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        titulo,
+                        categoria,
+                        valor_alvo,
+                        link_referencia,
+                        loja,
+                        imagem,
+                        monitorar_promocao
+                    })
+                });
+
+                if (res.ok) {
+                    seivaNotificar('Objetivo atualizado com sucesso!', 'sucesso', 'Meta Atualizada');
+                    fecharModalId('modalEditarMeta');
+                    carregarMetasDados();
+                    carregarDashboardDados();
+                } else {
+                    const err = await res.json();
+                    seivaNotificar(err.mensagem || 'Não foi possível salvar alterações.', 'erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao salvar objetivo.', 'erro');
+            }
         }
 
         // ── Renderização dinâmica das seções do Dashboard ─────────────────────
@@ -5508,19 +5864,23 @@
         }
 
         // 4. Modal Atualizar Saldo (Imagem 3)
-        function abrirModalAtualizarSaldo() {
+        function abrirModalAtualizarSaldo(contaId = null) {
             const contas = dashboardDadosCache?.contas || listaContas || [];
             const containerChips = document.getElementById('modalSaldoChipsContas');
             if (containerChips && contas.length) {
-                contaAjusteSaldoId = contas[0].id_conta;
-                containerChips.innerHTML = contas.map((c, i) => `
+                let contaAlvo = contaId ? contas.find(c => String(c.id_conta) === String(contaId)) : null;
+                if (!contaAlvo) contaAlvo = contas[0];
+                contaAjusteSaldoId = contaAlvo.id_conta;
+
+                containerChips.innerHTML = contas.map(c => `
                     <button type="button" onclick="selecionarContaAjusteSaldo(${c.id_conta}, '${c.nome.replace(/'/g, "\\'")}', ${c.saldo})" 
-                            class="chip-conta-saldo flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${i === 0 ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300' : 'border-border bg-card text-muted-foreground hover:text-foreground'}">
+                            id="chipSaldoConta_${c.id_conta}"
+                            class="chip-conta-saldo flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${String(c.id_conta) === String(contaAlvo.id_conta) ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300' : 'border-border bg-card text-muted-foreground hover:text-foreground'}">
                         <span class="size-2 rounded-full" style="background-color: ${c.cor || '#10b981'}"></span>
                         <span>${c.nome}</span>
                     </button>
                 `).join('');
-                selecionarContaAjusteSaldo(contas[0].id_conta, contas[0].nome, contas[0].saldo);
+                selecionarContaAjusteSaldo(contaAlvo.id_conta, contaAlvo.nome, contaAlvo.saldo);
             }
             document.getElementById('modalAtualizarSaldo')?.classList.remove('hidden');
             lucide.createIcons();
@@ -5734,11 +6094,30 @@
 
         function selecionarCategoriaGasto(btn, nomeCat, icon) {
             categoriaGastoAtual = nomeCat;
-            document.getElementById('gastoCategoriaSelecionada').value = nomeCat;
-            document.querySelectorAll('#gastoChipsCategorias .cat-chip').forEach(b => {
-                b.className = 'cat-chip flex flex-col items-center justify-center p-2.5 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-[11px] transition';
+            const inputCat = document.getElementById('gastoCategoriaSelecionada');
+            if (inputCat) inputCat.value = nomeCat;
+            const inputIco = document.getElementById('gastoIconeSelecionado');
+            if (inputIco) inputIco.value = icon || 'tag';
+
+            document.querySelectorAll('#gastoGridCategorias .cat-chip, #gastoChipsCategorias .cat-chip').forEach(b => {
+                b.className = 'cat-chip flex flex-col items-center justify-center p-3 rounded-2xl border border-border bg-card text-foreground hover:bg-muted/40 font-bold text-xs transition shadow-2xs';
             });
-            btn.className = 'cat-chip active flex flex-col items-center justify-center p-2.5 rounded-2xl border border-emerald-600 bg-emerald-800 text-white font-bold text-[11px] transition';
+            btn.className = 'cat-chip active flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-emerald-800 bg-emerald-800 text-white font-bold text-xs transition shadow-2xs';
+        }
+
+        function selecionarContaGastoChip(btn, nomeConta, id) {
+            contaGastoAtual = id;
+            const inputConta = document.getElementById('gastoContaIdSelecionada');
+            if (inputConta) inputConta.value = id;
+            document.querySelectorAll('#gastoChipsContas .chip-conta-btn').forEach(b => {
+                b.className = 'chip-conta-btn px-4 py-2 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition shadow-2xs';
+            });
+            btn.className = 'chip-conta-btn active px-4 py-2 rounded-full border-2 border-emerald-800 bg-emerald-800 text-white font-bold text-xs transition shadow-2xs';
+        }
+
+        function aoAlternarImprevistoGasto(ativo) {
+            const aviso = document.getElementById('textoAvisoImprevistoGasto');
+            if (aviso) aviso.classList.toggle('hidden', !ativo);
         }
 
         function selecionarContaGasto(id) {
@@ -5784,6 +6163,9 @@
             const compartilhado = visibilidadeGastoAtual === 'compartilhado';
 
             try {
+                const contaIdEfetivo = contaGastoAtual || document.getElementById('gastoContaIdSelecionada')?.value || (dashboardDadosCache?.contas?.[0]?.id_conta ?? null);
+                const categoriaEfetiva = categoriaGastoAtual || 'Moradia';
+
                 const res = await fetch('/api/transacoes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -5791,8 +6173,8 @@
                         tipo: 'saida',
                         titulo,
                         valor,
-                        conta_id: contaGastoAtual,
-                        categoria_nome: categoriaGastoAtual,
+                        conta_id: contaIdEfetivo,
+                        categoria_nome: categoriaEfetiva,
                         is_imprevisto: isImprevisto,
                         compartilhado: compartilhado
                     })
@@ -5804,6 +6186,8 @@
                     inputTit.value = '';
                     seivaNotificar(`Gasto de ${BRL(valor)} registrado com sucesso!`, 'sucesso', 'Gasto Lançado');
                     carregarDashboardDados();
+                    if (typeof carregarExtratoDados === 'function') carregarExtratoDados();
+                    if (typeof carregarPainelLarDados === 'function') carregarPainelLarDados();
                 } else {
                     const err = await res.json();
                     seivaNotificar(err.erro || 'Não foi possível registrar o gasto.', 'erro');

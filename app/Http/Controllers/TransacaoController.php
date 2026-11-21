@@ -20,12 +20,45 @@ class TransacaoController extends Controller
             ->orderBy('data', 'desc')
             ->orderBy('id_transacao', 'desc');
 
-        if ($request->has('tipo') && $request->tipo) {
+        if ($request->filled('tipo')) {
             $query->where('tipo', $request->tipo);
         }
 
-        if ($request->has('mes') && $request->mes) {
+        if ($request->filled('conta_id')) {
+            $query->where('conta_id', $request->conta_id);
+        }
+
+        if ($request->filled('categoria')) {
+            $catFiltro = trim($request->categoria);
+            $query->where(function($q) use ($catFiltro) {
+                $q->whereHas('categoria', function($cq) use ($catFiltro) {
+                    $cq->where('nome', 'like', "%{$catFiltro}%")
+                       ->orWhere('id_categoria', $catFiltro);
+                })
+                ->orWhere('titulo', 'like', "%{$catFiltro}%");
+            });
+        }
+
+        if ($request->filled('periodo')) {
+            $hoje = now()->format('Y-m-d');
+            if ($request->periodo === 'hoje') {
+                $query->whereDate('data', $hoje);
+            } elseif ($request->periodo === 'semana') {
+                $query->whereDate('data', '>=', now()->subDays(7)->format('Y-m-d'));
+            } elseif ($request->periodo === 'mes') {
+                $query->whereRaw("strftime('%Y-%m', data) = ?", [now()->format('Y-m')]);
+            }
+        } elseif ($request->filled('mes')) {
             $query->whereRaw("strftime('%Y-%m', data) = ?", [$request->mes]);
+        }
+
+        if ($request->filled('q') || $request->filled('busca')) {
+            $termo = trim($request->q ?? $request->busca);
+            $query->where(function($q) use ($termo) {
+                $q->where('titulo', 'like', "%{$termo}%")
+                  ->orWhereHas('categoria', fn($cq) => $cq->where('nome', 'like', "%{$termo}%"))
+                  ->orWhereHas('conta', fn($cq) => $cq->where('nome', 'like', "%{$termo}%"));
+            });
         }
 
         $transacoes = $query->get();
@@ -40,9 +73,12 @@ class TransacaoController extends Controller
             'tipo' => 'required|in:entrada,saida',
             'conta_id' => 'required|exists:contas,id_conta',
             'categoria_id' => 'nullable|exists:categorias,id_categoria',
+            'categoria_nome' => 'nullable|string',
+            'is_imprevisto' => 'nullable|boolean',
             'data' => 'nullable|date',
             'emoji' => 'nullable|string',
             'visibilidade' => 'nullable|in:pessoal,compartilhado,lar',
+            'compartilhado' => 'nullable|boolean',
         ]);
 
         $userId = Auth::id();
@@ -51,17 +87,53 @@ class TransacaoController extends Controller
             return response()->json(['error' => 'A conta informada não pertence ao usuário.'], 403);
         }
 
-        return DB::transaction(function () use ($request, $userId, $conta) {
+        // Mapeamento e resolução de Categoria por Nome ou ID
+        $categoriaId = $request->categoria_id;
+        $iconeSugerido = null;
+
+        if (!$categoriaId && $request->filled('categoria_nome')) {
+            $mapaIcones = [
+                'Moradia' => 'home',
+                'Alimentação' => 'utensils',
+                'Transporte' => 'car',
+                'Saúde' => 'pill',
+                'Lazer' => 'film',
+                'Mercado' => 'shopping-cart',
+                'Beleza' => 'sparkles',
+                'Presente' => 'gift',
+            ];
+            $catNome = trim($request->categoria_nome);
+            $iconeSugerido = $mapaIcones[$catNome] ?? 'tag';
+
+            $categoria = \App\Models\Categoria::firstOrCreate(
+                ['nome' => $catNome],
+                [
+                    'emoji' => $iconeSugerido,
+                    'cor' => '#10b981',
+                    'sistema' => true,
+                ]
+            );
+            $categoriaId = $categoria->id_categoria;
+        }
+
+        $visibilidade = $request->visibilidade;
+        if (!$visibilidade) {
+            $visibilidade = $request->compartilhado ? 'compartilhado' : 'pessoal';
+        }
+
+        return DB::transaction(function () use ($request, $userId, $conta, $categoriaId, $iconeSugerido, $visibilidade) {
+            $iconeFinal = $request->emoji ?: ($iconeSugerido ?: ($request->tipo === 'entrada' ? 'trending-up' : 'credit-card'));
+
             $transacao = Transacao::create([
                 'usuario_id' => $userId,
                 'conta_id' => $request->conta_id,
-                'categoria_id' => $request->categoria_id,
+                'categoria_id' => $categoriaId,
                 'titulo' => $request->titulo,
-                'emoji' => $request->emoji ?? ($request->tipo === 'entrada' ? 'trending-up' : 'trending-down'),
+                'emoji' => $iconeFinal,
                 'valor' => $request->valor,
                 'tipo' => $request->tipo,
                 'data' => $request->data ?? now()->format('Y-m-d'),
-                'visibilidade' => $request->visibilidade ?? 'pessoal',
+                'visibilidade' => $visibilidade,
             ]);
 
             // Atualiza saldo da conta

@@ -364,21 +364,57 @@ class MetaController extends Controller
     public function atualizarMeta(Request $request, $id)
     {
         $request->validate([
-            'valor_alvo' => 'required|numeric|min:1',
+            'titulo' => 'nullable|string|max:255',
+            'valor_alvo' => 'nullable|numeric|min:1',
+            'contribuicao_mensal' => 'nullable|numeric|min:0',
+            'categoria' => 'nullable|string',
+            'imagem' => 'nullable|string',
+            'link_referencia' => 'nullable|string|max:1000',
+            'loja' => 'nullable|string|max:100',
+            'monitorar_promocao' => 'nullable|boolean',
             'data_limite' => 'nullable|string',
+            'onde_guardado' => 'nullable|string',
         ]);
 
+        $user = Auth::user();
         $meta = Meta::find($id);
+
+        $dadosAtualizacao = array_filter([
+            'titulo' => $request->titulo,
+            'valor_alvo' => $request->valor_alvo,
+            'contribuicao_mensal' => $request->contribuicao_mensal,
+            'categoria' => $request->categoria,
+            'imagem' => $request->imagem,
+            'link_referencia' => $request->link_referencia,
+            'loja' => $request->loja,
+            'data_limite' => $request->data_limite,
+            'onde_guardado' => $request->onde_guardado,
+        ], fn($v) => !is_null($v));
+
+        if ($request->has('monitorar_promocao')) {
+            $dadosAtualizacao['monitorar_promocao'] = (bool)$request->monitorar_promocao;
+        }
+
         if ($meta) {
-            $meta->update([
-                'valor_alvo' => $request->valor_alvo,
-                'data_limite' => $request->data_limite ?: $meta->data_limite,
-            ]);
+            $meta->update($dadosAtualizacao);
+        } elseif ($user) {
+            // Se for uma meta seeded que ainda não estava no banco, salva agora
+            $lar = $user->lares()->first();
+            $meta = Meta::create(array_merge([
+                'usuario_id' => $user->id_usuario,
+                'lar_id' => ($id >= 200 && $lar) ? $lar->id_lar : null,
+                'titulo' => $request->titulo ?: 'Meta',
+                'valor_alvo' => $request->valor_alvo ?: 1000,
+                'valor_atual' => 0,
+                'categoria' => $request->categoria ?: 'produto',
+                'status' => 'ativa',
+            ], $dadosAtualizacao));
         }
 
         return response()->json([
             'sucesso' => true,
             'mensagem' => 'Meta atualizada com sucesso!',
+            'meta' => $meta,
         ]);
     }
 

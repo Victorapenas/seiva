@@ -60,6 +60,12 @@
         </div>
 
         <div class="flex items-center gap-2.5">
+            <!-- Botão Atualizar Saldo no Início -->
+            <button type="button" onclick="abrirModalAtualizarSaldo()" class="inline-flex items-center gap-1.5 rounded-full bg-card hover:bg-muted text-foreground border border-border px-3.5 py-1.5 text-xs font-bold shadow-2xs transition">
+                <i data-lucide="refresh-cw" class="size-3.5 text-emerald-600"></i>
+                <span>Atualizar saldo</span>
+            </button>
+
             <!-- Badge "Você registra, o SEIVA organiza" -->
             <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/40 px-3.5 py-1.5 text-xs font-semibold shadow-2xs">
                 <i data-lucide="info" class="size-3.5 text-emerald-600"></i>

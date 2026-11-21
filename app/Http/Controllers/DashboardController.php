@@ -367,8 +367,8 @@ class DashboardController extends Controller
             ];
         }
 
-        // 12. Atividade Recente Real
-        $atividades = Transacao::with('conta')
+        // 12. Atividade Recente Real com Categoria e Ícones
+        $atividades = Transacao::with(['conta', 'categoria'])
             ->where('usuario_id', $userId)
             ->orderByDesc('data')
             ->orderByDesc('id_transacao')
@@ -380,9 +380,10 @@ class DashboardController extends Controller
                 return [
                     'titulo' => $t->titulo,
                     'sub' => Carbon::parse($t->data)->format('d/m') . ($t->conta ? ' · ' . $t->conta->nome : ''),
+                    'categoria' => $t->categoria ? $t->categoria->nome : null,
                     'valor' => $val,
                     'tipo' => $t->tipo,
-                    'icone' => $t->tipo === 'entrada' ? 'briefcase' : 'credit-card',
+                    'icone' => $t->emoji ?: ($t->tipo === 'entrada' ? 'trending-up' : 'credit-card'),
                 ];
             });
 
