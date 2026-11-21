@@ -214,7 +214,7 @@ class CenariosTesteSeeder extends Seeder
         $ian = Usuario::updateOrCreate(
             ['email' => 'ian@seiva.com'],
             [
-                'nome' => 'Ian Silva',
+                'nome' => 'Ian Marcos',
                 'telefone' => '71988882222',
                 'senha_hash' => Hash::make('123456'),
                 'pin_caixa_preta' => '9876',
@@ -231,7 +231,7 @@ class CenariosTesteSeeder extends Seeder
         $duda = Usuario::updateOrCreate(
             ['email' => 'duda@seiva.com'],
             [
-                'nome' => 'Duda Lima',
+                'nome' => 'Maria Eduarda',
                 'telefone' => '71977773333',
                 'senha_hash' => Hash::make('123456'),
                 'pin_caixa_preta' => '1234',

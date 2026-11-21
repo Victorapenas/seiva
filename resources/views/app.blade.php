@@ -4469,17 +4469,20 @@
                 if (!res.ok) return;
                 const data = await res.json();
                 const user = data.usuario || {};
-                const nomeCompleto = user.nome || 'Usuário';
+                const nomeCompleto = user.nome || 'Maria Eduarda';
                 const partes = nomeCompleto.trim().split(' ').filter(Boolean);
-                const iniciais = partes.length >= 2
-                    ? (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
-                    : (partes[0] || 'U').slice(0, 2).toUpperCase();
+                let iniciais = 'ME';
+                if (partes.length >= 2) {
+                    iniciais = (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+                } else if (partes.length === 1) {
+                    iniciais = partes[0].slice(0, 2).toUpperCase();
+                }
                 const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
                 const avatarEl = document.getElementById('perfilAvatarCircle');
                 if (avatarEl) avatarEl.textContent = iniciais;
                 set('perfilNomeTxt', nomeCompleto);
                 set('perfilEmailTxt', user.email || '');
-                set('perfilApelido', `Apelido: ${partes[0] || nomeCompleto}`);
+                set('perfilApelido', `Apelido: ${partes[0] === 'Maria' ? 'Duda' : partes[0]}`);
                 set('perfilLarMeuNome', nomeCompleto);
                 set('perfilLarMeuEmail', user.email || '');
                 set('perfilChavePix', user.chave_pix || user.email || '');
@@ -4825,7 +4828,7 @@
                 const sub = document.getElementById('bvSubtitulo');
                 if (sub) {
                     if (totalNaoLidas > 0) {
-                        sub.innerText = `${totalNaoLidas} notificação${totalNaoLidas > 1 ? 'ões' : ''} pendente${totalNaoLidas > 1 ? 's' : ''} para você`;
+                        sub.innerText = `${totalNaoLidas} ${totalNaoLidas > 1 ? 'notificações' : 'notificação'} pendente${totalNaoLidas > 1 ? 's' : ''} para você`;
                     } else {
                         sub.innerText = 'Tudo em dia! Nenhuma pendência.';
                     }

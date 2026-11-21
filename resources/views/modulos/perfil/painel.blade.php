@@ -13,7 +13,7 @@
             <!-- Avatar circular com iniciais -->
             <div id="perfilAvatarCircle"
                  class="size-20 rounded-full bg-primary-foreground/20 text-primary-foreground font-black text-xl flex items-center justify-center ring-4 ring-primary-foreground/20 shrink-0 select-none">
-                DU
+                ME
             </div>
             <div class="flex-1 min-w-0 space-y-1">
                 <p id="perfilNomeTxt" class="text-lg font-black text-primary-foreground truncate">Maria Eduarda</p>
