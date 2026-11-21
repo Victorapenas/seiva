@@ -96,7 +96,7 @@
                                         <i data-lucide="leaf" class="size-3 text-emerald-950"></i>
                                     </div>
                                     <div>
-                                        <p class="text-[9px] font-black text-white leading-tight">Nosso Cantinho 🌿</p>
+                                        <p class="text-[9px] font-black text-white leading-tight">Nosso Cantinho</p>
                                         <p class="text-[7.5px] font-semibold text-emerald-300/80 leading-none">Duda &amp; Ian</p>
                                     </div>
                                 </div>
@@ -346,16 +346,16 @@
                     </p>
                     <div class="flex flex-wrap items-center justify-center gap-1.5">
                         <button type="button" onclick="preencherLoginTeste('duda@seiva.com', '123456')" 
-                                class="px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold text-[11px] text-foreground transition shadow-2xs">
-                            👩 Duda (Casal)
+                                class="px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1">
+                            <i data-lucide="user" class="size-3"></i> Duda (Casal)
                         </button>
                         <button type="button" onclick="preencherLoginTeste('ian@seiva.com', '123456')" 
-                                class="px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold text-[11px] text-foreground transition shadow-2xs">
-                            👨 Ian (Casal)
+                                class="px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1">
+                            <i data-lucide="user" class="size-3"></i> Ian (Casal)
                         </button>
                         <button type="button" onclick="preencherLoginTeste('victor@seiva.com', '123456')" 
-                                class="px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold text-[11px] text-foreground transition shadow-2xs">
-                            👤 Victor Hugo (Individual)
+                                class="px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-semibold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1">
+                            <i data-lucide="user-check" class="size-3"></i> Victor Hugo (Individual)
                         </button>
                     </div>
                 </div>

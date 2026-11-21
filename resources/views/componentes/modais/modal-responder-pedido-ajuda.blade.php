@@ -47,16 +47,19 @@
             <!-- Botões de Ação -->
             <div class="grid grid-cols-3 gap-2 pt-2">
                 <button type="button" onclick="executarAcaoRespostaAjuda('recusar')" 
-                        class="py-3 px-2 rounded-2xl border border-border bg-card hover:bg-rose-50 text-rose-600 font-bold text-xs transition text-center shadow-2xs">
-                    ✕ Recusar
+                        class="py-3 px-2 rounded-2xl border border-border bg-card hover:bg-rose-50 text-rose-600 font-bold text-xs transition text-center shadow-2xs inline-flex items-center justify-center gap-1">
+                    <i data-lucide="x" class="size-3.5"></i>
+                    <span>Recusar</span>
                 </button>
                 <button type="button" onclick="alternarCampoContraproposta()" 
-                        class="py-3 px-2 rounded-2xl border border-border bg-card hover:bg-muted text-foreground font-bold text-xs transition text-center shadow-2xs">
-                    🤝 Contrapor
+                        class="py-3 px-2 rounded-2xl border border-border bg-card hover:bg-muted text-foreground font-bold text-xs transition text-center shadow-2xs inline-flex items-center justify-center gap-1">
+                    <i data-lucide="scale" class="size-3.5"></i>
+                    <span>Contrapor</span>
                 </button>
                 <button type="button" onclick="executarAcaoRespostaAjuda('aceitar')" 
-                        class="py-3 px-2 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-black text-xs transition text-center shadow-soft">
-                    ✓ Ajudar
+                        class="py-3 px-2 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-black text-xs transition text-center shadow-soft inline-flex items-center justify-center gap-1">
+                    <i data-lucide="check" class="size-3.5"></i>
+                    <span>Ajudar</span>
                 </button>
             </div>
         </div>

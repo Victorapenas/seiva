@@ -225,7 +225,7 @@ class CaixaPretaController extends Controller
                     'valor' => $cobranca->valor,
                     'tipo' => 'saida',
                     'data' => now()->format('Y-m-d'),
-                    'emoji' => '🤝',
+                    'emoji' => 'handshake',
                     'visibilidade' => 'compartilhado',
                 ]);
 
@@ -241,7 +241,7 @@ class CaixaPretaController extends Controller
 
                 return response()->json([
                     'sucesso' => true,
-                    'mensagem' => 'Você ajudou com R$ ' . number_format($cobranca->valor, 2, ',', '.') . '! 🌿💚'
+                    'mensagem' => 'Você ajudou com R$ ' . number_format($cobranca->valor, 2, ',', '.') . '!'
                 ]);
             });
         }

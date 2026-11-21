@@ -133,7 +133,7 @@ class DashboardController extends Controller
             $dadosLar = [
                 'id_lar' => $lar->id_lar,
                 'nome' => $lar->nome,
-                'emoji' => $lar->emoji ?? '🌿',
+                'emoji' => $lar->emoji ?? 'home',
                 'nomes_casal' => $nomesCasal ?: $lar->nome,
                 'iniciais_casal' => $iniciaisCasal ?: 'CL',
                 'saldo_lar' => $saldoConsolidadoLar ?: $saldoTotal,
@@ -744,7 +744,7 @@ class DashboardController extends Controller
                 'valor' => $request->valor,
                 'tipo' => 'saida',
                 'data' => now()->format('Y-m-d'),
-                'emoji' => '💳',
+                'emoji' => 'credit-card',
                 'visibilidade' => 'pessoal',
             ]);
 
@@ -780,7 +780,7 @@ class DashboardController extends Controller
                     'valor' => abs($ajuste),
                     'tipo' => $ajuste > 0 ? 'entrada' : 'saida',
                     'data' => now()->format('Y-m-d'),
-                    'emoji' => $ajuste > 0 ? '💰' : '💸',
+                    'emoji' => $ajuste > 0 ? 'trending-up' : 'trending-down',
                     'visibilidade' => 'pessoal',
                 ]);
             } elseif ($request->has('saldo')) {
@@ -797,7 +797,7 @@ class DashboardController extends Controller
                         'valor' => abs($diff),
                         'tipo' => $diff > 0 ? 'entrada' : 'saida',
                         'data' => now()->format('Y-m-d'),
-                        'emoji' => '🔄',
+                        'emoji' => 'refresh-cw',
                         'visibilidade' => 'pessoal',
                     ]);
                 }

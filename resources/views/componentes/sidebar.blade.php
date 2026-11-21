@@ -89,7 +89,8 @@
             <div class="min-w-0 flex-1">
                 <p id="userNameSidebar" class="truncate text-sm font-semibold text-foreground">Usuário</p>
                 <span id="userLarPillSidebar" class="mt-0.5 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
-                    Nosso Cantinho 🌿
+                    <i data-lucide="home" class="size-3"></i>
+                    <span>Nosso Cantinho</span>
                 </span>
             </div>
         </button>

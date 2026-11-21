@@ -22,17 +22,17 @@ use Illuminate\Support\Facades\Hash;
 /**
  * Seeder para provisionar os cenários de teste:
  * 1. Usuário Individual: Victor Hugo (RF003/RF009)
- * 2. Casal Compartilhado: Duda & Ian no Lar "Nosso Cantinho 🌿" (RF004/RF010)
+ * 2. Casal Compartilhado: Duda & Ian no Lar "Nosso Cantinho" (RF004/RF010)
  */
 class CenariosTesteSeeder extends Seeder
 {
     public function run(): void
     {
         // Garante categorias base
-        $catMoradia = Categoria::firstOrCreate(['nome' => 'Moradia & Contas'], ['emoji' => '🏠', 'cor' => '#3b82f6', 'sistema' => true]);
-        $catMercado = Categoria::firstOrCreate(['nome' => 'Alimentação & Mercado'], ['emoji' => '🛒', 'cor' => '#10b981', 'sistema' => true]);
-        $catLazer = Categoria::firstOrCreate(['nome' => 'Lazer & Restaurantes'], ['emoji' => '🍔', 'cor' => '#8b5cf6', 'sistema' => true]);
-        $catTrabalho = Categoria::firstOrCreate(['nome' => 'Trabalho & Freela'], ['emoji' => '💼', 'cor' => '#6366f1', 'sistema' => true]);
+        $catMoradia = Categoria::firstOrCreate(['nome' => 'Moradia & Contas'], ['emoji' => 'home', 'cor' => '#3b82f6', 'sistema' => true]);
+        $catMercado = Categoria::firstOrCreate(['nome' => 'Alimentação & Mercado'], ['emoji' => 'shopping-cart', 'cor' => '#10b981', 'sistema' => true]);
+        $catLazer = Categoria::firstOrCreate(['nome' => 'Lazer & Restaurantes'], ['emoji' => 'utensils', 'cor' => '#8b5cf6', 'sistema' => true]);
+        $catTrabalho = Categoria::firstOrCreate(['nome' => 'Trabalho & Freela'], ['emoji' => 'briefcase', 'cor' => '#6366f1', 'sistema' => true]);
 
         // =========================================================================
         // CENÁRIO 1: USUÁRIO INDIVIDUAL - Victor Hugo
@@ -181,7 +181,7 @@ class CenariosTesteSeeder extends Seeder
             [
                 'lar_id' => null,
                 'responsavel_id' => $victor->id_usuario,
-                'emoji' => '🛡️',
+                'emoji' => 'shield',
                 'categoria' => 'reserva',
                 'valor_alvo' => 10000.00,
                 'valor_atual' => 3500.00,
@@ -196,7 +196,7 @@ class CenariosTesteSeeder extends Seeder
             [
                 'lar_id' => null,
                 'responsavel_id' => $victor->id_usuario,
-                'emoji' => '💻',
+                'emoji' => 'laptop',
                 'categoria' => 'produto',
                 'valor_alvo' => 3000.00,
                 'valor_atual' => 2400.00,
@@ -207,7 +207,7 @@ class CenariosTesteSeeder extends Seeder
         );
 
         // =========================================================================
-        // CENÁRIO 2: CASAL COMPARTILHADO - Duda & Ian ("Nosso Cantinho 🌿")
+        // CENÁRIO 2: CASAL COMPARTILHADO - Duda & Ian ("Nosso Cantinho")
         // Ian ganha R$ 6.000 (60%) e Duda ganha R$ 4.000 (40%)
         // Saldos somam R$ 14.850,00 (exatamente o protótipo)
         // =========================================================================
@@ -316,11 +316,11 @@ class CenariosTesteSeeder extends Seeder
         );
         // Total somado das contas do casal = R$ 14.850,00!
 
-        // Cria o Lar "Nosso Cantinho 🌿"
+        // Cria o Lar "Nosso Cantinho"
         $lar = Lar::updateOrCreate(
             ['nome' => 'Nosso Cantinho'],
             [
-                'emoji' => '🌿',
+                'emoji' => 'home',
                 'criado_por' => $ian->id_usuario,
             ]
         );
@@ -352,7 +352,7 @@ class CenariosTesteSeeder extends Seeder
             ['lar_id' => $lar->id_lar, 'titulo' => 'Aluguel & Condomínio'],
             [
                 'registrada_por' => $ian->id_usuario,
-                'emoji' => '🏠',
+                'emoji' => 'home',
                 'valor_total' => 3200.00,
                 'tipo' => 'fixa',
                 'divisao' => 'proporcional',
@@ -374,7 +374,7 @@ class CenariosTesteSeeder extends Seeder
             ['lar_id' => $lar->id_lar, 'titulo' => 'Supermercado do Mês'],
             [
                 'registrada_por' => $duda->id_usuario,
-                'emoji' => '🛒',
+                'emoji' => 'shopping-cart',
                 'valor_total' => 1550.00,
                 'tipo' => 'variavel',
                 'divisao' => 'proporcional',
@@ -396,7 +396,7 @@ class CenariosTesteSeeder extends Seeder
             ['lar_id' => $lar->id_lar, 'titulo' => 'Internet Fibra 600MB'],
             [
                 'registrada_por' => $ian->id_usuario,
-                'emoji' => '🌐',
+                'emoji' => 'wifi',
                 'valor_total' => 150.00,
                 'tipo' => 'fixa',
                 'divisao' => '50/50',
@@ -555,7 +555,7 @@ class CenariosTesteSeeder extends Seeder
             [
                 'lar_id' => null,
                 'responsavel_id' => $duda->id_usuario,
-                'emoji' => '💻',
+                'emoji' => 'laptop',
                 'categoria' => 'produto',
                 'valor_alvo' => 4500.00,
                 'valor_atual' => 4050.00,
@@ -570,7 +570,7 @@ class CenariosTesteSeeder extends Seeder
             [
                 'usuario_id' => $duda->id_usuario,
                 'responsavel_id' => $ian->id_usuario,
-                'emoji' => '❄️',
+                'emoji' => 'snowflake',
                 'categoria' => 'produto',
                 'valor_alvo' => 3200.00,
                 'valor_atual' => 1000.00,
@@ -585,7 +585,7 @@ class CenariosTesteSeeder extends Seeder
             [
                 'lar_id' => null,
                 'responsavel_id' => $ian->id_usuario,
-                'emoji' => '🖨️',
+                'emoji' => 'printer',
                 'categoria' => 'produto',
                 'valor_alvo' => 250.00,
                 'valor_atual' => 180.00,
@@ -643,10 +643,10 @@ class CenariosTesteSeeder extends Seeder
 
         // Notificação de Lembrete Diplomático
         Notificacao::updateOrCreate(
-            ['usuario_id' => $duda->id_usuario, 'titulo' => '🌿 Lembrete diplomático de Ian Silva'],
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Lembrete diplomático de Ian Silva'],
             [
                 'lar_id' => $lar->id_lar,
-                'mensagem' => 'Oi amor! Passando só pra lembrar com carinho da nossa divisão de Aluguel (R$ 1.280,00). Segue meu PIX: ian@seiva.com 🌿💚',
+                'mensagem' => 'Oi amor! Passando só pra lembrar com carinho da nossa divisão de Aluguel (R$ 1.280,00). Segue meu PIX: ian@seiva.com',
                 'tipo' => 'lar',
                 'tempo' => 'Há 15 min',
             ]

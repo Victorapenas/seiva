@@ -444,7 +444,7 @@
                         const larRes = await fetch('/api/lar', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ nome: 'Nosso Cantinho', emoji: '🌿' })
+                            body: JSON.stringify({ nome: 'Nosso Cantinho', emoji: 'home' })
                         });
                         if (larRes.ok) larSessao = await larRes.json();
                     } catch (e) {}
@@ -819,7 +819,7 @@
                             const larRes = await fetch('/api/lar', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ nome: nomeLar, emoji: '🌿' })
+                                body: JSON.stringify({ nome: nomeLar, emoji: 'home' })
                             });
                             if (larRes.ok) {
                                 larSessao = await larRes.json();
@@ -877,7 +877,7 @@
                             const larRes = await fetch('/api/lar', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ nome: nomeLar, emoji: '🌿' })
+                                body: JSON.stringify({ nome: nomeLar, emoji: 'home' })
                             });
                             if (larRes.ok) {
                                 larSessao = await larRes.json();
@@ -1213,19 +1213,19 @@
             if (larSessao) {
                 if (secaoLarSide) secaoLarSide.classList.remove('hidden');
                 if (elLarPill) {
-                    elLarPill.innerText = `${larSessao.nome} 🌿`;
+                    elLarPill.innerText = larSessao.nome;
                     elLarPill.className = 'mt-0.5 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground';
                 }
 
                 const elGrpLar = document.getElementById('labelGrupoLarSidebar');
-                if (elGrpLar) elGrpLar.innerText = `🌿 ${larSessao.nome}`;
+                if (elGrpLar) elGrpLar.innerText = larSessao.nome;
 
                 const elLarHead = document.getElementById('larHeaderTitle');
                 if (elLarHead) elLarHead.innerText = larSessao.nome;
             } else {
                 if (secaoLarSide) secaoLarSide.classList.add('hidden');
                 if (elLarPill) {
-                    elLarPill.innerText = 'Individual 👤';
+                    elLarPill.innerText = 'Individual';
                     elLarPill.className = 'mt-0.5 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground';
                 }
             }
@@ -1318,7 +1318,7 @@
         function aceitarPedidoAjuda() {
             const b = document.getElementById('bannerPedidoAjuda');
             if (b) b.classList.add('hidden');
-            seivaNotificar('Você ajudou Ian com R$ 50,00! 🌿💚', 'sucesso', 'Ajuda Confirmada');
+            seivaNotificar('Você ajudou Ian com R$ 50,00!', 'sucesso', 'Ajuda Confirmada');
         }
 
         function confirmarRegistroRapido(titulo, valor) {
@@ -1712,20 +1712,39 @@
             lucide.createIcons();
         }
 
+        function obterIconeTransacao(t) {
+            if (t.icone && t.icone.length > 1 && !/[\uD83C-\uDBFF\uDC00-\uDFFF]/.test(t.icone)) return t.icone;
+            if (t.tipo === 'entrada') return 'trending-up';
+            const tit = (t.titulo || '').toLowerCase();
+            const cat = (t.categoria?.nome || '').toLowerCase();
+            if (tit.includes('sephora') || tit.includes('beleza') || cat.includes('beleza')) return 'sparkles';
+            if (tit.includes('ifood') || tit.includes('restaurante') || tit.includes('lanche') || cat.includes('aliment')) return 'utensils';
+            if (tit.includes('luz') || tit.includes('energia') || tit.includes('enel') || tit.includes('coelba')) return 'zap';
+            if (tit.includes('água') || tit.includes('agua') || tit.includes('embasa') || tit.includes('sabesp')) return 'droplet';
+            if (tit.includes('mercado') || tit.includes('supermercado') || cat.includes('mercado')) return 'shopping-cart';
+            if (tit.includes('aluguel') || tit.includes('condom') || tit.includes('casa') || cat.includes('morad')) return 'home';
+            if (tit.includes('uber') || tit.includes('gasolina') || tit.includes('combustivel') || cat.includes('transp')) return 'car';
+            if (tit.includes('farmacia') || tit.includes('remedio') || cat.includes('saude') || cat.includes('saúde')) return 'pill';
+            if (tit.includes('cinema') || tit.includes('show') || cat.includes('lazer')) return 'film';
+            if (tit.includes('presente') || cat.includes('presente')) return 'gift';
+            if (tit.includes('internet') || tit.includes('vivo') || tit.includes('claro')) return 'wifi';
+            return 'receipt';
+        }
+
         function _renderItemTransacao(t) {
             const isEntrada = t.tipo === 'entrada';
-            const emoji     = t.emoji || (isEntrada ? '💰' : '💸');
+            const iconeNome = obterIconeTransacao(t);
             const contaNome = t.conta?.nome || '';
             const catNome   = t.categoria?.nome || '';
             const dataFmt   = t.data ? new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
 
             let badge = '';
             if (t.visibilidade === 'pessoal') {
-                badge = `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[9px] font-bold">
+                badge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[9px] font-bold">
                             <i data-lucide="lock" class="size-2.5"></i> Privado
                          </span>`;
             } else if (t.visibilidade === 'compartilhado' || t.visibilidade === 'lar') {
-                badge = `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[9px] font-bold">
+                badge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[9px] font-bold">
                             <i data-lucide="users" class="size-2.5"></i> Compartilhado
                          </span>`;
             }
@@ -1735,8 +1754,8 @@
             return `
                 <div class="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition">
                     <div class="flex items-center gap-3 min-w-0">
-                        <span class="size-10 rounded-2xl ${isEntrada ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'} flex items-center justify-center text-base shrink-0">
-                            ${emoji}
+                        <span class="size-10 rounded-2xl ${isEntrada ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300' : 'bg-muted/70 text-foreground'} flex items-center justify-center shrink-0 border border-border/50">
+                            <i data-lucide="${iconeNome}" class="size-5"></i>
                         </span>
                         <div class="min-w-0">
                             <p class="text-xs font-semibold text-foreground truncate">${t.titulo}</p>
@@ -1748,7 +1767,7 @@
                         </div>
                     </div>
                     <div class="flex flex-col items-end shrink-0 ml-3 gap-1">
-                        <span class="text-xs font-black ${isEntrada ? 'text-emerald-600' : 'text-rose-600'}">
+                        <span class="text-xs font-black ${isEntrada ? 'text-emerald-600' : 'text-foreground'}">
                             ${isEntrada ? '+' : '-'} ${BRL(t.valor)}
                         </span>
                     </div>
@@ -1877,18 +1896,33 @@
             cont.innerHTML = `<div class="rounded-3xl border border-border bg-card shadow-card overflow-hidden">
                 <div class="divide-y divide-border/60">
                     ${lista.map(t => {
-                        const emoji   = t.emoji || '🏠';
+                        const iconeNome = obterIconeTransacao(t);
                         const dataFmt = t.data ? new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : '';
                         const quemNome = t.usuario_id === userId
                             ? (usuarioSessao?.nome?.split(' ')[0] || 'Eu')
                             : (larSessao?.membros?.find(m => m.id_usuario !== userId)?.nome?.split(' ')[0] || 'Parceiro(a)');
+                        
+                        // Detalhe de rateio estilo Imagem 5
+                        const metade = (parseFloat(t.valor) / 2).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                        const parceiroPrimeiroNome = larSessao?.membros?.find(m => m.id_usuario !== userId)?.nome?.split(' ')[0] || 'Ian';
+                        let detalheTexto = `${quemNome} · ${dataFmt}`;
+                        if (t.detalhe_rateio) {
+                            detalheTexto += ` · ${t.detalhe_rateio}`;
+                        } else if ((t.titulo || '').toLowerCase().includes('luz') || (t.titulo || '').toLowerCase().includes('aluguel') || (t.titulo || '').toLowerCase().includes('água')) {
+                            detalheTexto += ` · Transferido p/ conta do Lar`;
+                        } else {
+                            detalheTexto += ` · 50/50 · ${parceiroPrimeiroNome} deve R$ ${metade}`;
+                        }
+
                         return `
                         <div class="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition">
                             <div class="flex items-center gap-3 min-w-0">
-                                <span class="size-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-base shrink-0">${emoji}</span>
+                                <span class="size-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                                    <i data-lucide="${iconeNome}" class="size-5"></i>
+                                </span>
                                 <div class="min-w-0">
-                                    <p class="text-xs font-semibold text-foreground truncate">${t.titulo}</p>
-                                    <span class="text-[10px] text-muted-foreground">${quemNome} · ${dataFmt}</span>
+                                    <p class="text-xs font-bold text-foreground truncate">${t.titulo}</p>
+                                    <span class="text-[10px] text-muted-foreground truncate block mt-0.5">${detalheTexto}</span>
                                 </div>
                             </div>
                             <span class="text-xs font-black text-foreground shrink-0 ml-3">${BRL(t.valor)}</span>
@@ -2243,8 +2277,8 @@
                             </div>
                             <div class="text-right shrink-0">
                                 <strong class="text-xs font-black text-white block">${BRL(prod.preco)}</strong>
-                                <button type="button" onclick="abrirModalCriarMetaComDados('${prod.nome}', ${prod.preco})" class="text-[10px] text-emerald-400 font-bold hover:underline">
-                                    🎯 Criar meta
+                                <button type="button" onclick="abrirModalCriarMetaComDados('${prod.nome}', ${prod.preco})" class="text-[10px] text-emerald-400 font-bold hover:underline inline-flex items-center gap-1">
+                                    <i data-lucide="target" class="size-3"></i> Criar meta
                                 </button>
                             </div>
                         </div>
@@ -2374,7 +2408,7 @@
         }
 
         function confirmarRecebimentoAjuda(id) {
-            seivaNotificar('Recebimento confirmado! O valor foi adicionado ao seu saldo livre.', 'sucesso', 'Confirmado 🌱');
+            seivaNotificar('Recebimento confirmado! O valor foi adicionado ao seu saldo livre.', 'sucesso', 'Confirmado');
             carregarCaixaPretaDados();
         }
 
@@ -2556,27 +2590,105 @@
             document.getElementById('novaMetaCategoria').value = tipo;
         }
 
-        function buscarDadosLinkProduto() {
-            const url = document.getElementById('novaMetaLinkProduto')?.value;
+        async function buscarDadosLinkProduto() {
+            const url = document.getElementById('novaMetaLinkProduto')?.value?.trim();
             if (!url) return seivaNotificar('Cole a URL de um produto antes de buscar.', 'aviso');
-            seivaNotificar('Consultando dados do anúncio...', 'info', 'Rastreador');
-            setTimeout(() => {
-                if (url.includes('sony') || url.includes('camera')) {
-                    document.getElementById('novaMetaNome').value = 'Câmera Sony ZV-E10';
-                    document.getElementById('novaMetaValor').value = '2.890,00';
-                } else if (url.includes('nike')) {
-                    document.getElementById('novaMetaNome').value = 'Tênis Nike Air Force 1';
-                    document.getElementById('novaMetaValor').value = '489,90';
+            
+            const btn = document.getElementById('btnBuscarLinkMeta');
+            const textoOriginal = btn ? btn.innerHTML : 'Buscar';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i data-lucide="loader-2" class="size-3.5 animate-spin"></i><span>Buscando...</span>`;
+                lucide.createIcons();
+            }
+
+            try {
+                const res = await fetch('/api/metas/consultar-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.titulo) document.getElementById('novaMetaNome').value = data.titulo;
+                    if (data.preco) {
+                        const valFmt = typeof data.preco === 'number' 
+                            ? data.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : data.preco;
+                        document.getElementById('novaMetaValor').value = valFmt;
+                    }
+                    if (data.loja) document.getElementById('novaMetaLoja').value = data.loja;
+                    
+                    if (data.imagem) {
+                        document.getElementById('novaMetaFotoUrl').value = data.imagem;
+                        const previewCont = document.getElementById('previewFotoMetaContainer');
+                        const previewImg = document.getElementById('previewFotoMetaImg');
+                        const boxUpload = document.getElementById('boxUploadFotoMeta');
+                        const previewTit = document.getElementById('previewFotoMetaTitulo');
+                        if (previewImg) previewImg.src = data.imagem;
+                        if (previewTit) previewTit.innerText = data.titulo || 'Foto do produto';
+                        if (previewCont) previewCont.classList.remove('hidden');
+                        if (boxUpload) boxUpload.classList.add('hidden');
+                    }
+                    seivaNotificar(`Dados importados de ${data.loja || 'loja'}! Revise e confirme.`, 'sucesso', 'Wishlist');
+                } else {
+                    seivaNotificar('Não foi possível obter dados automáticos deste link. Você pode preencher manualmente.', 'aviso');
                 }
-                seivaNotificar('Dados importados com sucesso! Revise e confirme.', 'sucesso');
-            }, 800);
+            } catch (e) {
+                console.error(e);
+                seivaNotificar('Erro de conexão ao consultar o link do produto.', 'erro');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        function aoSelecionarFotoMetaArquivo(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                document.getElementById('novaMetaFotoUrl').value = dataUrl;
+                const previewCont = document.getElementById('previewFotoMetaContainer');
+                const previewImg = document.getElementById('previewFotoMetaImg');
+                const boxUpload = document.getElementById('boxUploadFotoMeta');
+                const previewTit = document.getElementById('previewFotoMetaTitulo');
+                if (previewImg) previewImg.src = dataUrl;
+                if (previewTit) previewTit.innerText = file.name;
+                if (previewCont) previewCont.classList.remove('hidden');
+                if (boxUpload) boxUpload.classList.add('hidden');
+                lucide.createIcons();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removerFotoMeta(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('novaMetaFotoUrl').value = '';
+            const inpFile = document.getElementById('novaMetaFotoArquivo');
+            if (inpFile) inpFile.value = '';
+            const previewCont = document.getElementById('previewFotoMetaContainer');
+            const boxUpload = document.getElementById('boxUploadFotoMeta');
+            if (previewCont) previewCont.classList.add('hidden');
+            if (boxUpload) boxUpload.classList.remove('hidden');
+            lucide.createIcons();
         }
 
         function selecionarPosseMeta(btn, posse) {
             document.querySelectorAll('.chip-posse-meta').forEach(b => {
                 b.className = 'chip-posse-meta w-full flex items-center justify-between p-3.5 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/20';
+                const check = b.querySelector('[data-lucide="check"]');
+                if (check) check.remove();
             });
             btn.className = 'chip-posse-meta active w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition';
+            if (!btn.querySelector('[data-lucide="check"]')) {
+                btn.insertAdjacentHTML('beforeend', `<i data-lucide="check" class="size-4 text-emerald-600"></i>`);
+            }
             document.getElementById('novaMetaPosse').value = posse;
 
             const avisoComp = document.getElementById('avisoMetaCompartilhada');
@@ -2584,11 +2696,11 @@
                 if (posse === 'compartilhada') avisoComp.classList.remove('hidden');
                 else avisoComp.classList.add('hidden');
             }
+            lucide.createIcons();
         }
 
         function levarMetaParaAcordos() {
             const titulo = document.getElementById('novaMetaNome')?.value || 'Meta Compartilhada';
-            const valor = document.getElementById('novaMetaValor')?.value || '0';
             fecharModalId('modalCriarMeta');
             trocarAbaApp('acordos');
             seivaNotificar(`Proposta para "${titulo}" iniciada na Mesa de Acordos.`, 'info', 'Mesa de Acordos');
@@ -2601,6 +2713,9 @@
             const posse = document.getElementById('novaMetaPosse').value;
             const valorRaw = document.getElementById('novaMetaValor').value.replace(/\./g, '').replace(',', '.');
             const valor_alvo = parseFloat(valorRaw) || 0;
+            const imagem = document.getElementById('novaMetaFotoUrl')?.value || null;
+            const link_referencia = document.getElementById('novaMetaLinkProduto')?.value?.trim() || null;
+            const loja = document.getElementById('novaMetaLoja')?.value?.trim() || null;
 
             if (!valor_alvo) return seivaNotificar('Informe um valor alvo válido.', 'aviso');
 
@@ -2615,11 +2730,15 @@
                         posse,
                         tipo_escopo: posse === 'compartilhada' || posse === 'lar' ? 'lar' : 'individual',
                         onde_guardado: 'Reserva Pessoal',
+                        imagem,
+                        link_referencia,
+                        loja,
+                        monitorar_promocao: true
                     })
                 });
 
                 if (res.ok) {
-                    seivaNotificar('Meta criada com sucesso! 🎯🌱', 'sucesso', 'Meta Criada');
+                    seivaNotificar('Meta criada com sucesso!', 'sucesso', 'Meta Criada');
                     fecharModalId('modalCriarMeta');
                     carregarMetasDados();
                     carregarCaixaPretaDados();
@@ -2734,10 +2853,10 @@
 
             const dicaEl = document.getElementById('guardarMetaDicaMotivacional');
             if (dicaEl) {
-                if (p >= 100) dicaEl.innerText = '🎉 Incrível! Você atingiu o objetivo com esse aporte!';
-                else if (p >= 75) dicaEl.innerText = '🔥 A reta final! Falta muito pouco!';
-                else if (p >= 50) dicaEl.innerText = '🌱 Metade do caminho já percorrido. Parabéns!';
-                else dicaEl.innerText = 'Quase lá. Cada aporte faz a diferença. 💚';
+                if (p >= 100) dicaEl.innerText = 'Incrível! Você atingiu o objetivo com esse aporte!';
+                else if (p >= 75) dicaEl.innerText = 'A reta final! Falta muito pouco!';
+                else if (p >= 50) dicaEl.innerText = 'Metade do caminho já percorrido. Parabéns!';
+                else dicaEl.innerText = 'Quase lá. Cada aporte faz a diferença.';
             }
         }
 
@@ -2764,7 +2883,7 @@
                 });
 
                 if (res.ok) {
-                    seivaNotificar(`Aporte de ${BRL(valor)} registrado com sucesso! 🌱`, 'sucesso', 'Meta Atualizada');
+                    seivaNotificar(`Aporte de ${BRL(valor)} registrado com sucesso!`, 'sucesso', 'Meta Atualizada');
                     fecharModalId('modalGuardarMeta');
                     carregarMetasDados();
                     carregarCaixaPretaDados();
@@ -2932,9 +3051,8 @@
                 const faltam = Math.max(0, alvo - atual);
                 const p     = Math.min(100, Math.round((atual / alvo) * 100));
 
-                // Cor da barra baseada no progresso
+                // Cor da barra de progresso
                 const corBarra = p >= 70 ? 'bg-emerald-600' : p >= 30 ? 'bg-amber-500' : 'bg-rose-500';
-                const emoji    = m.emoji || '🎯';
 
                 // Data limite formatada
                 let dataLabel = '';
@@ -2943,59 +3061,131 @@
                     dataLabel = `Meta para ${d.toLocaleDateString('pt-BR', {month:'short', year:'numeric'})}`;
                 }
 
+                // Imagem real ou ícone Lucide
+                const visualProduto = m.imagem
+                    ? `<img src="${m.imagem}" alt="${m.titulo}" class="size-12 rounded-2xl object-cover shrink-0 border border-border shadow-2xs">`
+                    : `<span class="size-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-500/20 shadow-2xs"><i data-lucide="${m.icone || 'target'}" class="size-6"></i></span>`;
+
                 return `
                 <div class="rounded-3xl border border-border bg-card shadow-2xs overflow-hidden">
                     <!-- Cabeçalho do card -->
-                    <div class="p-4 pb-3 flex items-start gap-3">
-                        <div class="size-11 rounded-2xl bg-muted flex items-center justify-center text-xl shrink-0">
-                            ${emoji}
+                    <div class="p-4 pb-3 flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3 min-w-0">
+                            ${visualProduto}
+                            <div class="min-w-0 flex-1">
+                                <h4 class="text-sm font-extrabold text-foreground truncate">${m.titulo}</h4>
+                                ${dataLabel ? `<span class="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5"><i data-lucide="calendar" class="size-3"></i> ${dataLabel}</span>` : ''}
+                                ${m.link_referencia ? `
+                                    <a href="${m.link_referencia}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline mt-0.5">
+                                        <i data-lucide="external-link" class="size-3"></i>
+                                        <span>${m.loja || 'Link do produto'} · Acompanhar preço</span>
+                                    </a>
+                                ` : ''}
+                            </div>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-extrabold text-foreground truncate">${m.titulo}</p>
-                            ${dataLabel ? `<span class="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg> ${dataLabel}</span>` : ''}
-                        </div>
-                        ${isLar ? '<span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold shrink-0">Lar</span>' : ''}
+
+                        ${m.em_negociacao ? `
+                            <span class="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-300 text-amber-800 dark:text-amber-300 text-[10px] font-bold inline-flex items-center gap-1 shrink-0">
+                                <i data-lucide="alert-triangle" class="size-3 text-amber-600"></i>
+                                <span>Em negociação</span>
+                            </span>
+                        ` : ''}
                     </div>
 
                     <!-- Barra de progresso -->
                     <div class="px-4">
-                        <div class="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div class="h-2 w-full rounded-full bg-muted overflow-hidden">
                             <div class="h-full ${corBarra} rounded-full transition-all duration-700" style="width:${p}%"></div>
                         </div>
                     </div>
 
                     <!-- Valores -->
                     <div class="px-4 py-2 flex items-center justify-between text-xs text-muted-foreground">
-                        <span class="font-semibold text-foreground">${BRL(atual)}</span>
-                        <span>de ${BRL(alvo)} · <strong class="${corBarra === 'bg-emerald-600' ? 'text-emerald-600' : corBarra === 'bg-amber-500' ? 'text-amber-600' : 'text-rose-500'}">${p}%</strong></span>
+                        <strong class="font-bold text-foreground">${BRL(atual)}</strong>
+                        <span>de ${BRL(alvo)} · <strong class="${corBarra === 'bg-emerald-600' ? 'text-emerald-600' : 'text-amber-600'}">${p}%</strong></span>
                     </div>
 
-                    <!-- Mini-cards informativos -->
-                    <div class="px-4 pb-3 grid grid-cols-2 gap-2">
-                        <div class="rounded-xl border border-border bg-muted/30 p-2.5 space-y-0.5">
-                            <span class="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                                Guardado em
-                            </span>
-                            <p class="text-xs font-bold text-foreground truncate">${m.onde_guardado || 'Reserva Pessoal'}</p>
+                    ${isLar ? `
+                        <!-- Seção de Participantes (Divisão do Lar) -->
+                        <div class="px-4 space-y-1.5 pt-2 border-t border-border/40">
+                            <div class="flex items-center justify-between text-xs py-0.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="size-5 rounded-full bg-muted text-muted-foreground font-extrabold text-[9px] flex items-center justify-center">ME</span>
+                                    <span class="font-medium text-foreground">Você</span>
+                                </div>
+                                <strong class="font-bold text-foreground">R$ ${(m.divisao_voce || 250).toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês</strong>
+                            </div>
+                            <div class="flex items-center justify-between text-xs py-0.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="size-5 rounded-full bg-muted text-muted-foreground font-extrabold text-[9px] flex items-center justify-center">${m.parceiro_iniciais || 'IM'}</span>
+                                    <span class="font-medium text-foreground">${m.parceiro_nome || 'Ian'}</span>
+                                </div>
+                                <strong class="font-bold text-foreground">R$ ${(m.divisao_parceiro || 250).toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês</strong>
+                            </div>
                         </div>
-                        <div class="rounded-xl border border-border bg-muted/30 p-2.5 space-y-0.5">
-                            <span class="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                                Faltam
-                            </span>
-                            <p class="text-xs font-extrabold ${faltam <= 0 ? 'text-emerald-600' : 'text-foreground'}">${faltam <= 0 ? '🎉 Concluída!' : BRL(faltam)}</p>
-                        </div>
-                    </div>
 
-                    <!-- Botão de aporte -->
-                    <div class="px-4 pb-4">
-                        <button onclick="abrirGuardarNaMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${atual}, ${alvo}, '${isLar ? 'lar' : 'individual'}')"
-                                class="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-extrabold text-xs flex items-center justify-center gap-2 shadow-soft hover:bg-primary/90 transition">
-                            <i data-lucide="plus" class="size-4"></i>
-                            + Guardar para esta meta
-                        </button>
-                    </div>
+                        <!-- Card de Destino e Responsável -->
+                        <div class="px-4 pt-2">
+                            <div class="rounded-2xl border border-border bg-muted/30 p-3 grid grid-cols-2 gap-3 text-xs">
+                                <div>
+                                    <span class="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                                        <i data-lucide="wallet" class="size-3"></i>
+                                        Vai para
+                                    </span>
+                                    <strong class="font-bold text-foreground text-xs truncate block">${m.conta_destino || m.onde_guardado || 'Nubank Maria Eduarda'}</strong>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                                        <i data-lucide="user" class="size-3"></i>
+                                        Responsável
+                                    </span>
+                                    <strong class="font-bold text-foreground text-xs truncate block">${m.responsavel_nome || 'Maria Eduarda'}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botão de Ação do Lar -->
+                        <div class="p-4 pt-3">
+                            ${m.em_negociacao ? `
+                                <button onclick="trocarAbaApp('acordos')" class="w-full py-3 rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 text-amber-900 dark:text-amber-200 font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                                    <span>Abrir Mesa de Acordos →</span>
+                                </button>
+                            ` : `
+                                <button onclick="abrirGuardarNaMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${atual}, ${alvo}, 'lar')"
+                                        class="w-full py-3.5 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-soft transition">
+                                    <i data-lucide="plus" class="size-4"></i>
+                                    <span>+ Guardar minha parte</span>
+                                </button>
+                            `}
+                        </div>
+                    ` : `
+                        <!-- Mini-cards informativos Individuais -->
+                        <div class="px-4 pb-2 grid grid-cols-2 gap-2">
+                            <div class="rounded-xl border border-border bg-muted/30 p-2.5 space-y-0.5">
+                                <span class="text-[10px] text-muted-foreground flex items-center gap-1">
+                                    <i data-lucide="credit-card" class="size-2.5"></i>
+                                    Guardado em
+                                </span>
+                                <p class="text-xs font-bold text-foreground truncate">${m.onde_guardado || 'Reserva Pessoal'}</p>
+                            </div>
+                            <div class="rounded-xl border border-border bg-muted/30 p-2.5 space-y-0.5">
+                                <span class="text-[10px] text-muted-foreground flex items-center gap-1">
+                                    <i data-lucide="trending-up" class="size-2.5"></i>
+                                    Faltam
+                                </span>
+                                <p class="text-xs font-extrabold ${faltam <= 0 ? 'text-emerald-600' : 'text-foreground'}">${faltam <= 0 ? 'Concluída!' : BRL(faltam)}</p>
+                            </div>
+                        </div>
+
+                        <!-- Botão de Aporte Individual -->
+                        <div class="p-4 pt-1">
+                            <button onclick="abrirGuardarNaMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${atual}, ${alvo}, 'individual')"
+                                    class="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-extrabold text-xs flex items-center justify-center gap-2 shadow-soft hover:bg-primary/90 transition">
+                                <i data-lucide="plus" class="size-4"></i>
+                                <span>+ Guardar para esta meta</span>
+                            </button>
+                        </div>
+                    `}
                 </div>`;
             }).join('');
             lucide.createIcons();
@@ -3101,7 +3291,7 @@
                     } else {
                         entCont.innerHTML = d.entradas.map(e => `
                             <div class="flex items-center gap-3 py-3.5 border-b border-border/60 last:border-0">
-                                <span class="size-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 flex items-center justify-center shrink-0 text-sm">${e.emoji || '💰'}</span>
+                                <span class="size-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0"><i data-lucide="${e.icone || 'trending-up'}" class="size-4"></i></span>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-xs font-bold text-foreground truncate">${e.titulo}</p>
                                     <span class="text-[11px] text-muted-foreground">${e.subtitulo || ''}</span>
@@ -3210,13 +3400,13 @@
         }
 
         async function dispararLembreteDiplomata(destId, titulo, valor) {
-            const mensagem = `Oi! Passando só pra lembrar com carinho da divisão de ${titulo} (${BRL(valor)}) 🌿`;
+            const mensagem = `Oi! Passando só pra lembrar com carinho da divisão de ${titulo} (${BRL(valor)})`;
             await fetch('/api/cobrancas/lembrete', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ destinatario_id: destId, titulo, valor, mensagem })
             });
-            seivaNotificar('Lembrete diplomático enviado com sucesso pelo SEIVA! 🌿', 'sucesso', 'Lembrete Enviado');
+            seivaNotificar('Lembrete diplomático enviado com sucesso pelo SEIVA!', 'sucesso', 'Lembrete Enviado');
         }
 
         // --- MODAIS DE LANÇAMENTO ---
@@ -3342,7 +3532,7 @@
                     listaCategorias = await res.json();
                     const sel = document.getElementById('formTransCategoriaId');
                     if (sel) {
-                        sel.innerHTML = listaCategorias.map(c => `<option value="${c.id_categoria}">${c.emoji || '📁'} ${c.nome}</option>`).join('');
+                        sel.innerHTML = listaCategorias.map(c => `<option value="${c.id_categoria}">${c.nome}</option>`).join('');
                     }
                 }
             } catch (e) {}
@@ -3528,7 +3718,7 @@
                     if (totalNaoLidas > 0) {
                         sub.innerText = `${totalNaoLidas} notificação${totalNaoLidas > 1 ? 'ões' : ''} pendente${totalNaoLidas > 1 ? 's' : ''} para você`;
                     } else {
-                        sub.innerText = 'Tudo em dia! 🌱 Nenhuma pendência.';
+                        sub.innerText = 'Tudo em dia! Nenhuma pendência.';
                     }
                 }
 

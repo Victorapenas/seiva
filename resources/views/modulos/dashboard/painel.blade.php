@@ -1,7 +1,7 @@
 {{-- 
     Módulo: Dashboard Oficial SEIVA (Fidelidade Absoluta ao Protótipo)
     Responsável Acadêmico: Victor Hugo / Equipe SEIVA
-    Bordão Oficial: "Onde seu dinheiro cria raízes 🌱"
+    Bordão Oficial: "Onde seu dinheiro cria raízes"
     Telas Implementadas:
       1. Header do Usuário com Data Contextual & Badge "Você registra, o SEIVA organiza"
       2. Banner Interativo "Pedido de ajuda" (Duda & Ian)
@@ -29,16 +29,16 @@
         <div class="flex flex-wrap items-center gap-1.5">
             <span class="text-muted-foreground text-[11px] mr-1 hidden sm:inline">Testar persona:</span>
             <button type="button" onclick="trocarUsuarioRapido('duda@seiva.com')" 
-                    class="btn-perfil-switch px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-semibold text-[11px] text-foreground transition shadow-2xs">
-                👩 Duda (Casal · 40%)
+                    class="btn-perfil-switch px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-semibold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1">
+                <i data-lucide="user" class="size-3"></i> Duda (Casal · 40%)
             </button>
             <button type="button" onclick="trocarUsuarioRapido('ian@seiva.com')" 
-                    class="btn-perfil-switch px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-semibold text-[11px] text-foreground transition shadow-2xs">
-                👨 Ian (Casal · 60%)
+                    class="btn-perfil-switch px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-semibold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1">
+                <i data-lucide="user" class="size-3"></i> Ian (Casal · 60%)
             </button>
             <button type="button" onclick="trocarUsuarioRapido('victor@seiva.com')" 
-                    class="btn-perfil-switch px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-semibold text-[11px] text-foreground transition shadow-2xs">
-                👤 Victor Hugo (Individual)
+                    class="btn-perfil-switch px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-semibold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1">
+                <i data-lucide="user-check" class="size-3"></i> Victor Hugo (Individual)
             </button>
         </div>
     </div>

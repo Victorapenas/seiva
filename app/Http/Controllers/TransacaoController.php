@@ -57,7 +57,7 @@ class TransacaoController extends Controller
                 'conta_id' => $request->conta_id,
                 'categoria_id' => $request->categoria_id,
                 'titulo' => $request->titulo,
-                'emoji' => $request->emoji ?? ($request->tipo === 'entrada' ? '💰' : '💸'),
+                'emoji' => $request->emoji ?? ($request->tipo === 'entrada' ? 'trending-up' : 'trending-down'),
                 'valor' => $request->valor,
                 'tipo' => $request->tipo,
                 'data' => $request->data ?? now()->format('Y-m-d'),
@@ -159,7 +159,7 @@ class TransacaoController extends Controller
             'valor'       => (float) $t->valor,
             'membro'      => 'eu',
             'iniciais'    => $user->iniciais ?? 'EU',
-            'icone'       => $t->emoji ?? '💸',
+            'icone'       => ($t->emoji && !preg_match('/[\x{1F300}-\x{1F9FF}]/u', $t->emoji)) ? $t->emoji : 'home',
         ])->concat($parceiroLar->map(fn($t) => [
             'id'          => $t->id_transacao,
             'titulo'      => $t->titulo,
@@ -167,7 +167,7 @@ class TransacaoController extends Controller
             'valor'       => (float) $t->valor,
             'membro'      => 'parceiro',
             'iniciais'    => $parceiro ? ($parceiro->iniciais ?? 'IM') : 'IM',
-            'icone'       => $t->emoji ?? '💸',
+            'icone'       => ($t->emoji && !preg_match('/[\x{1F300}-\x{1F9FF}]/u', $t->emoji)) ? $t->emoji : 'home',
         ]))->sortByDesc('valor')->values();
 
         return response()->json([

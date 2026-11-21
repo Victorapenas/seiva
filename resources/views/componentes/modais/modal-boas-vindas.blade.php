@@ -29,7 +29,7 @@
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="text-base">🌱</span>
+                            <i data-lucide="sprout" class="size-4 text-emerald-600"></i>
                             <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                 Onde seu dinheiro cria raízes
                             </p>

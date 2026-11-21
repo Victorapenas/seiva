@@ -81,7 +81,7 @@ class LarController extends Controller
 
             $lar = Lar::create([
                 'nome' => $request->nome,
-                'emoji' => $request->emoji ?? '🌿',
+                'emoji' => $request->emoji ?? 'home',
                 'criado_por' => $user->id_usuario,
             ]);
 
@@ -197,7 +197,7 @@ class LarController extends Controller
                 'lar_id' => $lar->id_lar,
                 'registrada_por' => $user->id_usuario,
                 'titulo' => $request->titulo,
-                'emoji' => $request->emoji ?? '🧾',
+                'emoji' => $request->emoji ?? 'receipt',
                 'valor_total' => $request->valor_total,
                 'tipo' => $request->tipo,
                 'divisao' => $request->divisao,

@@ -106,7 +106,7 @@
         <!-- BANNER DE PEDIDO DE AJUDA DO PARCEIRO (IMAGEM 1) -->
         <div id="caixaBannerPedidoAjuda" class="rounded-3xl border border-emerald-800/40 bg-[#12241b] text-white p-5 space-y-3.5 shadow-card">
             <div class="flex items-center gap-2">
-                <span class="text-emerald-400 text-sm">🤝</span>
+                <i data-lucide="handshake" class="size-4 text-emerald-400"></i>
                 <div>
                     <h3 id="caixaAjudaRemetenteTitulo" class="text-xs font-bold uppercase tracking-wider text-emerald-200">Ian pediu sua ajuda</h3>
                     <p class="text-[11px] text-gray-300">Você pode ajudar, contrapor um valor menor ou recusar</p>
@@ -350,7 +350,7 @@
                 Isolamento Criptográfico e Confidencialidade Individual (LGPD)
             </span>
             <span class="font-bold text-emerald-800 dark:text-emerald-300">
-                Onde seu dinheiro cria raízes 🌱
+                Onde seu dinheiro cria raízes
             </span>
         </footer>
     </div>

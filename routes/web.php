@@ -83,10 +83,11 @@ Route::prefix('api')->group(function () {
         Route::post('/acordos/propostas', [AcordoController::class, 'criarProposta']);
         Route::post('/acordos/propostas/votar/{id}', [AcordoController::class, 'votarProposta']);
 
-        // RF007: Criar Metas
+        // RF007: Criar Metas e Monitoramento de Produtos
         Route::get('/metas', [MetaController::class, 'index']);
         Route::post('/metas', [MetaController::class, 'store']);
         Route::post('/metas/{id}/contribuir', [MetaController::class, 'contribuir']);
+        Route::post('/metas/consultar-link', [MetaController::class, 'consultarLinkProduto']);
 
         // RF003: Relatórios e Recebimentos
         Route::get('/recebimentos', [RecebimentosController::class, 'relatorio']);
