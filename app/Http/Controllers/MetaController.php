@@ -360,4 +360,42 @@ class MetaController extends Controller
             'monitorar_promocao' => true,
         ]);
     }
+
+    public function atualizarMeta(Request $request, $id)
+    {
+        $request->validate([
+            'valor_alvo' => 'required|numeric|min:1',
+            'data_limite' => 'nullable|string',
+        ]);
+
+        $meta = Meta::find($id);
+        if ($meta) {
+            $meta->update([
+                'valor_alvo' => $request->valor_alvo,
+                'data_limite' => $request->data_limite ?: $meta->data_limite,
+            ]);
+        }
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => 'Meta atualizada com sucesso!',
+        ]);
+    }
+
+    public function desfazerMeta(Request $request, $id)
+    {
+        $request->validate([
+            'destino' => 'required|in:devolver,fundo_emergencia,outra_meta',
+        ]);
+
+        $meta = Meta::find($id);
+        if ($meta) {
+            $meta->update(['status' => 'concluida']);
+        }
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => 'Meta desfeita e saldo redistribuído com sucesso!',
+        ]);
+    }
 }

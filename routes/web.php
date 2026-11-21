@@ -76,6 +76,8 @@ Route::prefix('api')->group(function () {
         Route::get('/lar/despesas', [LarController::class, 'despesas']);
         Route::post('/lar/despesas', [LarController::class, 'storeDespesa']);
         Route::post('/lar/despesas/quitar/{id}', [LarController::class, 'quitarParticipacao']);
+        Route::post('/lar/despesas/pagar', [LarController::class, 'pagarDespesa']);
+        Route::post('/lar/fundo-emergencia/reforcar', [LarController::class, 'reforcarFundoEmergencia']);
 
         // RF006: Mesa de Acordos
         Route::get('/acordos', [AcordoController::class, 'index']);
@@ -87,6 +89,10 @@ Route::prefix('api')->group(function () {
         Route::get('/metas', [MetaController::class, 'index']);
         Route::post('/metas', [MetaController::class, 'store']);
         Route::post('/metas/{id}/contribuir', [MetaController::class, 'contribuir']);
+        Route::post('/metas/{id}/guardar', [MetaController::class, 'contribuir']);
+        Route::match(['put', 'post'], '/metas/{id}', [MetaController::class, 'atualizarMeta']);
+        Route::post('/metas/{id}/atualizar', [MetaController::class, 'atualizarMeta']);
+        Route::post('/metas/{id}/desfazer', [MetaController::class, 'desfazerMeta']);
         Route::post('/metas/consultar-link', [MetaController::class, 'consultarLinkProduto']);
 
         // RF003: Relatórios e Recebimentos
