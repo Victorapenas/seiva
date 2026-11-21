@@ -148,7 +148,7 @@ class NotificacoesController extends Controller
         if (empty($notifs)) {
             $notifs[] = [
                 'id'    => 'vazio',
-                'titulo' => 'Tudo em dia! 🌱',
+                'titulo' => 'Tudo em dia!',
                 'texto' => 'Nenhuma notificação pendente por aqui.',
                 'tipo'  => 'sucesso',
                 'lida'  => true,

@@ -27,8 +27,8 @@
             <div class="space-y-1.5">
                 <label class="text-xs font-bold text-foreground">Tipo de meta</label>
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" onclick="selecionarTipoMeta(this, 'produto', 'shopping-bag')" class="chip-cat-meta active flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-emerald-600 bg-emerald-800 text-white font-bold text-xs transition">
-                        <i data-lucide="shopping-bag" class="size-3.5"></i>
+                    <button type="button" onclick="selecionarTipoMeta(this, 'produto', 'shopping-cart')" class="chip-cat-meta active flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-emerald-600 bg-emerald-800 text-white font-bold text-xs transition">
+                        <i data-lucide="shopping-cart" class="size-3.5"></i>
                         <span>Comprar produto</span>
                     </button>
                     <button type="button" onclick="selecionarTipoMeta(this, 'viagem', 'plane')" class="chip-cat-meta flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition">
@@ -56,10 +56,12 @@
                 <label class="text-xs font-bold text-foreground">Cole o link do produto (Mercado Livre, Amazon...)</label>
                 <div class="flex items-center gap-2">
                     <input type="url" id="novaMetaLinkProduto" class="flex-1 rounded-2xl border border-border bg-background px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none shadow-2xs" placeholder="https://...">
-                    <button type="button" onclick="buscarDadosLinkProduto()" class="px-4 py-2.5 rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-200 transition shrink-0">
-                        Buscar
+                    <button type="button" id="btnBuscarLinkMeta" onclick="buscarDadosLinkProduto()" class="px-4 py-2.5 rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-200 transition shrink-0 flex items-center gap-1.5">
+                        <i data-lucide="search" class="size-3.5"></i>
+                        <span>Buscar</span>
                     </button>
                 </div>
+                <input type="hidden" id="novaMetaLoja" value="">
             </div>
 
             <!-- Nome da Meta -->
@@ -71,19 +73,39 @@
             <!-- Valor Total -->
             <div class="space-y-1.5">
                 <label class="text-xs font-bold text-foreground">Valor total da meta</label>
-                <div class="relative flex items-center rounded-2xl border-2 border-emerald-600/70 bg-background px-4 py-2.5 shadow-2xs">
-                    <span class="text-base font-black text-muted-foreground select-none pr-2">R$</span>
-                    <input type="text" id="novaMetaValor" inputmode="decimal" required class="w-full bg-transparent text-xl font-black text-foreground focus:outline-none" placeholder="0,00">
+                <div class="relative flex items-center justify-between rounded-2xl border-2 border-emerald-600/70 bg-background px-4 py-2.5 shadow-2xs">
+                    <span class="text-xl font-black text-muted-foreground select-none pr-2">R$</span>
+                    <input type="text" id="novaMetaValor" inputmode="decimal" required class="w-full bg-transparent text-2xl font-black text-foreground text-right focus:outline-none" placeholder="0,00">
                 </div>
             </div>
 
-            <!-- Foto do Produto (opcional) -->
+            <!-- Foto do Produto (opcional) com upload e preview -->
             <div class="space-y-1.5">
                 <label class="text-xs font-bold text-foreground">Foto do produto (opcional)</label>
-                <div class="flex flex-col items-center justify-center p-3.5 rounded-2xl border-2 border-dashed border-border bg-muted/20 text-center cursor-pointer hover:border-emerald-500 transition">
-                    <i data-lucide="image-plus" class="size-6 text-muted-foreground mb-1"></i>
+                <input type="file" id="novaMetaFotoArquivo" accept="image/*" class="hidden" onchange="aoSelecionarFotoMetaArquivo(this)">
+                <input type="hidden" id="novaMetaFotoUrl" value="">
+                
+                <div id="boxUploadFotoMeta" onclick="document.getElementById('novaMetaFotoArquivo').click()" 
+                     class="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-border bg-muted/20 text-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/10 transition group">
+                    <div class="size-10 rounded-xl bg-muted/60 text-muted-foreground group-hover:text-emerald-600 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-950 flex items-center justify-center mb-1.5 transition">
+                        <i data-lucide="image-plus" class="size-5"></i>
+                    </div>
                     <span class="text-xs font-bold text-foreground">Adicionar foto</span>
-                    <span class="text-[11px] text-muted-foreground">O link nem sempre traz imagem — adicione a sua se quiser</span>
+                    <span class="text-[11px] text-muted-foreground mt-0.5">O Mercado Livre nem sempre traz imagem — adicione a sua.</span>
+                </div>
+
+                <!-- Preview de Foto carregada -->
+                <div id="previewFotoMetaContainer" class="hidden relative rounded-2xl border border-border bg-card p-2 flex items-center gap-3">
+                    <img id="previewFotoMetaImg" src="" alt="Produto" class="size-14 rounded-xl object-cover shrink-0 border border-border">
+                    <div class="min-w-0 flex-1">
+                        <span class="text-xs font-bold text-foreground block truncate" id="previewFotoMetaTitulo">Foto do produto</span>
+                        <span class="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                            <i data-lucide="check-circle-2" class="size-3"></i> Imagem vinculada
+                        </span>
+                    </div>
+                    <button type="button" onclick="removerFotoMeta(event)" class="size-8 rounded-xl bg-muted hover:bg-rose-50 text-muted-foreground hover:text-rose-600 flex items-center justify-center transition">
+                        <i data-lucide="trash-2" class="size-4"></i>
+                    </button>
                 </div>
             </div>
 
@@ -129,7 +151,7 @@
                         </span>
                         <div>
                             <strong class="text-xs font-extrabold text-foreground block">Compartilhada</strong>
-                            <span class="text-[11px] text-muted-foreground">Para o Lar e preciso de ajuda do parceiro</span>
+                            <span class="text-[11px] text-muted-foreground" id="subtextoMetaCompartilhada">Para o Lar e preciso de ajuda do parceiro</span>
                         </div>
                     </div>
                 </button>

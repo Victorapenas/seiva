@@ -74,7 +74,7 @@ class CobrancaController extends Controller
         Notificacao::create([
             'usuario_id' => $request->destinatario_id,
             'lar_id' => $lar->id_lar,
-            'titulo' => '🌿 Lembrete diplomático de ' . $user->nome,
+            'titulo' => 'Lembrete diplomático de ' . $user->nome,
             'mensagem' => $request->mensagem . " | Chave PIX: " . ($user->chave_pix ?: $user->email),
             'tipo' => 'lar',
             'tempo' => 'Agora mesmo',
@@ -92,12 +92,12 @@ class CobrancaController extends Controller
             [
                 'id' => 'diplomatico',
                 'nome' => 'Diplomático & Gentil (Padrão)',
-                'texto' => 'Oi amor! Passando só pra lembrar com carinho da nossa divisão de {titulo} (R$ {valor}). Segue meu PIX pra quando puder: {pix} 🌿💚',
+                'texto' => 'Oi amor! Passando só pra lembrar com carinho da nossa divisão de {titulo} (R$ {valor}). Segue meu PIX pra quando puder: {pix}',
             ],
             [
                 'id' => 'descontraido',
                 'nome' => 'Descontraído & Bem-humorado',
-                'texto' => 'E aí parceiro(a)! O boleto de {titulo} não perdoa rs! Dá uma olhadinha quando der no valor de R$ {valor}. PIX: {pix} ☕✨',
+                'texto' => 'E aí parceiro(a)! O boleto de {titulo} não perdoa! Dá uma olhadinha quando der no valor de R$ {valor}. PIX: {pix}',
             ],
             [
                 'id' => 'direto',

@@ -99,7 +99,7 @@ class RecebimentosController extends Controller
                 'titulo'    => $t->titulo,
                 'subtitulo' => ($t->categoria?->nome ?? 'Renda') . ' · ' . Carbon::parse($t->data)->locale('pt_BR')->isoFormat('MMM/YYYY'),
                 'valor'     => (float) $t->valor,
-                'emoji'     => $t->emoji ?? '💰',
+                'icone'     => 'trending-up',
             ]),
             'gastos_por_categoria' => $porCategoria,
             'historico'            => $historico,

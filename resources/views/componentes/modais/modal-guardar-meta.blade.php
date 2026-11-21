@@ -78,7 +78,7 @@
 
             <!-- Dica Motivacional (dinâmica via JS) -->
             <div id="guardarMetaDicaMotivacional" class="p-3 rounded-2xl bg-muted/40 text-center text-xs text-muted-foreground font-medium border border-border/40">
-                Quase lá. Você vai conseguir. 💚
+                Quase lá. Você vai conseguir.
             </div>
 
             <!-- Seção de destino Pix (metas do lar) – oculta por padrão -->
