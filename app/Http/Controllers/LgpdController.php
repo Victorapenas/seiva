@@ -9,6 +9,31 @@ use Illuminate\Support\Facades\DB;
 
 class LgpdController extends Controller
 {
+    /**
+     * Retorna os dados do perfil do usuário autenticado (RF011)
+     */
+    public function show()
+    {
+        $user = Auth::user();
+        $lar = $user->lares()->first();
+
+        return response()->json([
+            'usuario' => [
+                'id_usuario'   => $user->id_usuario,
+                'nome'         => $user->nome,
+                'email'        => $user->email,
+                'renda_mensal' => $user->renda_mensal ?? 0,
+                'chave_pix'    => $user->chave_pix ?? $user->email,
+                'created_at'   => $user->created_at,
+            ],
+            'lar' => $lar ? [
+                'id_lar'    => $lar->id_lar,
+                'nome'      => $lar->nome,
+                'criado_em' => $lar->created_at,
+            ] : null,
+        ]);
+    }
+
     public function updateProfile(Request $request)
     {
         $user = Auth::user();

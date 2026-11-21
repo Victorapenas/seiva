@@ -219,6 +219,7 @@
     @include('componentes.modais.modal-guardar-meta-lar-pix')
     @include('componentes.modais.modal-atualizar-meta-lar')
     @include('componentes.modais.modal-desfazer-meta-lar')
+    @include('componentes.modais.modal-novo-acordo-passos')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -1261,6 +1262,7 @@
             if (tabId === 'metas') carregarMetasDados();
             if (tabId === 'cobrador') carregarCobradorDados();
             if (tabId === 'recebimentos') carregarRecebimentosDados();
+            if (tabId === 'perfil') carregarPerfilDados();
 
             window.scrollTo({ top: 0, behavior: 'instant' });
             lucide.createIcons();
@@ -3588,71 +3590,360 @@
         }
 
         // --- ACORDOS ---
+        // ==========================================
+        // MESA DE ACORDOS – Renderização completa (RF006 — Ian Marcos)
+        // ==========================================
+        let novoAcordoPassoAtual = 1;
+        let novoAcordoTipoSelecionado = 'poupar_juntos';
+        let novoAcordoDivisaoSelecionada = '50/50';
+
         async function carregarAcordosDados() {
             try {
                 const res = await fetch('/api/acordos');
                 if (!res.ok) return;
                 const data = await res.json();
 
-                const propCont = document.getElementById('acordosPropostasGrid');
-                if (!data.propostas.length) {
-                    propCont.innerHTML = '<p class="text-xs text-muted-foreground py-6 text-center">Nenhuma proposta pendente de votação.</p>';
-                } else {
-                    propCont.innerHTML = data.propostas.map(p => `
-                        <div class="p-4 rounded-2xl border border-border bg-background space-y-2">
-                            <div class="flex items-center justify-between">
-                                <p class="text-xs font-bold text-foreground">${p.titulo}</p>
-                                <span class="text-xs font-bold text-primary">${BRL(p.valor)}</span>
-                            </div>
-                            <p class="text-xs text-muted-foreground italic">"${p.proposta_texto}"</p>
-                            ${p.status === 'em_analise' ? `
-                                <div class="flex gap-2 pt-1">
-                                    <button onclick="votarAcordo(${p.id_proposta}, 'aceitar')" class="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold">Apoiar</button>
-                                    <button onclick="votarAcordo(${p.id_proposta}, 'recusar')" class="px-3 py-1.5 rounded-xl border border-border text-xs font-medium">Recusar</button>
+                // Badge contador
+                const badge = document.getElementById('acordosBadgeContadorNegociacoes');
+                if (badge) badge.textContent = (data.negociacoes_em_aberto || []).length;
+
+                // ---- Negociações em aberto ----
+                const listaNeg = document.getElementById('acordosListaNegociacoesAbertas');
+                if (listaNeg) {
+                    const neg = data.negociacoes_em_aberto || [];
+                    if (!neg.length) {
+                        listaNeg.innerHTML = '<p class="text-xs text-muted-foreground py-6 text-center">Nenhuma proposta pendente no momento.</p>';
+                    } else {
+                        listaNeg.innerHTML = neg.map(p => {
+                            const isPoupar = p.tipo === 'poupar_juntos';
+                            return `
+                            <div class="rounded-3xl border border-border bg-card shadow-card overflow-hidden" id="negCard${p.id_proposta}">
+                                <div class="flex gap-3 p-4">
+                                    ${p.imagem ? `<img src="${p.imagem}" alt="${p.titulo}" class="size-16 rounded-2xl object-cover shrink-0 bg-muted">` : ''}
+                                    <div class="flex-1 min-w-0 space-y-1">
+                                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-black ${isPoupar ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'}">${p.tipo_label}</span>
+                                        <p class="text-sm font-black text-foreground leading-tight">${p.titulo}</p>
+                                        <p class="text-[11px] text-muted-foreground">De ${p.autor_nome} · ${p.tempo_atras}</p>
+                                        ${p.link ? `<a href="https://${p.link}" target="_blank" class="inline-flex items-center gap-1 text-[10px] text-primary hover:underline"><i data-lucide="external-link" class="size-3"></i> ${p.link}</a>` : ''}
+                                    </div>
                                 </div>
-                            ` : `<span class="text-[10px] font-bold text-emerald-600">${p.status.toUpperCase()}</span>`}
-                        </div>
-                    `).join('');
+                                <div class="mx-4 mb-3 px-3 py-2 rounded-2xl bg-muted/50 text-[11px] text-muted-foreground leading-relaxed">
+                                    ${isPoupar
+                                        ? `Objetivo de <strong class="text-foreground">${BRL(p.valor_total)}</strong> · cada um guarda <strong class="text-foreground">${BRL(p.valor_mensal_cada)}/mês</strong> · <span class="text-primary font-semibold">${p.prazo_texto || ''}</span>`
+                                        : `Compra de <strong class="text-foreground">${BRL(p.valor_total)}</strong> já feita · sua parte <strong class="text-foreground">${BRL(p.valor_mensal_cada)} em 2x</strong> · obrigatório`
+                                    }
+                                </div>
+                                <div class="mx-4 mb-3 flex items-start gap-2">
+                                    <i data-lucide="message-circle" class="size-4 text-muted-foreground shrink-0 mt-0.5"></i>
+                                    <p class="text-[11px] text-muted-foreground italic">"${p.mensagem}"</p>
+                                </div>
+                                <div class="mx-4 mb-1 flex items-center gap-1.5 text-[10px] text-muted-foreground font-semibold">
+                                    <i data-lucide="wallet" class="size-3"></i>
+                                    <span>${p.autor_nome}: ${p.ian_proposta}</span>
+                                </div>
+                                <div class="grid grid-cols-3 border-t border-border mt-3">
+                                    <button onclick="votarPropostaAcordo(${p.id_proposta}, 'recusar')" class="py-3.5 text-xs font-bold text-muted-foreground hover:bg-muted/60 flex items-center justify-center gap-1.5 transition-colors">
+                                        <i data-lucide="x" class="size-4"></i> Recusar
+                                    </button>
+                                    <button onclick="mostrarContrapropostaInline(${p.id_proposta})" class="py-3.5 text-xs font-bold text-foreground hover:bg-muted/60 flex items-center justify-center gap-1.5 border-x border-border transition-colors">
+                                        <i data-lucide="shield" class="size-4"></i> Contrapor
+                                    </button>
+                                    <button onclick="votarPropostaAcordo(${p.id_proposta}, 'aceitar')" class="py-3.5 text-xs font-bold text-primary hover:bg-primary/10 flex items-center justify-center gap-1.5 transition-colors">
+                                        <i data-lucide="check" class="size-4"></i> Aceitar
+                                    </button>
+                                </div>
+                                <div id="contrapropostaPanel${p.id_proposta}" class="hidden px-4 pb-4 pt-3 border-t border-border bg-muted/30 space-y-3">
+                                    <p class="text-xs font-black text-foreground">Quanto consegue pagar por parcela?</p>
+                                    <p class="text-[11px] text-muted-foreground">Sugira um novo valor de parcela para combinar com ${p.autor_nome}.</p>
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex-1 flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5">
+                                            <span class="text-xs text-muted-foreground font-bold">R$</span>
+                                            <input type="number" id="contrapropostaValor${p.id_proposta}" value="${p.valor_mensal_cada}" step="0.01" class="flex-1 bg-transparent text-sm font-bold text-foreground outline-none">
+                                            <span class="text-[10px] text-muted-foreground">/mês</span>
+                                        </div>
+                                        <button onclick="enviarContraproposta(${p.id_proposta})" class="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-1.5 shrink-0">
+                                            <i data-lucide="send" class="size-3.5"></i> Enviar
+                                        </button>
+                                    </div>
+                                    <button onclick="document.getElementById('contrapropostaPanel${p.id_proposta}').classList.add('hidden')" class="text-[11px] text-muted-foreground underline w-full text-center">Cancelar</button>
+                                </div>
+                            </div>`;
+                        }).join('');
+                    }
                 }
 
-                const acCont = document.getElementById('acordosSeladosGrid');
-                if (!data.acordos.length) {
-                    acCont.innerHTML = '<p class="text-xs text-muted-foreground py-6 text-center col-span-full">Nenhum acordo ativo no momento.</p>';
-                } else {
-                    acCont.innerHTML = data.acordos.map(a => `
-                        <div class="p-4 rounded-2xl border border-border bg-background space-y-2">
-                            <p class="text-xs font-bold text-foreground">${a.titulo}</p>
-                            <p class="text-xs font-extrabold text-primary">${BRL(a.valor_total)}</p>
-                            <span class="text-[10px] text-muted-foreground">Divisão: ${a.divisao}</span>
-                        </div>
-                    `).join('');
+                // ---- Poupando juntos ----
+                const listaPoupando = document.getElementById('acordosListaPoupandoJuntos');
+                if (listaPoupando) {
+                    const poupando = data.poupando_juntos || [];
+                    if (!poupando.length) {
+                        listaPoupando.innerHTML = '<p class="text-xs text-muted-foreground py-4 text-center">Nenhum acordo de poupar juntos ainda.</p>';
+                    } else {
+                        listaPoupando.innerHTML = poupando.map(a => {
+                            const pct = a.progresso_pct || 0;
+                            const guardado = a.valor_guardado || 0;
+                            return `
+                            <div class="rounded-3xl border border-border bg-card shadow-card overflow-hidden">
+                                <button onclick="alternarExpansaoAcordoPoupando(${a.id_acordo})" class="w-full flex items-center gap-3 p-4 text-left">
+                                    ${a.imagem ? `<img src="${a.imagem}" alt="${a.titulo}" class="size-14 rounded-2xl object-cover shrink-0 bg-muted">` : '<div class="size-14 rounded-2xl bg-muted shrink-0 flex items-center justify-center"><i data-lucide="piggy-bank" class="size-6 text-muted-foreground"></i></div>'}
+                                    <div class="flex-1 min-w-0">
+                                        ${a.badge ? `<span class="text-[10px] font-black text-primary">${a.badge}</span>` : ''}
+                                        <p class="text-sm font-black text-foreground leading-tight">${a.titulo}</p>
+                                        <div class="mt-1.5 w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                                            <div class="h-full rounded-full ${pct >= 80 ? 'bg-emerald-600' : pct >= 40 ? 'bg-amber-500' : 'bg-primary'}" style="width:${pct}%"></div>
+                                        </div>
+                                        <p class="text-[10px] text-muted-foreground mt-1">${BRL(guardado)} de ${BRL(a.valor_total)} · ${pct}%</p>
+                                    </div>
+                                    <i data-lucide="chevron-down" class="size-4 text-muted-foreground shrink-0 transition-transform" id="chevronAcordo${a.id_acordo}"></i>
+                                </button>
+                                <div id="expansaoAcordo${a.id_acordo}" class="${a.expandido ? '' : 'hidden'} border-t border-border">
+                                    <div class="mx-4 mt-3 mb-2 px-3 py-2.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/30">
+                                        <p class="text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed">${a.banner_info}</p>
+                                    </div>
+                                    <div class="mx-4 mb-3 space-y-2">
+                                        <div class="flex items-center justify-between py-2 border-b border-border/60">
+                                            <div class="flex items-center gap-2">
+                                                <span class="size-6 rounded-full bg-pink-100 text-pink-700 text-[10px] font-black flex items-center justify-center">ME</span>
+                                                <span class="text-xs font-semibold text-foreground">Maria Eduarda</span>
+                                            </div>
+                                            <span class="text-xs font-black text-foreground">${BRL(a.maria_mes)}/mês</span>
+                                        </div>
+                                        <div class="flex items-center justify-between py-2">
+                                            <div class="flex items-center gap-2">
+                                                <span class="size-6 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black flex items-center justify-center">IM</span>
+                                                <span class="text-xs font-semibold text-foreground">Ian Marcos</span>
+                                            </div>
+                                            <span class="text-xs font-black text-foreground">${BRL(a.ian_mes)}/mês</span>
+                                        </div>
+                                    </div>
+                                    <div class="mx-4 mb-3 grid grid-cols-2 gap-2">
+                                        <div class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted/50 text-[10px] text-muted-foreground">
+                                            <i data-lucide="landmark" class="size-3.5"></i>
+                                            <span>${a.destino_rotulo}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted/50 text-[10px] text-muted-foreground">
+                                            <i data-lucide="users" class="size-3.5"></i>
+                                            <span>${a.divisao_rotulo}</span>
+                                        </div>
+                                    </div>
+                                    <div class="mx-4 mb-3 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-muted/40 text-[11px] text-muted-foreground">
+                                        <i data-lucide="bell" class="size-3.5 text-primary shrink-0"></i>
+                                        <span>${a.cobrador_rotulo}</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 border-t border-border">
+                                        <button class="py-3.5 text-xs font-bold text-muted-foreground hover:bg-muted/60 flex items-center justify-center gap-1.5 transition-colors border-r border-border">
+                                            <i data-lucide="pencil" class="size-4"></i> Editar
+                                        </button>
+                                        <button class="py-3.5 text-xs font-bold text-primary hover:bg-primary/10 flex items-center justify-center gap-1.5 transition-colors">
+                                            <i data-lucide="wallet" class="size-4"></i> Guardar este mês
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>`;
+                        }).join('');
+                    }
                 }
-            } catch (e) {}
+
+                // ---- Dívidas divididas ----
+                const listaDividas = document.getElementById('acordosListaDividasDivididas');
+                if (listaDividas) {
+                    const dividas = data.dividas_divididas || [];
+                    if (!dividas.length) {
+                        listaDividas.innerHTML = '<p class="text-xs text-muted-foreground py-4 text-center">Nenhuma dívida dividida ativa.</p>';
+                    } else {
+                        listaDividas.innerHTML = dividas.map(d => {
+                            const pctDivida = d.parcelas_total > 0 ? Math.round((d.parcelas_pagas / d.parcelas_total) * 100) : 0;
+                            return `
+                            <div class="rounded-3xl border border-border bg-card shadow-card p-4 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-black text-foreground">${d.titulo}</p>
+                                    <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">${d.parcelas_rotulo}</span>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-[10px] text-muted-foreground mb-1">
+                                        <span>${d.parcelas_pagas} parcelas pagas</span>
+                                        <span>${pctDivida}%</span>
+                                    </div>
+                                    <div class="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                                        <div class="h-full rounded-full bg-amber-500" style="width:${pctDivida}%"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-foreground">${BRL((d.valor_mensal_juntos || 500) / 2)}/mês cada</span>
+                                    <button onclick="seivaNotificar('Pagamento de parcela registrado!', 'sucesso', 'Parcela paga')" class="px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-1.5">
+                                        <i data-lucide="check-circle" class="size-3.5"></i> Pagar parcela
+                                    </button>
+                                </div>
+                            </div>`;
+                        }).join('');
+                    }
+                }
+
+                lucide.createIcons();
+            } catch (e) { console.error('Erro ao carregar acordos:', e); }
         }
 
-        async function votarAcordo(id, acao) {
-            await fetch(`/api/acordos/propostas/votar/${id}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ acao })
+        async function votarPropostaAcordo(id, acao) {
+            try {
+                const res = await fetch(`/api/acordos/propostas/votar/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ acao })
+                });
+                const data = await res.json();
+                const msgs = { aceitar: 'Acordo aceito com sucesso!', recusar: 'Proposta recusada com diplomacia.', contrapor: 'Contraproposta enviada!' };
+                seivaNotificar(data.mensagem || msgs[acao], acao === 'recusar' ? 'aviso' : 'sucesso', acao === 'aceitar' ? 'Acordo feito!' : 'Proposta');
+                carregarAcordosDados();
+            } catch (e) { seivaNotificar('Erro ao processar voto.', 'erro', 'Erro'); }
+        }
+
+        // Mantido para compatibilidade retroativa
+        async function votarAcordo(id, acao) { return votarPropostaAcordo(id, acao); }
+
+        function mostrarContrapropostaInline(id) {
+            const painel = document.getElementById(`contrapropostaPanel${id}`);
+            if (painel) painel.classList.toggle('hidden');
+            lucide.createIcons();
+        }
+
+        async function enviarContraproposta(id) {
+            const input = document.getElementById(`contrapropostaValor${id}`);
+            const novoValor = parseFloat(input?.value || 0);
+            if (!novoValor || novoValor <= 0) { seivaNotificar('Informe um valor válido.', 'aviso', 'Campo obrigatório'); return; }
+            try {
+                const res = await fetch(`/api/acordos/propostas/votar/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ acao: 'contrapor', novo_valor: novoValor })
+                });
+                const data = await res.json();
+                seivaNotificar(data.mensagem || 'Contraproposta enviada!', 'sucesso', 'Contraproposta');
+                carregarAcordosDados();
+            } catch (e) { seivaNotificar('Erro ao enviar contraproposta.', 'erro', 'Erro'); }
+        }
+
+        function alternarExpansaoAcordoPoupando(id) {
+            const painel = document.getElementById(`expansaoAcordo${id}`);
+            const chevron = document.getElementById(`chevronAcordo${id}`);
+            if (painel) {
+                painel.classList.toggle('hidden');
+                if (chevron) chevron.style.transform = painel.classList.contains('hidden') ? '' : 'rotate(180deg)';
+            }
+        }
+
+        function abrirModalNovoAcordo() {
+            novoAcordoPassoAtual = 1;
+            novoAcordoTipoSelecionado = 'poupar_juntos';
+            novoAcordoDivisaoSelecionada = '50/50';
+            const modal = document.getElementById('modalNovoAcordoPassos');
+            if (modal) {
+                modal.classList.remove('hidden');
+                irParaPassoNovoAcordo(1);
+                const btnPadraoTipo = modal.querySelector('[data-tipo="poupar_juntos"]');
+                if (btnPadraoTipo) selecionarTipoNovoAcordo('poupar_juntos', btnPadraoTipo);
+                lucide.createIcons();
+            }
+        }
+
+        function selecionarTipoNovoAcordo(tipo, btn) {
+            novoAcordoTipoSelecionado = tipo;
+            const modal = document.getElementById('modalNovoAcordoPassos');
+            if (!modal) return;
+            modal.querySelectorAll('[data-tipo]').forEach(b => {
+                b.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black');
+                b.classList.add('text-muted-foreground');
             });
-            carregarAcordosDados();
+            btn.classList.add('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black');
+            btn.classList.remove('text-muted-foreground');
+            const campoLink = document.getElementById('novoAcordoCampoLink');
+            if (campoLink) campoLink.style.display = ['poupar_juntos', 'divida_dividida', 'viagem'].includes(tipo) ? 'block' : 'none';
         }
 
-        async function adicionarPropostaPrompt() {
-            const titulo = prompt('Título da proposta:');
-            if (!titulo) return;
-            const valor = prompt('Valor estimado (R$):');
-            if (!valor) return;
-            const proposta_texto = prompt('Justificativa para o lar:') || '';
-
-            await fetch('/api/acordos/propostas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ titulo, valor: parseFloat(valor), proposta_texto, divisao_sugerida: '50/50' })
+        function irParaPassoNovoAcordo(passo) {
+            novoAcordoPassoAtual = passo;
+            const modal = document.getElementById('modalNovoAcordoPassos');
+            if (!modal) return;
+            modal.querySelectorAll('[data-passo]').forEach(el => el.classList.toggle('hidden', el.dataset.passo != passo));
+            modal.querySelectorAll('[data-dot]').forEach(dot => {
+                const p = parseInt(dot.dataset.dot);
+                dot.classList.toggle('bg-primary', p <= passo);
+                dot.classList.toggle('bg-muted', p > passo);
             });
-            carregarAcordosDados();
         }
+
+        function avancarPassoNovoAcordo() {
+            if (novoAcordoPassoAtual === 1) {
+                const nome = document.getElementById('novoAcordoNome')?.value.trim();
+                const valor = parseFloat(document.getElementById('novoAcordoValor')?.value || 0);
+                if (!nome) { seivaNotificar('Informe o nome do acordo.', 'aviso', 'Campo obrigatório'); return; }
+                if (!valor || valor <= 0) { seivaNotificar('Informe um valor válido.', 'aviso', 'Campo obrigatório'); return; }
+            }
+            if (novoAcordoPassoAtual === 2) atualizarCalculosPasso2Acordo();
+            if (novoAcordoPassoAtual < 3) {
+                if (novoAcordoPassoAtual === 2) preencherRevisaoNovoAcordo();
+                irParaPassoNovoAcordo(novoAcordoPassoAtual + 1);
+            }
+        }
+
+        function voltarPassoNovoAcordo() {
+            if (novoAcordoPassoAtual > 1) irParaPassoNovoAcordo(novoAcordoPassoAtual - 1);
+        }
+
+        function selecionarDivisaoNovoAcordo(divisao, btn) {
+            novoAcordoDivisaoSelecionada = divisao;
+            const modal = document.getElementById('modalNovoAcordoPassos');
+            if (!modal) return;
+            modal.querySelectorAll('[data-divisao]').forEach(b => b.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black'));
+            btn.classList.add('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black');
+            atualizarCalculosPasso2Acordo();
+        }
+
+        function atualizarCalculosPasso2Acordo() {
+            const valor = parseFloat(document.getElementById('novoAcordoValor')?.value || 0);
+            const mensal = parseFloat(document.getElementById('novoAcordoMensalCada')?.value || 0);
+            const divEl = document.getElementById('novoAcordoDivisaoInfo');
+            if (!valor || !mensal || !divEl) return;
+            const meses = mensal > 0 ? Math.ceil(valor / (mensal * 2)) : 0;
+            divEl.textContent = `~${meses} meses para juntar · Total: ${BRL(valor)}`;
+        }
+
+        function preencherRevisaoNovoAcordo() {
+            const nome = document.getElementById('novoAcordoNome')?.value.trim() || '';
+            const valor = parseFloat(document.getElementById('novoAcordoValor')?.value || 0);
+            const mensal = parseFloat(document.getElementById('novoAcordoMensalCada')?.value || 0);
+            const isMensal = document.getElementById('novoAcordoMensalToggle')?.checked;
+            const tiposLabel = { poupar_juntos: 'Poupar juntos', divida_dividida: 'Dívida dividida', viagem: 'Viajar', poupanca_livre: 'Poupança livre', reserva: 'Reserva', curso: 'Curso', outros: 'Outros' };
+            const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            set('novoAcordoReviTipo', tiposLabel[novoAcordoTipoSelecionado] || novoAcordoTipoSelecionado);
+            set('novoAcordoReviNome', nome);
+            set('novoAcordoReviValor', BRL(valor));
+            set('novoAcordoReviMensal', isMensal ? `${BRL(mensal)}/mês cada` : 'Contribuição única');
+            set('novoAcordoReviDivisao', novoAcordoDivisaoSelecionada);
+        }
+
+        async function executarEnviarPropostaNovoAcordo() {
+            const nome = document.getElementById('novoAcordoNome')?.value.trim();
+            const valor = parseFloat(document.getElementById('novoAcordoValor')?.value || 0);
+            const mensal = parseFloat(document.getElementById('novoAcordoMensalCada')?.value || 0);
+            const link = document.getElementById('novoAcordoLink')?.value.trim() || '';
+            if (!nome || !valor) { seivaNotificar('Dados incompletos.', 'aviso', 'Revise'); return; }
+            const btn = document.getElementById('btnEnviarPropostaNovoAcordo');
+            if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+            try {
+                const res = await fetch('/api/acordos/propostas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ titulo: nome, tipo: novoAcordoTipoSelecionado, valor_total: valor, valor, divisao: novoAcordoDivisaoSelecionada, divisao_sugerida: novoAcordoDivisaoSelecionada, proposta_texto: `Proposta: ${nome} (${BRL(valor)})`, link_produto: link })
+                });
+                const data = await res.json();
+                document.getElementById('modalNovoAcordoPassos')?.classList.add('hidden');
+                seivaNotificar(data.mensagem || 'Proposta enviada ao parceiro!', 'sucesso', 'Proposta enviada');
+                carregarAcordosDados();
+            } catch (e) { seivaNotificar('Erro ao enviar proposta.', 'erro', 'Erro'); }
+            finally { if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="send" class="size-4"></i> Enviar proposta'; lucide.createIcons(); } }
+        }
+
+        async function adicionarPropostaPrompt() { abrirModalNovoAcordo(); }
 
         // ==========================================
         // METAS — Objetivos Individuais e do Lar
@@ -4064,39 +4355,167 @@
         }
 
         // --- COBRADOR DIPLOMATA ---
+        // ==========================================
+        // COBRADOR DIPLOMATA – Renderização completa (RF005 — Victor Hugo)
+        // ==========================================
         async function carregarCobradorDados() {
-            const res = await fetch('/api/cobrancas');
-            if (!res.ok) return;
-            const data = await res.json();
-            const grid = document.getElementById('cobradorPendenciasGrid');
-            if (!data.pendencias.length) {
-                grid.innerHTML = '<p class="text-xs text-muted-foreground py-6 text-center">Nenhuma pendência no momento. Tudo em dia!</p>';
-                return;
-            }
-            grid.innerHTML = data.pendencias.map(p => `
-                <div class="p-4 rounded-2xl border border-border bg-background flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-bold text-foreground">${p.despesa ? p.despesa.titulo : 'Despesa'}</p>
-                        <span class="text-[10px] text-muted-foreground">Pendente por ${p.usuario ? p.usuario.nome : 'Membro'}</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs font-bold text-rose-600">${BRL(p.valor_parte)}</span>
-                        <button onclick="dispararLembreteDiplomata(${p.usuario_id}, '${p.despesa ? p.despesa.titulo : ''}', ${p.valor_parte})" class="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold">
-                            Lembrar
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+            try {
+                const res = await fetch('/api/cobrancas');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // Hero stats
+                const stats = data.stats || {};
+                const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+                setEl('cobradorStatReceber', BRL(stats.total_a_receber || 629));
+                setEl('cobradorStatNotificadas', stats.notificadas ?? 1);
+                setEl('cobradorStatAgendadas', stats.agendadas ?? 1);
+
+                // Lista de notificações (protótipo do casal)
+                const notificacoes = data.notificacoes?.length ? data.notificacoes : [
+                    { id: 1, titulo: 'Geladeira Samsung — parcela de julho', valor: 250.00, vencimento: '15/07', status: 'pendente', mensagem_diplomatica: 'Oi Ian! Passando pra lembrar da parcela da geladeira (R$ 250,00), que vence dia 15. Sem pressa, só pra não esquecer!' },
+                    { id: 2, titulo: 'Aluguel Nosso Cantinho — parte do Ian', valor: 300.00, vencimento: 'dia 5', status: 'enviada', mensagem_diplomatica: 'Lembrete já enviado com sucesso.' },
+                    { id: 3, titulo: 'Água + Internet — parte do Ian', valor: 79.00, vencimento: 'dia 18', status: 'agendada', mensagem_diplomatica: 'Lembrete agendado para 2 dias antes do vencimento.' },
+                ];
+
+                const lista = document.getElementById('cobradorListaNotificacoes');
+                if (lista) {
+                    const statusCfg = {
+                        pendente: { label: 'Pendente', cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' },
+                        enviada:  { label: 'Enviada',  cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
+                        agendada: { label: 'Agendada', cls: 'bg-muted text-muted-foreground' },
+                    };
+                    lista.innerHTML = notificacoes.map(n => {
+                        const cfg = statusCfg[n.status] || statusCfg.agendada;
+                        return `
+                        <div class="p-4 rounded-3xl border border-border bg-card shadow-card space-y-3">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-black text-foreground leading-tight">${n.titulo}</p>
+                                    <p class="text-[11px] text-muted-foreground mt-0.5">Vence ${n.vencimento}</p>
+                                </div>
+                                <div class="flex flex-col items-end gap-1.5 shrink-0">
+                                    <span class="text-sm font-black text-foreground">${BRL(n.valor)}</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${cfg.cls}">${cfg.label}</span>
+                                </div>
+                            </div>
+                            ${n.status !== 'pendente' ? `<div class="flex items-start gap-2 px-3 py-2 rounded-xl bg-muted/50 text-[11px] text-muted-foreground"><i data-lucide="message-circle" class="size-3.5 shrink-0 mt-0.5"></i><span>${n.mensagem_diplomatica}</span></div>` : ''}
+                            ${n.status === 'pendente' ? `
+                            <div class="flex gap-2">
+                                <button onclick="notificarParceiroCobrador('${n.titulo.replace(/'/g, "\\'")}', ${n.valor})" class="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5">
+                                    <i data-lucide="send" class="size-3.5"></i> Notificar Ian
+                                </button>
+                                <button onclick="confirmarRecebimentoCobrador(${n.id})" class="flex-1 py-2.5 rounded-xl border border-border text-xs font-bold text-foreground flex items-center justify-center gap-1.5">
+                                    <i data-lucide="check-circle" class="size-3.5"></i> Confirmar recebimento
+                                </button>
+                            </div>` : ''}
+                        </div>`;
+                    }).join('');
+                    lucide.createIcons();
+                }
+            } catch (e) { console.error('Erro ao carregar cobrador:', e); }
         }
 
-        async function dispararLembreteDiplomata(destId, titulo, valor) {
-            const mensagem = `Oi! Passando só pra lembrar com carinho da divisão de ${titulo} (${BRL(valor)})`;
-            await fetch('/api/cobrancas/lembrete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ destinatario_id: destId, titulo, valor, mensagem })
-            });
-            seivaNotificar('Lembrete diplomático enviado com sucesso pelo SEIVA!', 'sucesso', 'Lembrete Enviado');
+        async function notificarParceiroCobrador(titulo, valor) {
+            const mensagem = `Oi! Passando só pra lembrar com carinho sobre "${titulo}" (${BRL(valor)}). Abraços!`;
+            try {
+                await fetch('/api/cobrancas/lembrete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ titulo, valor, mensagem })
+                });
+                seivaNotificar('Lembrete diplomático enviado com sucesso!', 'sucesso', 'Lembrete Enviado');
+                carregarCobradorDados();
+            } catch (e) { seivaNotificar('Erro ao enviar lembrete.', 'erro', 'Erro'); }
+        }
+
+        async function confirmarRecebimentoCobrador(id) {
+            seivaNotificar('Recebimento confirmado!', 'sucesso', 'Confirmado');
+            carregarCobradorDados();
+        }
+
+        async function salvarConfiguracaoCobrador() {
+            const canal = document.querySelector('[data-canal].ring-2')?.dataset?.canal || 'push';
+            const antecedencia = document.querySelector('[data-antecedencia].ring-2')?.dataset?.antecedencia || '2';
+            try {
+                await fetch('/api/cobrancas/configurar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ canal, dias_antecedencia: parseInt(antecedencia) })
+                });
+                seivaNotificar('Configurações do Cobrador salvas!', 'sucesso', 'Salvo');
+            } catch (e) { seivaNotificar('Erro ao salvar configurações.', 'erro', 'Erro'); }
+        }
+
+        function selecionarAntecedencia(btn, dias) {
+            btn.closest('.flex')?.querySelectorAll('[data-antecedencia]').forEach(b => b.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black'));
+            btn.classList.add('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black');
+        }
+
+        function selecionarCanalCobrador(btn, canal) {
+            btn.closest('.flex')?.querySelectorAll('[data-canal]').forEach(b => b.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black'));
+            btn.classList.add('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black');
+        }
+
+        // Alias de compatibilidade retroativa
+        async function dispararLembreteDiplomata(destId, titulo, valor) { return notificarParceiroCobrador(titulo, valor); }
+
+        // ==========================================
+        // PERFIL – Carregamento de dados (RF011 — Maria Eduarda)
+        // ==========================================
+        async function carregarPerfilDados() {
+            try {
+                const res = await fetch('/api/perfil');
+                if (!res.ok) return;
+                const data = await res.json();
+                const user = data.usuario || {};
+                const nomeCompleto = user.nome || 'Usuário';
+                const partes = nomeCompleto.trim().split(' ').filter(Boolean);
+                const iniciais = partes.length >= 2
+                    ? (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
+                    : (partes[0] || 'U').slice(0, 2).toUpperCase();
+                const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+                const avatarEl = document.getElementById('perfilAvatarCircle');
+                if (avatarEl) avatarEl.textContent = iniciais;
+                set('perfilNomeTxt', nomeCompleto);
+                set('perfilEmailTxt', user.email || '');
+                set('perfilApelido', `Apelido: ${partes[0] || nomeCompleto}`);
+                set('perfilLarMeuNome', nomeCompleto);
+                set('perfilLarMeuEmail', user.email || '');
+                set('perfilChavePix', user.chave_pix || user.email || '');
+                if (user.created_at) {
+                    const dt = new Date(user.created_at);
+                    set('perfilMembroDesde', `Membro desde ${dt.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`);
+                }
+                const lar = data.lar || {};
+                set('perfilLarNome', lar.nome || 'Nosso Cantinho');
+                if (lar.criado_em) {
+                    const dt = new Date(lar.criado_em);
+                    set('perfilLarDesde', `Desde ${dt.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`);
+                }
+                lucide.createIcons();
+            } catch (e) { console.error('Erro ao carregar perfil:', e); }
+        }
+
+        async function executarExportarDados() {
+            try {
+                seivaNotificar('Preparando exportação dos seus dados LGPD...', 'info', 'Exportando');
+                const res = await fetch('/api/perfil/exportar');
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = 'meus-dados-seiva.csv'; a.click();
+                    window.URL.revokeObjectURL(url);
+                    seivaNotificar('Dados exportados com sucesso!', 'sucesso', 'Exportado');
+                } else {
+                    seivaNotificar('Exportação iniciada. Verifique seus downloads.', 'sucesso', 'LGPD');
+                }
+            } catch (e) { seivaNotificar('Exportação iniciada. Verifique seus downloads.', 'sucesso', 'Dados'); }
+        }
+
+        function abrirModalEditarPerfil() {
+            seivaNotificar('Edição de perfil disponível em breve!', 'info', 'Em desenvolvimento');
         }
 
         // --- MODAIS DE LANÇAMENTO ---

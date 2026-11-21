@@ -110,9 +110,11 @@ Route::prefix('api')->group(function () {
         Route::post('/cobrancas/lembrete', [CobrancaController::class, 'enviarLembrete']);
 
         // RF011: Gestão de Conta e LGPD
+        Route::get('/perfil', [LgpdController::class, 'show']);
         Route::put('/perfil', [LgpdController::class, 'updateProfile']);
         Route::get('/perfil/exportar', [LgpdController::class, 'exportData']);
         Route::delete('/perfil/excluir', [LgpdController::class, 'deleteAccount']);
+        Route::post('/cobrancas/configurar', [CobrancaController::class, 'salvarConfiguracao']);
 
         // Notificações do Painel de Boas-Vindas
         Route::get('/notificacoes', [NotificacoesController::class, 'index']);

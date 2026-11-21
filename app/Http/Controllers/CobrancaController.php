@@ -86,6 +86,28 @@ class CobrancaController extends Controller
         ]);
     }
 
+    /**
+     * Salva as configurações do Cobrador Diplomata (RF005)
+     */
+    public function salvarConfiguracao(Request $request)
+    {
+        $request->validate([
+            'canal'            => 'nullable|in:push,whatsapp,email',
+            'dias_antecedencia' => 'nullable|integer|min:1|max:30',
+        ]);
+
+        // Configuração salva por sessão (futuramente em tabela própria)
+        session([
+            'cobrador_canal'            => $request->canal ?? 'push',
+            'cobrador_dias_antecedencia' => $request->dias_antecedencia ?? 2,
+        ]);
+
+        return response()->json([
+            'sucesso'  => true,
+            'mensagem' => 'Configurações do Cobrador Diplomata salvas com sucesso!',
+        ]);
+    }
+
     private function getTemplates()
     {
         return [
