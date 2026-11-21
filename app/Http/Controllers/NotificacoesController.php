@@ -29,6 +29,8 @@ class NotificacoesController extends Controller
         $lar = $user->lares()->first();
         $notifs = [];
 
+        $lidasAte = session('notificacoes_lidas_ate_' . $userId, 0);
+
         // ── 1. Notificações persistidas no banco ──────────────────────────────
         $dbNotifs = Notificacao::where('usuario_id', $userId)
             ->orderByDesc('created_at')
@@ -36,12 +38,13 @@ class NotificacoesController extends Controller
             ->get();
 
         foreach ($dbNotifs as $n) {
+            $isLida = (bool)$n->lida || ($lidasAte > 0 && $n->created_at && $n->created_at->timestamp <= $lidasAte);
             $notifs[] = [
                 'id'      => 'notif_' . $n->id_notificacao,
                 'titulo'  => $n->titulo,
                 'texto'   => $n->mensagem,
                 'tipo'    => $n->tipo ?? 'info',
-                'lida'    => (bool)$n->lida,
+                'lida'    => $isLida,
                 'tempo'   => $n->tempo ?? ($n->created_at ? Carbon::parse($n->created_at)->diffForHumans() : ''),
             ];
         }
@@ -58,14 +61,18 @@ class NotificacoesController extends Controller
 
             foreach ($cobrancas as $c) {
                 $nomeCriador = $c->criador ? explode(' ', $c->criador->nome)[0] : 'Parceiro(a)';
+                $isLida = $lidasAte > 0 && $c->created_at && $c->created_at->timestamp <= $lidasAte;
                 $notifs[] = [
                     'id'     => 'cobranca_' . $c->id_cobranca,
                     'titulo' => "{$nomeCriador} pediu R$ " . number_format($c->valor, 2, ',', '.'),
                     'texto'  => $c->mensagem ?: $c->titulo,
                     'tipo'   => 'cobranca',
-                    'lida'   => false,
+                    'lida'   => $isLida,
                     'tempo'  => $c->created_at ? Carbon::parse($c->created_at)->diffForHumans() : '',
-                    'acao'   => ['label' => 'Ver pedido', 'fn' => 'trocarAbaApp(\'cobrador\')'],
+                    'acao'   => [
+                        'label' => 'Responder pedido', 
+                        'fn' => "abrirModalResponderAjuda({$c->id_cobranca}, '{$nomeCriador}', {$c->valor}, '" . addslashes($c->mensagem ?: $c->titulo) . "')"
+                    ],
                 ];
             }
 
@@ -91,9 +98,9 @@ class NotificacoesController extends Controller
                     'titulo' => "{$p->despesa_titulo} · R$ " . number_format($p->valor_parte, 2, ',', '.'),
                     'texto' => $textoVenc,
                     'tipo'  => 'alerta',
-                    'lida'  => false,
+                    'lida'  => $lidasAte > 0,
                     'tempo' => $textoVenc,
-                    'acao'  => ['label' => 'Registrar pagamento', 'fn' => 'trocarAbaApp(\'lar\')'],
+                    'acao'  => ['label' => 'Registrar pagamento', 'fn' => "abrirModalRegistrarPagamento('part_{$p->id_participacao}')"],
                 ];
             }
         }
@@ -110,9 +117,9 @@ class NotificacoesController extends Controller
                 'titulo' => "Fatura {$cartao->nome} · R$ " . number_format($cartao->comprometido, 2, ',', '.'),
                 'texto' => 'Valor comprometido aguardando registro',
                 'tipo'  => 'alerta',
-                'lida'  => false,
+                'lida'  => $lidasAte > 0,
                 'tempo' => 'Este mês',
-                'acao'  => ['label' => 'Registrar', 'fn' => 'abrirModalGasto()'],
+                'acao'  => ['label' => 'Registrar fatura', 'fn' => "abrirModalRegistrarPagamento('conta_{$cartao->id_conta}')"],
             ];
         }
 
@@ -130,9 +137,9 @@ class NotificacoesController extends Controller
                     'titulo' => "Meta \"{$m->titulo}\" quase lá! {$pct}%",
                     'texto' => 'Faltam R$ ' . number_format($m->valor_alvo - $m->valor_atual, 2, ',', '.') . ' para concluir',
                     'tipo'  => 'sucesso',
-                    'lida'  => false,
+                    'lida'  => $lidasAte > 0,
                     'tempo' => 'Meta ativa',
-                    'acao'  => ['label' => 'Ver metas', 'fn' => 'trocarAbaApp(\'metas\')'],
+                    'acao'  => ['label' => 'Guardar agora', 'fn' => "abrirModalGuardarMeta({$m->id_meta}, '{$m->titulo}', {$m->valor_atual}, {$m->valor_alvo})"],
                 ];
             }
         }
@@ -163,6 +170,8 @@ class NotificacoesController extends Controller
         Notificacao::where('usuario_id', $user->id_usuario)
             ->where('lida', false)
             ->update(['lida' => true]);
+
+        session(['notificacoes_lidas_ate_' . $user->id_usuario => now()->timestamp]);
 
         return response()->json(['ok' => true]);
     }

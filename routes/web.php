@@ -12,6 +12,7 @@ use App\Http\Controllers\MetaController;
 use App\Http\Controllers\ProjetoController;
 use App\Http\Controllers\CobrancaController;
 use App\Http\Controllers\LgpdController;
+use App\Http\Controllers\RecebimentosController;
 use App\Http\Controllers\NotificacoesController;
 
 // Rota principal da aplicação SEIVA
@@ -60,6 +61,9 @@ Route::prefix('api')->group(function () {
 
         // RF002: Caixa Preta
         Route::post('/caixa-preta/verificar-pin', [CaixaPretaController::class, 'verifyPin']);
+        Route::get('/caixa-preta/dados', [CaixaPretaController::class, 'dadosCompletos']);
+        Route::post('/caixa-preta/pedir-ajuda', [CaixaPretaController::class, 'pedirAjudaCusto']);
+        Route::post('/caixa-preta/responder-ajuda', [CaixaPretaController::class, 'responderAjudaCusto']);
         Route::get('/caixa-preta/registros', [CaixaPretaController::class, 'index']);
         Route::post('/caixa-preta/registros', [CaixaPretaController::class, 'store']);
         Route::delete('/caixa-preta/registros/{id}', [CaixaPretaController::class, 'destroy']);
@@ -83,6 +87,10 @@ Route::prefix('api')->group(function () {
         Route::get('/metas', [MetaController::class, 'index']);
         Route::post('/metas', [MetaController::class, 'store']);
         Route::post('/metas/{id}/contribuir', [MetaController::class, 'contribuir']);
+
+        // RF003: Relatórios e Recebimentos
+        Route::get('/recebimentos', [RecebimentosController::class, 'relatorio']);
+        Route::get('/transacoes/lar', [TransacaoController::class, 'indexLar']);
 
         // RF008: Gerenciar Projetos
         Route::get('/projetos', [ProjetoController::class, 'index']);

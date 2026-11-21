@@ -179,6 +179,9 @@
                 <!-- Módulo 6: Metas do Lar e Projetos Conjuntos (Ian Marcos - RF007, RF008) -->
                 @include('modulos.metas.painel')
 
+                <!-- Módulo 6b: Relatórios e Recebimentos (Victor Hugo - RF003/RF009) -->
+                @include('modulos.recebimentos.painel')
+
                 <!-- Módulo 7: Cobrador Diplomata sem Constrangimentos (Victor Hugo - RF005) -->
                 @include('modulos.cobrador.painel')
 
@@ -206,6 +209,11 @@
     @include('componentes.modais.modal-registrar-pagamento')
     @include('componentes.modais.modal-lancar-gasto')
     @include('componentes.modais.modal-registrar-recebimento')
+    @include('componentes.modais.modal-adicionar-conta-cartao')
+    @include('componentes.modais.modal-pedir-ajuda-custo')
+    @include('componentes.modais.modal-responder-pedido-ajuda')
+    @include('componentes.modais.modal-criar-meta')
+    @include('componentes.modais.modal-guardar-meta')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -1241,11 +1249,13 @@
             });
 
             if (tabId === 'dashboard') carregarDashboardDados();
+            if (tabId === 'caixa-preta') inicializarOuCarregarCaixaPreta();
             if (tabId === 'transacoes') carregarExtratoDados();
             if (tabId === 'lar') carregarLarDados();
             if (tabId === 'acordos') carregarAcordosDados();
             if (tabId === 'metas') carregarMetasDados();
             if (tabId === 'cobrador') carregarCobradorDados();
+            if (tabId === 'recebimentos') carregarRecebimentosDados();
 
             window.scrollTo({ top: 0, behavior: 'instant' });
             lucide.createIcons();
@@ -1591,33 +1601,310 @@
         }
 
         // --- TRANSAÇÕES ---
+        // Estado dos filtros ativos
+        let txPeriodoAtivo = 'mes';
+        let txCategoriaAtiva = '';
+        let txContaAtiva = '';
+        let txBuscaAtiva = '';
+        let txLarQuemAtivo = 'eu';
+        let txDadosCache = [];
+
         async function carregarExtratoDados() {
             try {
-                const res = await fetch('/api/transacoes');
+                const params = new URLSearchParams();
+                if (txPeriodoAtivo) params.set('periodo', txPeriodoAtivo);
+                if (txCategoriaAtiva) params.set('categoria', txCategoriaAtiva);
+                if (txContaAtiva) params.set('conta_id', txContaAtiva);
+
+                const res = await fetch(`/api/transacoes?${params.toString()}`);
                 if (!res.ok) return;
                 const txs = await res.json();
-                const cont = document.getElementById('extratoList');
-                if (!txs.length) {
-                    cont.innerHTML = '<p class="text-xs text-muted-foreground py-8 text-center">Nenhuma transação cadastrada ainda.</p>';
-                    return;
+                txDadosCache = txs;
+
+                // Popular chips de conta dinamicamente
+                _popularChipsContaTransacoes();
+
+                // Resumos
+                const entradas = txs.filter(t => t.tipo === 'entrada').reduce((s, t) => s + parseFloat(t.valor), 0);
+                const saidas   = txs.filter(t => t.tipo === 'saida').reduce((s, t) => s + parseFloat(t.valor), 0);
+                const saldo    = entradas - saidas;
+
+                const elEntradas = document.getElementById('txResumoEntradas');
+                const elSaidas   = document.getElementById('txResumoSaidas');
+                const elSaldo    = document.getElementById('txResumoSaldo');
+                if (elEntradas) elEntradas.textContent = BRL(entradas);
+                if (elSaidas)   elSaidas.textContent   = BRL(saidas);
+                if (elSaldo) {
+                    elSaldo.textContent = (saldo < 0 ? '-' : '') + BRL(Math.abs(saldo));
+                    elSaldo.className = `text-sm font-extrabold ${saldo < 0 ? 'text-rose-600' : 'text-emerald-600'}`;
                 }
-                cont.innerHTML = txs.map(t => `
-                    <div class="flex items-center justify-between py-3">
-                        <div class="flex items-center gap-3">
-                            <span class="size-9 rounded-xl ${t.tipo === 'entrada' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'} flex items-center justify-center font-bold">
-                                ${t.tipo === 'entrada' ? '+' : '-'}
-                            </span>
-                            <div>
-                                <p class="text-xs font-semibold text-foreground">${t.titulo}</p>
-                                <span class="text-[10px] text-muted-foreground">${t.data} ${t.categoria ? '· ' + t.categoria.nome : ''}</span>
+
+                _renderizarListaAgrupada(txs);
+            } catch (e) { console.error('Erro ao carregar transações:', e); }
+        }
+
+        function _popularChipsContaTransacoes() {
+            const contas = dashboardDadosCache?.contas || listaContas || [];
+            const container = document.getElementById('txChipContasDinamicas');
+            if (!container || !contas.length) return;
+            container.innerHTML = contas.map(c => `
+                <button onclick="filtrarTransacoesConta('${c.id_conta}', this)"
+                        data-conta="${c.id_conta}"
+                        class="tx-conta-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border bg-card text-muted-foreground text-xs font-bold transition hover:text-foreground">
+                    <span class="size-2 rounded-full" style="background-color:${c.cor || '#10b981'}"></span>
+                    ${c.nome}
+                </button>
+            `).join('');
+        }
+
+        function _renderizarListaAgrupada(txs) {
+            const cont = document.getElementById('txListaAgrupada');
+            if (!cont) return;
+
+            // Aplica filtro de busca local
+            let lista = txs;
+            if (txBuscaAtiva) {
+                const q = txBuscaAtiva.toLowerCase();
+                lista = txs.filter(t =>
+                    t.titulo.toLowerCase().includes(q) ||
+                    (t.categoria?.nome || '').toLowerCase().includes(q) ||
+                    (t.conta?.nome || '').toLowerCase().includes(q)
+                );
+            }
+
+            if (!lista.length) {
+                cont.innerHTML = `
+                    <div class="rounded-3xl border border-border bg-card p-8 shadow-card text-center">
+                        <i data-lucide="inbox" class="size-8 text-muted-foreground mx-auto mb-2"></i>
+                        <p class="text-xs text-muted-foreground">Nenhuma transação encontrada.</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            // Agrupar por data (HOJE, ONTEM, ou formatada)
+            const hoje    = new Date(); hoje.setHours(0,0,0,0);
+            const ontem   = new Date(hoje); ontem.setDate(ontem.getDate() - 1);
+            const grupos  = {};
+
+            lista.forEach(t => {
+                const d = new Date(t.data + 'T12:00:00');
+                d.setHours(0,0,0,0);
+                let label;
+                if (d.getTime() === hoje.getTime())  label = 'HOJE';
+                else if (d.getTime() === ontem.getTime()) label = 'ONTEM';
+                else label = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).toUpperCase();
+                if (!grupos[label]) grupos[label] = [];
+                grupos[label].push(t);
+            });
+
+            cont.innerHTML = Object.entries(grupos).map(([label, itens]) => `
+                <div class="rounded-3xl border border-border bg-card shadow-card overflow-hidden">
+                    <div class="px-4 py-2.5 border-b border-border bg-muted/40">
+                        <span class="text-[10px] font-black text-muted-foreground tracking-widest">${label}</span>
+                    </div>
+                    <div class="divide-y divide-border/60">
+                        ${itens.map(t => _renderItemTransacao(t)).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function _renderItemTransacao(t) {
+            const isEntrada = t.tipo === 'entrada';
+            const emoji     = t.emoji || (isEntrada ? '💰' : '💸');
+            const contaNome = t.conta?.nome || '';
+            const catNome   = t.categoria?.nome || '';
+            const dataFmt   = t.data ? new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+
+            let badge = '';
+            if (t.visibilidade === 'pessoal') {
+                badge = `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[9px] font-bold">
+                            <i data-lucide="lock" class="size-2.5"></i> Privado
+                         </span>`;
+            } else if (t.visibilidade === 'compartilhado' || t.visibilidade === 'lar') {
+                badge = `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[9px] font-bold">
+                            <i data-lucide="users" class="size-2.5"></i> Compartilhado
+                         </span>`;
+            }
+
+            const sub = [dataFmt, contaNome].filter(Boolean).join(' · ');
+
+            return `
+                <div class="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="size-10 rounded-2xl ${isEntrada ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'} flex items-center justify-center text-base shrink-0">
+                            ${emoji}
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-foreground truncate">${t.titulo}</p>
+                            <div class="flex items-center flex-wrap gap-1.5 mt-0.5">
+                                <span class="text-[10px] text-muted-foreground">${sub}</span>
+                                ${catNome ? `<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">${catNome}</span>` : ''}
+                                ${badge}
                             </div>
                         </div>
-                        <span class="text-xs font-bold ${t.tipo === 'entrada' ? 'text-emerald-600' : 'text-rose-600'}">
-                            ${t.tipo === 'entrada' ? '+' : '-'} ${BRL(t.valor)}
+                    </div>
+                    <div class="flex flex-col items-end shrink-0 ml-3 gap-1">
+                        <span class="text-xs font-black ${isEntrada ? 'text-emerald-600' : 'text-rose-600'}">
+                            ${isEntrada ? '+' : '-'} ${BRL(t.valor)}
                         </span>
                     </div>
-                `).join('');
-            } catch (e) {}
+                </div>`;
+        }
+
+        function alternarAbaTransacoes(aba) {
+            const paneMin = document.getElementById('paneMinhasTransacoes');
+            const paneLar = document.getElementById('paneLarTransacoes');
+            const btnMin  = document.getElementById('abaMinhasTransacoes');
+            const btnLar  = document.getElementById('abaLarTransacoes');
+
+            const ativoClass   = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all bg-card text-foreground shadow-2xs';
+            const inativoClass = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all text-muted-foreground hover:text-foreground';
+
+            if (aba === 'minhas') {
+                if (paneMin) paneMin.classList.remove('hidden');
+                if (paneLar) paneLar.classList.add('hidden');
+                if (btnMin)  btnMin.className  = ativoClass;
+                if (btnLar)  btnLar.className  = inativoClass;
+            } else {
+                if (paneMin) paneMin.classList.add('hidden');
+                if (paneLar) paneLar.classList.remove('hidden');
+                if (btnMin)  btnMin.className  = inativoClass;
+                if (btnLar)  btnLar.className  = ativoClass;
+                carregarTransacoesLar();
+            }
+        }
+
+        function filtrarTransacoesPeriodo(periodo, btn) {
+            txPeriodoAtivo = periodo;
+            document.querySelectorAll('.tx-periodo-btn').forEach(b => {
+                b.className = 'tx-periodo-btn px-4 py-2 rounded-xl border border-border bg-card text-muted-foreground text-xs font-bold transition hover:text-foreground';
+            });
+            if (btn) btn.className = 'tx-periodo-btn px-4 py-2 rounded-xl border border-primary bg-primary text-primary-foreground text-xs font-bold transition';
+            carregarExtratoDados();
+        }
+
+        function filtrarTransacoesCategoria(cat, btn) {
+            txCategoriaAtiva = cat;
+            document.querySelectorAll('.tx-cat-chip').forEach(b => {
+                b.className = 'tx-cat-chip flex-shrink-0 px-3.5 py-1.5 rounded-full border border-border bg-card text-muted-foreground text-xs font-bold transition hover:text-foreground';
+            });
+            if (btn) btn.className = 'tx-cat-chip flex-shrink-0 px-3.5 py-1.5 rounded-full border border-primary bg-primary text-primary-foreground text-xs font-bold transition';
+            carregarExtratoDados();
+        }
+
+        function filtrarTransacoesConta(contaId, btn) {
+            txContaAtiva = contaId;
+            // Reset todos os chips de conta
+            document.querySelectorAll('.tx-conta-chip').forEach(b => {
+                b.className = 'tx-conta-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border bg-card text-muted-foreground text-xs font-bold transition hover:text-foreground';
+            });
+            if (btn) btn.className = 'tx-conta-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-primary bg-primary text-primary-foreground text-xs font-bold transition';
+            carregarExtratoDados();
+        }
+
+        function buscarTransacoes(q) {
+            txBuscaAtiva = q;
+            _renderizarListaAgrupada(txDadosCache);
+        }
+
+        async function carregarTransacoesLar() {
+            try {
+                const res = await fetch('/api/transacoes?visibilidade=lar');
+                if (!res.ok) return;
+                const txs = await res.json();
+
+                const userId = usuarioSessao?.id_usuario;
+                const minhas  = txs.filter(t => t.usuario_id === userId);
+                const demais  = txs.filter(t => t.usuario_id !== userId);
+
+                const totalMeu      = minhas.reduce((s, t) => s + parseFloat(t.valor), 0);
+                const totalParceiro = demais.reduce((s, t) => s + parseFloat(t.valor), 0);
+                const totalGeral    = totalMeu + totalParceiro;
+
+                const elBannerTotal = document.getElementById('txLarBannerTotal');
+                const elEuEnviei    = document.getElementById('txLarEuEnviei');
+                const elParc        = document.getElementById('txLarParceiroEnviou');
+                if (elBannerTotal) elBannerTotal.textContent = BRL(totalGeral);
+                if (elEuEnviei)    elEuEnviei.textContent    = BRL(totalMeu);
+                if (elParc)        elParc.textContent        = BRL(totalParceiro);
+
+                // Iniciais do parceiro via lar
+                if (larSessao?.membros) {
+                    const parceiro = larSessao.membros.find(m => m.id_usuario !== userId);
+                    if (parceiro) {
+                        const elParceiroIni = document.getElementById('txLarParceiroIniciais');
+                        const elParceiroLbl = document.getElementById('txLarParceiroLabel');
+                        if (elParceiroIni) elParceiroIni.textContent = (parceiro.iniciais || parceiro.nome?.substring(0,2) || 'PA').toUpperCase();
+                        if (elParceiroLbl) elParceiroLbl.textContent = `${parceiro.nome?.split(' ')[0] || 'Parceiro(a)'} enviou`;
+                        const btnParceiro = document.querySelector('.tx-lar-quem-btn:last-child');
+                        if (btnParceiro) btnParceiro.textContent = parceiro.nome?.split(' ')[0] || 'Parceiro(a)';
+                    }
+                }
+
+                filtrarTransacoesLar(txLarQuemAtivo, null, txs);
+            } catch (e) { console.error('Erro ao carregar transações do lar:', e); }
+        }
+
+        function filtrarTransacoesLar(quem, btn, txsParam) {
+            txLarQuemAtivo = quem;
+            document.querySelectorAll('.tx-lar-quem-btn').forEach(b => {
+                b.className = 'tx-lar-quem-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all text-muted-foreground hover:text-foreground';
+            });
+            if (btn) btn.className = 'tx-lar-quem-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all bg-card text-foreground shadow-2xs';
+
+            const userId = usuarioSessao?.id_usuario;
+            const txs    = txsParam || [];
+            let lista    = txs;
+            if (quem === 'eu')       lista = txs.filter(t => t.usuario_id === userId);
+            if (quem === 'parceiro') lista = txs.filter(t => t.usuario_id !== userId);
+
+            const cont = document.getElementById('txLarLista');
+            if (!cont) return;
+
+            if (!lista.length) {
+                cont.innerHTML = `<div class="rounded-3xl border border-border bg-card p-8 shadow-card text-center">
+                    <i data-lucide="inbox" class="size-8 text-muted-foreground mx-auto mb-2"></i>
+                    <p class="text-xs text-muted-foreground">Nenhuma transação do lar encontrada.</p>
+                </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            cont.innerHTML = `<div class="rounded-3xl border border-border bg-card shadow-card overflow-hidden">
+                <div class="divide-y divide-border/60">
+                    ${lista.map(t => {
+                        const emoji   = t.emoji || '🏠';
+                        const dataFmt = t.data ? new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : '';
+                        const quemNome = t.usuario_id === userId
+                            ? (usuarioSessao?.nome?.split(' ')[0] || 'Eu')
+                            : (larSessao?.membros?.find(m => m.id_usuario !== userId)?.nome?.split(' ')[0] || 'Parceiro(a)');
+                        return `
+                        <div class="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="size-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-base shrink-0">${emoji}</span>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-semibold text-foreground truncate">${t.titulo}</p>
+                                    <span class="text-[10px] text-muted-foreground">${quemNome} · ${dataFmt}</span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-black text-foreground shrink-0 ml-3">${BRL(t.valor)}</span>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>`;
+            lucide.createIcons();
+        }
+
+        async function pedirAjudaCustoLar() {
+            try {
+                const res = await fetch('/api/caixa-preta/pedir-ajuda', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' } });
+                if (res.ok) seivaNotificar('Pedido de ajuda de custo enviado ao parceiro(a)!', 'sucesso', 'Pedido Enviado');
+                else seivaNotificar('Não foi possível enviar o pedido.', 'aviso');
+            } catch (e) { seivaNotificar('Erro de conexão.', 'erro'); }
         }
 
         // --- LAR & RATEIO ---
@@ -1667,65 +1954,828 @@
             } catch (e) {}
         }
 
-        // --- CAIXA PRETA ---
+        // ==========================================
+        // CAIXA PRETA — Área Privada Individual (RF002 / RF003)
+        // Responsável Acadêmico: Victor Hugo
+        // ==========================================
+        let caixaPretaDadosCache = null;
+        let despesaAjudaAtual = { id: null, titulo: 'Mercado Dia a Dia', valor: 312.80 };
+        let metaAporteAtual = { id: null, titulo: '', atual: 0, alvo: 0, tipo: 'individual' };
+
+        function inicializarOuCarregarCaixaPreta() {
+            carregarCaixaPretaDados();
+        }
+
         async function validarPinCaixa() {
-            const pin = document.getElementById('caixaPinField').value;
-            if (!pin) return seivaNotificar('Digite o PIN de 4 dígitos da Caixa Preta.', 'aviso', 'PIN obrigatório');
+            const pin = document.getElementById('caixaPinField')?.value;
+            if (!pin || pin.length < 4) {
+                return seivaNotificar('Digite o PIN de 4 dígitos da Caixa Preta.', 'aviso', 'PIN obrigatório');
+            }
 
-            const res = await fetch('/api/caixa-preta/verificar-pin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pin })
-            });
+            try {
+                const res = await fetch('/api/caixa-preta/verificar-pin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ pin })
+                });
 
-            const data = await res.json();
-            if (data.unlocked) {
-                document.getElementById('caixaPinLockBox').classList.add('hidden');
-                document.getElementById('caixaUnsealedBox').classList.remove('hidden');
-                carregarCaixaRegistros();
-            } else {
-                seivaNotificar(data.error || 'PIN incorreto. Tente novamente.', 'erro', 'Acesso negado');
+                const data = await res.json();
+                if (data.unlocked) {
+                    document.getElementById('caixaPinLockBox')?.classList.add('hidden');
+                    document.getElementById('caixaUnsealedBox')?.classList.remove('hidden');
+                    carregarCaixaPretaDados();
+                    seivaNotificar('Caixa Preta desbloqueada com sucesso!', 'sucesso', 'Acesso Concedido');
+                } else {
+                    seivaNotificar(data.error || 'PIN incorreto. Tente novamente.', 'erro', 'Acesso negado');
+                }
+            } catch (e) {
+                seivaNotificar('Erro ao validar PIN. Tente novamente.', 'erro');
             }
         }
 
         function trancarCaixa() {
-            document.getElementById('caixaPinField').value = '';
-            document.getElementById('caixaPinLockBox').classList.remove('hidden');
-            document.getElementById('caixaUnsealedBox').classList.add('hidden');
+            const pinField = document.getElementById('caixaPinField');
+            if (pinField) pinField.value = '';
+            document.getElementById('caixaPinLockBox')?.classList.remove('hidden');
+            document.getElementById('caixaUnsealedBox')?.classList.add('hidden');
+            seivaNotificar('Caixa Preta trancada com segurança.', 'info', 'Área Bloqueada');
         }
 
-        async function carregarCaixaRegistros() {
-            const res = await fetch('/api/caixa-preta/registros');
-            if (!res.ok) return;
-            const data = await res.json();
-            const container = document.getElementById('caixaRegistrosContainer');
-            if (!data.registros.length) {
-                container.innerHTML = '<p class="text-xs text-muted-foreground py-6 text-center">Nenhum registro confidencial cadastrado.</p>';
-                return;
+        async function carregarCaixaPretaDados() {
+            try {
+                const res = await fetch('/api/caixa-preta/dados');
+                if (res.status === 403) {
+                    // Trancada: exibe tela de PIN
+                    document.getElementById('caixaPinLockBox')?.classList.remove('hidden');
+                    document.getElementById('caixaUnsealedBox')?.classList.add('hidden');
+                    return;
+                }
+                if (!res.ok) return;
+
+                const data = await res.json();
+                caixaPretaDadosCache = data;
+
+                // Destrancar caixa
+                document.getElementById('caixaPinLockBox')?.classList.add('hidden');
+                document.getElementById('caixaUnsealedBox')?.classList.remove('hidden');
+
+                // 1. Hero Card Patrimônio Individual
+                const pat = data.patrimonio || {};
+                const patTotalEl = document.getElementById('caixaPatrimonioTotal');
+                const patLivreEl = document.getElementById('caixaPatrimonioLivre');
+                const patCompEl  = document.getElementById('caixaPatrimonioComprometido');
+                const patGuardEl = document.getElementById('caixaPatrimonioGuardado');
+                if (patTotalEl) patTotalEl.innerText = BRL(pat.total_individual || 0);
+                if (patLivreEl) patLivreEl.innerText = BRL(pat.livre_pra_usar || 0);
+                if (patCompEl)  patCompEl.innerText  = BRL(pat.comprometido || 0);
+                if (patGuardEl) patGuardEl.innerText = BRL(pat.guardado || 0);
+
+                // 2. Banner de Pedido de Ajuda do Parceiro
+                const bannerAjuda = document.getElementById('caixaBannerPedidoAjuda');
+                if (bannerAjuda) {
+                    if (data.is_casal && data.pedido_ajuda) {
+                        bannerAjuda.classList.remove('hidden');
+                        const pAj = data.pedido_ajuda;
+                        const remEl = document.getElementById('caixaAjudaRemetenteTitulo');
+                        const itmEl = document.getElementById('caixaAjudaItemTexto');
+                        const dscEl = document.getElementById('caixaAjudaItemDesc');
+                        const tagEl = document.getElementById('caixaAjudaItemTag');
+                        if (remEl) remEl.innerText = `${pAj.solicitante} pediu sua ajuda`;
+                        if (itmEl) itmEl.innerHTML = `${pAj.solicitante} pediu uma ajuda de <span class="text-emerald-400 font-extrabold">${BRL(pAj.valor)}</span>`;
+                        if (dscEl) dscEl.innerText = pAj.motivo || '';
+                        if (tagEl) tagEl.innerText = pAj.tag || '';
+                    } else {
+                        bannerAjuda.classList.add('hidden');
+                    }
+                }
+
+                // 3. Minhas Contas e Cartões
+                const cec = data.contas_e_cartoes || {};
+                const badgeCount = document.getElementById('caixaContasCountBadge');
+                if (badgeCount) badgeCount.innerText = `${cec.total_contas || 0} contas · ${cec.total_cartoes || 0} cartões`;
+
+                const gridContas = document.getElementById('caixaGridContas');
+                if (gridContas) {
+                    gridContas.innerHTML = (cec.contas || []).map(c => `
+                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-4 text-white space-y-3 shadow-2xs">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="size-8 rounded-xl bg-white/10 flex items-center justify-center text-sm" style="color: ${c.cor || '#10b981'}">
+                                        <i data-lucide="${c.icone || 'wallet'}" class="size-4"></i>
+                                    </span>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-white truncate">${c.nome}</h4>
+                                        <span class="text-[10px] text-gray-400">${c.tipo}</span>
+                                    </div>
+                                </div>
+                                ${c.badge ? `<span class="px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-700/40 text-[9px] font-bold">${c.badge}</span>` : ''}
+                            </div>
+                            <div>
+                                <strong class="text-base font-black text-white block">${BRL(c.saldo)}</strong>
+                                <div class="flex items-center justify-between text-[10px] text-gray-400 mt-0.5">
+                                    <span>Livre: <strong class="text-emerald-400">${BRL(c.livre)}</strong></span>
+                                    ${c.comprometido > 0 ? `<span>Comprometido: <strong class="text-rose-400">${BRL(c.comprometido)}</strong></span>` : ''}
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between pt-1 border-t border-white/5 text-[10px] text-gray-400">
+                                <span>${c.atualizado || 'Atualizado'}</span>
+                                <button type="button" onclick="abrirModalAtualizarSaldo('${c.id_conta}')" class="text-emerald-400 font-bold hover:underline flex items-center gap-1">
+                                    <i data-lucide="refresh-cw" class="size-3"></i> Atualizar
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Cartões de Crédito
+                const contCartoes = document.getElementById('caixaContainerCartoes');
+                if (contCartoes) {
+                    contCartoes.innerHTML = (cec.cartoes || []).map(cart => `
+                        <div class="rounded-2xl border border-rose-500/30 bg-[#1a1215] p-4 text-white space-y-3 shadow-2xs">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="size-8 rounded-xl bg-purple-950/80 text-purple-300 border border-purple-500/30 flex items-center justify-center">
+                                        <i data-lucide="credit-card" class="size-4"></i>
+                                    </span>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-white">${cart.nome}</h4>
+                                        <span class="text-[10px] text-gray-400">${cart.tipo}</span>
+                                    </div>
+                                </div>
+                                ${cart.vence_hoje ? `<span class="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[9px] font-black uppercase tracking-wider animate-pulse">Vence hoje</span>` : ''}
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 pt-1">
+                                <div>
+                                    <span class="text-[10px] text-gray-400 block font-medium">Fatura atual</span>
+                                    <strong class="text-sm font-black text-rose-400">${BRL(cart.fatura_atual)}</strong>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-gray-400 block font-medium">Limite disponível</span>
+                                    <strong class="text-sm font-black text-white">${BRL(cart.limite_disponivel)}</strong>
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                                    <div class="h-full bg-rose-500 rounded-full" style="width: ${cart.percentual_usado}%"></div>
+                                </div>
+                                <span class="text-[10px] text-gray-400 block text-right">${cart.percentual_usado}% do limite de ${BRL(cart.limite_total)} usado</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // 4. O que você deve
+                const dev = data.o_que_voce_deve || {};
+                const listaDeve = document.getElementById('caixaListaOQueVoceDeve');
+                if (listaDeve) {
+                    listaDeve.innerHTML = (dev.itens || []).map(it => `
+                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-4 text-white space-y-3 shadow-2xs">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="size-8 rounded-xl bg-white/10 text-emerald-300 flex items-center justify-center">
+                                        <i data-lucide="${it.icone || 'receipt'}" class="size-4"></i>
+                                    </span>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-white">${it.titulo}</h4>
+                                        <span class="text-[10px] text-gray-400">${it.subtitulo}</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <strong class="text-sm font-black text-white">${BRL(it.valor)}</strong>
+                                    ${it.status_label ? `<span class="text-[9px] block ${it.vence_hoje ? 'text-rose-400 font-bold' : 'text-gray-400'}">${it.status_label}</span>` : ''}
+                                </div>
+                            </div>
+                            ${it.progresso_pct > 0 ? `
+                                <div class="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                                    <div class="h-full ${it.progresso_pct >= 100 ? 'bg-emerald-500' : 'bg-amber-500'} rounded-full" style="width: ${it.progresso_pct}%"></div>
+                                </div>
+                            ` : ''}
+                            <button type="button" onclick="abrirModalRegistrarPagamento('${it.id}', '${it.titulo}', ${it.valor})" 
+                                    class="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-200 hover:text-white border border-white/10 transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="check" class="size-3.5"></i>
+                                <span>Registrar pagamento</span>
+                            </button>
+                        </div>
+                    `).join('');
+                }
+
+                // Total comprometido / mês
+                const totCompEl = document.getElementById('caixaTotalComprometidoTxt');
+                const barCompEl = document.getElementById('caixaBarraComprometidoRenda');
+                const pctCompEl = document.getElementById('caixaPctComprometidoRendaTxt');
+                if (totCompEl) totCompEl.innerText = BRL(dev.total_comprometido_mes || 0);
+                if (barCompEl) barCompEl.style.width = `${dev.percentual_renda || 0}%`;
+                if (pctCompEl) {
+                    pctCompEl.innerHTML = `Você compromete <strong class="text-rose-500 font-extrabold">${dev.percentual_renda || 0}%</strong> da sua renda com despesas fixas e acordos.`;
+                }
+
+                // 5. Despesas só suas
+                const listaSoSuas = document.getElementById('caixaListaDespesasSoSuas');
+                if (listaSoSuas) {
+                    listaSoSuas.innerHTML = (data.despesas_so_suas || []).map(ds => `
+                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3.5 text-white flex items-center justify-between gap-3 shadow-2xs">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="size-8 rounded-xl bg-white/10 text-emerald-300 flex items-center justify-center shrink-0">
+                                    <i data-lucide="${ds.icone || 'lock'}" class="size-4"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <h4 class="text-xs font-bold text-white truncate">${ds.titulo}</h4>
+                                    <span class="text-[10px] text-gray-400 block truncate">${ds.detalhe}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="text-xs font-black text-white">${BRL(ds.valor)}</span>
+                                ${data.is_casal ? `
+                                    <button type="button" onclick="dividirDespesaComParceiro('${ds.id}', '${ds.titulo}', ${ds.valor})" 
+                                            class="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-[10px] font-bold text-emerald-300 hover:text-white transition flex items-center gap-1">
+                                        <i data-lucide="share-2" class="size-3"></i> Dividir
+                                    </button>
+                                ` : ''}
+                                <button type="button" onclick="abrirModalRegistrarPagamento('${ds.id}', '${ds.titulo}', ${ds.valor})" 
+                                        class="size-7 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition">
+                                    <i data-lucide="check" class="size-3.5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // 6. Suas Metas & Wishlist
+                const gridMetas = document.getElementById('caixaGridMetas');
+                if (gridMetas) {
+                    gridMetas.innerHTML = (data.metas || []).map(m => {
+                        const p = m.percentual || Math.min(100, Math.round(((m.atual||0) / (m.alvo||1)) * 100));
+                        return `
+                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3.5 text-white space-y-2 shadow-2xs">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="size-7 rounded-lg bg-white/10 text-emerald-300 flex items-center justify-center text-xs">
+                                        <i data-lucide="${m.icone || 'target'}" class="size-3.5"></i>
+                                    </span>
+                                    <h4 class="text-xs font-bold text-white truncate">${m.titulo}</h4>
+                                </div>
+                                <span class="text-xs font-black text-emerald-400">${p}%</span>
+                            </div>
+                            <div class="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                                <div class="h-full bg-emerald-500 rounded-full" style="width: ${p}%"></div>
+                            </div>
+                            <div class="flex items-center justify-between text-[10px] text-gray-400">
+                                <span>${BRL(m.atual)} de ${BRL(m.alvo)}</span>
+                                <button type="button" onclick="abrirModalGuardarMeta(${m.id_meta || 1}, '${m.titulo}', ${m.atual}, ${m.alvo}, 'individual')" class="text-emerald-400 font-bold hover:underline">
+                                    + Guardar
+                                </button>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+
+                // Produtos de olho (Wishlist)
+                const listaOlho = document.getElementById('caixaListaProdutosOlho');
+                if (listaOlho) {
+                    listaOlho.innerHTML = (data.produtos_de_olho || []).map(prod => `
+                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3 text-white flex items-center justify-between gap-3 shadow-2xs">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <img src="${prod.imagem}" alt="${prod.nome}" class="size-10 rounded-xl object-cover border border-white/10 shrink-0" onerror="this.src='/icon.svg'">
+                                <div class="min-w-0">
+                                    <h5 class="text-xs font-bold text-white truncate">${prod.nome}</h5>
+                                    <span class="text-[10px] text-gray-400">${prod.loja}</span>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <strong class="text-xs font-black text-white block">${BRL(prod.preco)}</strong>
+                                <button type="button" onclick="abrirModalCriarMetaComDados('${prod.nome}', ${prod.preco})" class="text-[10px] text-emerald-400 font-bold hover:underline">
+                                    🎯 Criar meta
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // 7. A Receber
+                const secAReceber = document.getElementById('caixaSecaoAReceber');
+                if (secAReceber) {
+                    if (data.is_casal && data.a_receber?.tem_a_receber) {
+                        secAReceber.classList.remove('hidden');
+                        const listaAReceber = document.getElementById('caixaListaAReceber');
+                        if (listaAReceber) {
+                            listaAReceber.innerHTML = (data.a_receber.itens || []).map(r => `
+                                <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3.5 text-white flex items-center justify-between gap-3 shadow-2xs">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <span class="size-8 rounded-xl bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                                            <i data-lucide="${r.icone || 'hand-coins'}" class="size-4"></i>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <h4 class="text-xs font-bold text-white truncate">${r.titulo}</h4>
+                                            <span class="text-[10px] text-gray-400 block truncate">${r.descricao}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <strong class="text-xs font-black text-emerald-400 block">${BRL(r.valor)}</strong>
+                                        <button type="button" onclick="confirmarRecebimentoAjuda('${r.id}')" class="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-[10px] font-bold text-white transition mt-0.5">
+                                            Confirmar que recebi
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('');
+                        }
+                    } else {
+                        secAReceber.classList.add('hidden');
+                    }
+                }
+
+                // 8. Gastos Recentes
+                const listaGastos = document.getElementById('caixaListaGastosRecentes');
+                if (listaGastos) {
+                    listaGastos.innerHTML = (data.gastos_recentes || []).map(g => `
+                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3 text-white flex items-center justify-between gap-3 shadow-2xs">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="size-8 rounded-xl bg-white/10 text-emerald-300 flex items-center justify-center shrink-0">
+                                    <i data-lucide="${g.icone || 'sparkles'}" class="size-4"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <h4 class="text-xs font-bold text-white truncate">${g.titulo}</h4>
+                                    <span class="text-[10px] text-gray-400">${g.subtitulo}</span>
+                                </div>
+                            </div>
+                            <strong class="text-xs font-black text-rose-400 shrink-0">-${BRL(g.valor)}</strong>
+                        </div>
+                    `).join('');
+                }
+
+                // 9. O que entrou este mês
+                const listaEntrou = document.getElementById('caixaListaOQueEntrou');
+                const totRecebido = document.getElementById('caixaTotalRecebidoTxt');
+                if (listaEntrou) {
+                    listaEntrou.innerHTML = (data.o_que_entrou || []).map(ent => `
+                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3 text-white flex items-center justify-between gap-3 shadow-2xs">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="size-8 rounded-xl bg-emerald-950/80 text-emerald-300 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                                    <i data-lucide="trending-up" class="size-4"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <h4 class="text-xs font-bold text-white truncate">${ent.titulo}</h4>
+                                    <span class="text-[10px] text-gray-400">${ent.data}</span>
+                                </div>
+                            </div>
+                            <strong class="text-xs font-black text-emerald-400 shrink-0">+${BRL(ent.valor)}</strong>
+                        </div>
+                    `).join('');
+                }
+                if (totRecebido) totRecebido.innerText = BRL(data.total_recebido || 0);
+
+                // Botão pedir ajuda ao parceiro no rodapé
+                const btnPedirAjuda = document.getElementById('caixaBtnPedirAjudaParceiro');
+                if (btnPedirAjuda) {
+                    if (data.is_casal) {
+                        btnPedirAjuda.classList.remove('hidden');
+                        const txtEl = document.getElementById('caixaBtnPedirAjudaTexto');
+                        if (txtEl) txtEl.innerText = `Pedir ajuda de custo a ${data.parceiro_nome || 'parceiro'} →`;
+                    } else {
+                        btnPedirAjuda.classList.add('hidden');
+                    }
+                }
+
+                lucide.createIcons();
+
+            } catch (e) {
+                console.error('Erro ao carregar dados da Caixa Preta:', e);
             }
-            container.innerHTML = data.registros.map(r => `
-                <div class="p-3 rounded-2xl border border-border bg-card flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-bold text-foreground">${r.titulo_cifrado}</p>
-                        <span class="text-[10px] text-muted-foreground">${r.data}</span>
-                    </div>
-                    <span class="text-xs font-bold text-amber-600">${BRL(r.valor_cifrado)}</span>
-                </div>
-            `).join('');
         }
 
-        async function adicionarRegistroCaixaPrompt() {
-            const titulo = prompt('Título do gasto secreto:');
-            if (!titulo) return;
-            const valor = prompt('Valor (R$):');
-            if (!valor) return;
+        // --- AÇÕES DA CAIXA PRETA & MODAIS ---
+        async function responderPedidoAjudaCaixa(acao) {
+            const pedido = caixaPretaDadosCache?.pedido_ajuda;
+            if (!pedido) return;
 
-            await fetch('/api/caixa-preta/registros', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ titulo, valor: parseFloat(valor) })
+            try {
+                const res = await fetch('/api/caixa-preta/responder-ajuda', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        id_cobranca: pedido.id_cobranca,
+                        acao: acao,
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    seivaNotificar(data.mensagem || 'Ação registrada com sucesso!', 'sucesso', 'Ajuda Mútua');
+                    carregarCaixaPretaDados();
+                } else {
+                    seivaNotificar(data.error || 'Não foi possível processar a ação.', 'erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão.', 'erro');
+            }
+        }
+
+        function dividirDespesaComParceiro(id, titulo, valor) {
+            abrirModalPedirAjudaCusto({ id, titulo, valor });
+        }
+
+        function confirmarRecebimentoAjuda(id) {
+            seivaNotificar('Recebimento confirmado! O valor foi adicionado ao seu saldo livre.', 'sucesso', 'Confirmado 🌱');
+            carregarCaixaPretaDados();
+        }
+
+        // --- MODAL: ADICIONAR CONTA OU CARTÃO ---
+        function abrirModalAdicionarContaCartao() {
+            const modal = document.getElementById('modalAdicionarContaCartao');
+            if (modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        function selecionarTipoContaCartao(btn, tipo) {
+            document.querySelectorAll('.chip-tipo-conta').forEach(b => {
+                b.className = 'chip-tipo-conta py-2.5 px-3 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition text-center';
             });
-            carregarCaixaRegistros();
+            btn.className = 'chip-tipo-conta active py-2.5 px-3 rounded-2xl border border-emerald-600 bg-emerald-800 text-white font-bold text-xs transition text-center';
+            document.getElementById('novaContaTipo').value = tipo;
+
+            const campoVenc = document.getElementById('campoNovaContaVencimento');
+            const labelValor = document.getElementById('labelNovaContaValor');
+            if (tipo === 'cartao') {
+                if (campoVenc) campoVenc.classList.remove('hidden');
+                if (labelValor) labelValor.innerText = 'Limite total do cartão';
+            } else {
+                if (campoVenc) campoVenc.classList.add('hidden');
+                if (labelValor) labelValor.innerText = 'Saldo atual';
+            }
+        }
+
+        function aoMudarBancoSelecionado(banco) {
+            const inputNome = document.getElementById('novaContaNome');
+            if (inputNome && !inputNome.value.trim()) {
+                inputNome.value = banco;
+            }
+        }
+
+        async function executarSalvarNovaContaCartao(event) {
+            event.preventDefault();
+            const tipo = document.getElementById('novaContaTipo').value;
+            const banco = document.getElementById('novaContaBanco').value;
+            const nome = document.getElementById('novaContaNome').value.trim();
+            const valorRaw = document.getElementById('novaContaValor').value.replace(/\./g, '').replace(',', '.');
+            const valor = parseFloat(valorRaw) || 0;
+            const vencimento = document.getElementById('novaContaVencimento')?.value || 12;
+
+            try {
+                const payload = {
+                    nome: nome || banco,
+                    tipo: tipo,
+                    saldo: tipo === 'cartao' ? 0 : valor,
+                    limite: tipo === 'cartao' ? valor : 0,
+                    vencimento_fatura: tipo === 'cartao' ? vencimento : null,
+                };
+
+                const res = await fetch('/api/contas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    seivaNotificar('Conta/cartão cadastrado com sucesso!', 'sucesso', 'Conta Salva');
+                    fecharModalId('modalAdicionarContaCartao');
+                    carregarCaixaPretaDados();
+                    carregarDashboardDados();
+                } else {
+                    const err = await res.json();
+                    seivaNotificar(err.error || 'Erro ao cadastrar.', 'erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao salvar conta.', 'erro');
+            }
+        }
+
+        // --- MODAL: PEDIR AJUDA DE CUSTO ---
+        function abrirModalPedirAjudaCusto(desp) {
+            const d = desp || { id: null, titulo: 'Mercado da casa', valor: 312.80 };
+            despesaAjudaAtual = d;
+
+            const modal = document.getElementById('modalPedirAjudaCusto');
+            if (!modal) return;
+
+            const titEl = document.getElementById('modalAjudaItemTitulo');
+            const subEl = document.getElementById('modalAjudaItemSub');
+            const metEl = document.getElementById('labelAjudaMetadeTexto');
+            const totEl = document.getElementById('labelAjudaTotalTexto');
+            const valFin = document.getElementById('ajudaValorFinal');
+
+            if (titEl) titEl.innerText = d.titulo;
+            if (subEl) subEl.innerText = `${BRL(d.valor)} · pago por você`;
+            if (metEl) metEl.innerText = `Metade — ${BRL(d.valor / 2)}`;
+            if (totEl) totEl.innerText = `Valor total — ${BRL(d.valor)}`;
+            if (valFin) valFin.value = (d.valor / 2).toFixed(2);
+
+            selecionarOpcaoAjuda('metade');
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function selecionarOpcaoAjuda(opcao) {
+            document.querySelectorAll('.opcao-ajuda-chip').forEach(b => {
+                b.className = 'opcao-ajuda-chip w-full flex items-center justify-between p-3.5 rounded-2xl border border-border bg-card text-foreground hover:bg-muted/30 transition text-left';
+            });
+
+            const outroContainer = document.getElementById('containerAjudaOutroValor');
+            const valFin = document.getElementById('ajudaValorFinal');
+
+            if (opcao === 'metade') {
+                const btn = document.getElementById('btnAjudaOpcaoMetade');
+                if (btn) btn.className = 'opcao-ajuda-chip active w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 text-foreground transition text-left';
+                if (outroContainer) outroContainer.classList.add('hidden');
+                if (valFin) valFin.value = (despesaAjudaAtual.valor / 2).toFixed(2);
+            } else if (opcao === 'total') {
+                const btn = document.getElementById('btnAjudaOpcaoTotal');
+                if (btn) btn.className = 'opcao-ajuda-chip active w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 text-foreground transition text-left';
+                if (outroContainer) outroContainer.classList.add('hidden');
+                if (valFin) valFin.value = despesaAjudaAtual.valor.toFixed(2);
+            } else {
+                const btn = document.getElementById('btnAjudaOpcaoOutro');
+                if (btn) btn.className = 'opcao-ajuda-chip active w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 text-foreground transition text-left';
+                if (outroContainer) outroContainer.classList.remove('hidden');
+            }
+        }
+
+        function aoDigitarOutroValorAjuda(valStr) {
+            const num = parseFloat(valStr.replace(/\./g, '').replace(',', '.')) || 0;
+            const valFin = document.getElementById('ajudaValorFinal');
+            if (valFin) valFin.value = num.toFixed(2);
+        }
+
+        async function executarEnvioPedidoAjuda(event) {
+            event.preventDefault();
+            const valor = parseFloat(document.getElementById('ajudaValorFinal')?.value) || (despesaAjudaAtual.valor / 2);
+            const titulo = despesaAjudaAtual.titulo || 'Ajuda de custo';
+
+            try {
+                const res = await fetch('/api/caixa-preta/pedir-ajuda', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ titulo, valor, mensagem: `Solicitou ajuda de custo de ${BRL(valor)} para ${titulo}` })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    seivaNotificar(data.mensagem || 'Pedido de ajuda enviado ao parceiro!', 'sucesso', 'Pedido Enviado');
+                    fecharModalId('modalPedirAjudaCusto');
+                    carregarCaixaPretaDados();
+                } else {
+                    seivaNotificar(data.erro || 'Não foi possível enviar o pedido.', 'aviso');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao enviar pedido de ajuda.', 'erro');
+            }
+        }
+
+        // --- MODAL: CRIAR META ---
+        function abrirModalCriarMeta() {
+            const modal = document.getElementById('modalCriarMeta');
+            if (modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        function abrirModalCriarMetaComDados(nome, preco) {
+            abrirModalCriarMeta();
+            const nomeEl = document.getElementById('novaMetaNome');
+            const valEl = document.getElementById('novaMetaValor');
+            if (nomeEl) nomeEl.value = nome;
+            if (valEl) valEl.value = preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        }
+
+        function selecionarTipoMeta(btn, tipo, icone) {
+            document.querySelectorAll('.chip-cat-meta').forEach(b => {
+                b.className = 'chip-cat-meta flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition';
+            });
+            btn.className = 'chip-cat-meta active flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-emerald-600 bg-emerald-800 text-white font-bold text-xs transition';
+            document.getElementById('novaMetaCategoria').value = tipo;
+        }
+
+        function buscarDadosLinkProduto() {
+            const url = document.getElementById('novaMetaLinkProduto')?.value;
+            if (!url) return seivaNotificar('Cole a URL de um produto antes de buscar.', 'aviso');
+            seivaNotificar('Consultando dados do anúncio...', 'info', 'Rastreador');
+            setTimeout(() => {
+                if (url.includes('sony') || url.includes('camera')) {
+                    document.getElementById('novaMetaNome').value = 'Câmera Sony ZV-E10';
+                    document.getElementById('novaMetaValor').value = '2.890,00';
+                } else if (url.includes('nike')) {
+                    document.getElementById('novaMetaNome').value = 'Tênis Nike Air Force 1';
+                    document.getElementById('novaMetaValor').value = '489,90';
+                }
+                seivaNotificar('Dados importados com sucesso! Revise e confirme.', 'sucesso');
+            }, 800);
+        }
+
+        function selecionarPosseMeta(btn, posse) {
+            document.querySelectorAll('.chip-posse-meta').forEach(b => {
+                b.className = 'chip-posse-meta w-full flex items-center justify-between p-3.5 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/20';
+            });
+            btn.className = 'chip-posse-meta active w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition';
+            document.getElementById('novaMetaPosse').value = posse;
+
+            const avisoComp = document.getElementById('avisoMetaCompartilhada');
+            if (avisoComp) {
+                if (posse === 'compartilhada') avisoComp.classList.remove('hidden');
+                else avisoComp.classList.add('hidden');
+            }
+        }
+
+        function levarMetaParaAcordos() {
+            const titulo = document.getElementById('novaMetaNome')?.value || 'Meta Compartilhada';
+            const valor = document.getElementById('novaMetaValor')?.value || '0';
+            fecharModalId('modalCriarMeta');
+            trocarAbaApp('acordos');
+            seivaNotificar(`Proposta para "${titulo}" iniciada na Mesa de Acordos.`, 'info', 'Mesa de Acordos');
+        }
+
+        async function executarSalvarNovaMeta(event) {
+            event.preventDefault();
+            const titulo = document.getElementById('novaMetaNome').value.trim();
+            const categoria = document.getElementById('novaMetaCategoria').value;
+            const posse = document.getElementById('novaMetaPosse').value;
+            const valorRaw = document.getElementById('novaMetaValor').value.replace(/\./g, '').replace(',', '.');
+            const valor_alvo = parseFloat(valorRaw) || 0;
+
+            if (!valor_alvo) return seivaNotificar('Informe um valor alvo válido.', 'aviso');
+
+            try {
+                const res = await fetch('/api/metas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        titulo,
+                        categoria,
+                        valor_alvo,
+                        posse,
+                        tipo_escopo: posse === 'compartilhada' || posse === 'lar' ? 'lar' : 'individual',
+                        onde_guardado: 'Reserva Pessoal',
+                    })
+                });
+
+                if (res.ok) {
+                    seivaNotificar('Meta criada com sucesso! 🎯🌱', 'sucesso', 'Meta Criada');
+                    fecharModalId('modalCriarMeta');
+                    carregarMetasDados();
+                    carregarCaixaPretaDados();
+                } else {
+                    const err = await res.json();
+                    seivaNotificar(err.error || 'Erro ao criar meta.', 'erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao criar meta.', 'erro');
+            }
+        }
+
+        // --- MODAL: GUARDAR EM META ---
+        function abrirModalGuardarMeta(id, titulo, atual, alvo, tipo) {
+            metaAporteAtual = { id, titulo, atual: parseFloat(atual)||0, alvo: parseFloat(alvo)||1, tipo };
+
+            const modal = document.getElementById('modalGuardarMeta');
+            if (!modal) return;
+
+            const titEl = document.getElementById('modalGuardarMetaTituloHeader');
+            const subEl = document.getElementById('modalGuardarMetaSubHeader');
+            const progTxt = document.getElementById('modalGuardarMetaValoresTxt');
+            const barraEl = document.getElementById('modalGuardarMetaBarra');
+            const seraEl = document.getElementById('modalGuardarMetaSeraPct');
+            const secLar = document.getElementById('guardarMetaSecaoLar');
+            const inpVal = document.getElementById('guardarMetaInputValor');
+            const metaIdEl = document.getElementById('guardarMetaId');
+
+            if (titEl) titEl.innerText = `Guardar em ${titulo}`;
+            if (subEl) subEl.innerText = tipo === 'lar' ? 'Meta do Lar' : 'Meta pessoal';
+            if (progTxt) progTxt.innerText = `${BRL(atual)} de ${BRL(alvo)}`;
+            if (metaIdEl) metaIdEl.value = id;
+            if (inpVal) inpVal.value = '';
+
+            const p = Math.min(100, Math.round((atual / alvo) * 100));
+            if (barraEl) barraEl.style.width = `${p}%`;
+            if (seraEl) seraEl.innerText = `Será ${p}% após guardar`;
+
+            // Popular chips de contas com saldos
+            _popularContasAporteMeta();
+
+            // Metas do Lar exibem destino Pix
+            if (tipo === 'lar' && larSessao) {
+                if (secLar) secLar.classList.remove('hidden');
+                const destNome = document.getElementById('guardarMetaDestinoNome');
+                const destPix = document.getElementById('guardarMetaDestinoPix');
+                if (destNome) destNome.innerText = `Conta de ${usuarioSessao?.nome || 'Você'}`;
+                if (destPix) destPix.innerText = `Pix: ${usuarioSessao?.chave_pix || '(71) 99812-3456'}`;
+            } else {
+                if (secLar) secLar.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function _popularContasAporteMeta() {
+            const cont = document.getElementById('guardarMetaChipsContas');
+            if (!cont) return;
+
+            const contas = dashboardDadosCache?.contas || [
+                { id_conta: 1, nome: 'Nubank', saldo: 1180.00, cor: '#8b5cf6' },
+                { id_conta: 2, nome: 'Poupança Caixa', saldo: 2100.00, cor: '#0284c7' },
+                { id_conta: 3, nome: 'PicPay', saldo: 240.00, cor: '#10b981' },
+                { id_conta: 4, nome: 'Dinheiro', saldo: 130.00, cor: '#059669' },
+            ];
+
+            cont.innerHTML = contas.map((c, i) => `
+                <button type="button" onclick="selecionarContaAporteMeta('${c.id_conta}', this)"
+                        class="chip-conta-aporte ${i === 0 ? 'active border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border border-border bg-card'} p-3 rounded-2xl flex items-center gap-2.5 text-left transition hover:bg-muted/20">
+                    <span class="size-7 rounded-xl flex items-center justify-center text-xs shrink-0" style="background-color:${c.cor||'#10b981'}20; color:${c.cor||'#10b981'}">
+                        <i data-lucide="wallet" class="size-3.5"></i>
+                    </span>
+                    <div class="min-w-0">
+                        <strong class="text-xs font-bold text-foreground block truncate">${c.nome}</strong>
+                        <span class="text-[10px] text-muted-foreground">${BRL(c.saldo)}</span>
+                    </div>
+                </button>
+            `).join('');
+
+            const contaIdEl = document.getElementById('guardarMetaContaId');
+            if (contaIdEl && contas.length) contaIdEl.value = contas[0].id_conta;
+            lucide.createIcons();
+        }
+
+        function selecionarContaAporteMeta(contaId, btn) {
+            document.querySelectorAll('.chip-conta-aporte').forEach(b => {
+                b.className = 'chip-conta-aporte border border-border bg-card p-3 rounded-2xl flex items-center gap-2.5 text-left transition hover:bg-muted/20';
+            });
+            btn.className = 'chip-conta-aporte active border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 rounded-2xl flex items-center gap-2.5 text-left transition';
+            const contaIdEl = document.getElementById('guardarMetaContaId');
+            if (contaIdEl) contaIdEl.value = contaId;
+        }
+
+        function definirValorAporteMeta(val) {
+            const inp = document.getElementById('guardarMetaInputValor');
+            if (inp) {
+                inp.value = val.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                aoMudarValorAporteMeta(inp.value);
+            }
+        }
+
+        function aoMudarValorAporteMeta(valStr) {
+            const num = parseFloat(valStr.replace(/\./g, '').replace(',', '.')) || 0;
+            const novoAtual = metaAporteAtual.atual + num;
+            const p = Math.min(100, Math.round((novoAtual / metaAporteAtual.alvo) * 100));
+
+            const seraEl = document.getElementById('modalGuardarMetaSeraPct');
+            const barraEl = document.getElementById('modalGuardarMetaBarra');
+            if (seraEl) seraEl.innerText = `Será ${p}% após guardar`;
+            if (barraEl) barraEl.style.width = `${p}%`;
+
+            const dicaEl = document.getElementById('guardarMetaDicaMotivacional');
+            if (dicaEl) {
+                if (p >= 100) dicaEl.innerText = '🎉 Incrível! Você atingiu o objetivo com esse aporte!';
+                else if (p >= 75) dicaEl.innerText = '🔥 A reta final! Falta muito pouco!';
+                else if (p >= 50) dicaEl.innerText = '🌱 Metade do caminho já percorrido. Parabéns!';
+                else dicaEl.innerText = 'Quase lá. Cada aporte faz a diferença. 💚';
+            }
+        }
+
+        function copiarPixMeta() {
+            const pix = usuarioSessao?.chave_pix || '(71) 99812-3456';
+            navigator.clipboard.writeText(pix);
+            seivaNotificar(`Chave Pix ${pix} copiada!`, 'sucesso', 'Chave Copiada');
+        }
+
+        async function executarGuardarNaMeta(event) {
+            event.preventDefault();
+            const id = document.getElementById('guardarMetaId').value || metaAporteAtual.id;
+            const valorRaw = document.getElementById('guardarMetaInputValor').value.replace(/\./g, '').replace(',', '.');
+            const valor = parseFloat(valorRaw) || 0;
+            const conta_id = document.getElementById('guardarMetaContaId').value || null;
+
+            if (!valor || valor <= 0) return seivaNotificar('Informe um valor de aporte maior que zero.', 'aviso');
+
+            try {
+                const res = await fetch(`/api/metas/${id}/contribuir`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ valor, conta_id })
+                });
+
+                if (res.ok) {
+                    seivaNotificar(`Aporte de ${BRL(valor)} registrado com sucesso! 🌱`, 'sucesso', 'Meta Atualizada');
+                    fecharModalId('modalGuardarMeta');
+                    carregarMetasDados();
+                    carregarCaixaPretaDados();
+                    carregarDashboardDados();
+                } else {
+                    const err = await res.json();
+                    seivaNotificar(err.error || 'Erro ao realizar aporte.', 'erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao guardar na meta.', 'erro');
+            }
         }
 
         // --- ACORDOS ---
@@ -1795,45 +2845,184 @@
             carregarAcordosDados();
         }
 
-        // --- METAS ---
+        // ==========================================
+        // METAS — Objetivos Individuais e do Lar
+        // ==========================================
+        let metasAbaAtiva = 'individual';
+
+        function alternarAbaMetas(aba) {
+            metasAbaAtiva = aba;
+            const painelInd = document.getElementById('painelMeusObjetivos');
+            const painelLar = document.getElementById('painelPlanoLar');
+            const tabInd    = document.getElementById('tabMeusObjetivos');
+            const tabLar    = document.getElementById('tabPlanoLar');
+
+            const ativoClass = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all bg-card text-foreground shadow-2xs flex items-center justify-center gap-2';
+            const inativoClass = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all text-muted-foreground hover:text-foreground flex items-center justify-center gap-2';
+
+            if (aba === 'individual') {
+                if (painelInd) painelInd.classList.remove('hidden');
+                if (painelLar) painelLar.classList.add('hidden');
+                if (tabInd)    tabInd.className = ativoClass;
+                if (tabLar)    tabLar.className = inativoClass;
+            } else {
+                if (painelInd) painelInd.classList.add('hidden');
+                if (painelLar) painelLar.classList.remove('hidden');
+                if (tabInd)    tabInd.className = inativoClass;
+                if (tabLar)    tabLar.className = ativoClass;
+            }
+            lucide.createIcons();
+        }
+
         async function carregarMetasDados() {
-            const res = await fetch('/api/metas');
-            if (!res.ok) return;
-            const data = await res.json();
-            const todas = [...(data.individuais || []), ...(data.lar || [])];
+            try {
+                const res = await fetch('/api/metas');
+                if (!res.ok) return;
+                const data = await res.json();
 
-            const total = todas.reduce((s, m) => s + parseFloat(m.valor_atual || 0), 0);
-            const alvo = todas.reduce((s, m) => s + parseFloat(m.valor_alvo || 1), 0);
-            const pct = Math.round((total / alvo) * 100);
+                const individuais = data.individuais || [];
+                const metasLar    = data.lar || [];
+                const todas       = [...individuais, ...metasLar];
 
-            document.getElementById('metasValorTotalDisplay').innerText = BRL(total);
-            document.getElementById('metasAlvoTotalDisplay').innerText = `de ${BRL(alvo)} planejados`;
-            document.getElementById('metasProgressoPct').innerText = `${pct}%`;
-            document.getElementById('metasQtdAtivas').innerText = todas.length;
+                // Hero Card
+                const totalAtual  = todas.reduce((s, m) => s + parseFloat(m.valor_atual || 0), 0);
+                const totalAlvo   = todas.reduce((s, m) => s + parseFloat(m.valor_alvo  || 1), 0);
+                const pct         = totalAlvo > 0 ? Math.round((totalAtual / totalAlvo) * 100) : 0;
+                const mensal      = todas.reduce((s, m) => s + parseFloat(m.contribuicao_mensal || 0), 0);
 
-            const cont = document.getElementById('metasCardsGrid');
-            if (!todas.length) {
-                cont.innerHTML = '<p class="text-xs text-muted-foreground py-8 text-center col-span-full">Nenhuma meta cadastrada.</p>';
+                const heroTotalEl = document.getElementById('metasHeroTotal');
+                const heroAlvoEl  = document.getElementById('metasHeroAlvo');
+                const heroPctEl   = document.getElementById('metasHeroProgresso');
+                const heroMensEl  = document.getElementById('metasHeroMensal');
+                if (heroTotalEl) heroTotalEl.innerText = BRL(totalAtual);
+                if (heroAlvoEl)  heroAlvoEl.innerText  = `de ${BRL(totalAlvo)} planejados`;
+                if (heroPctEl)   heroPctEl.innerText   = `${pct}%`;
+                if (heroMensEl)  heroMensEl.innerText  = BRL(mensal);
+
+                // Ocultar aba do Lar se usuário for individual
+                const semLar = !larSessao;
+                const tabLarEl = document.getElementById('tabPlanoLar');
+                if (semLar && tabLarEl) tabLarEl.classList.add('hidden');
+
+                // Renderizar metas individuais
+                _renderizarCardsMetasNovo(individuais, '#metasListaMeusObjetivos', false);
+
+                // Renderizar metas do lar
+                _renderizarCardsMetasNovo(metasLar, '#metasListaPlanoLar', true);
+
+            } catch(e) { console.error('Erro metas:', e); }
+        }
+
+        function _renderizarCardsMetasNovo(metas, seletor, isLar) {
+            const cont = document.querySelector(seletor);
+            if (!cont) return;
+
+            if (!metas.length) {
+                cont.innerHTML = `<div class="flex flex-col items-center justify-center py-12 gap-2 text-center">
+                    <i data-lucide="${isLar ? 'home' : 'target'}" class="size-10 text-muted-foreground/30 mx-auto"></i>
+                    <p class="text-sm text-muted-foreground">${isLar ? 'Nenhuma meta compartilhada.' : 'Nenhuma meta individual cadastrada.'}</p>
+                </div>`;
+                lucide.createIcons();
                 return;
             }
-            cont.innerHTML = todas.map(m => {
-                const p = Math.min(100, Math.round((m.valor_atual / m.valor_alvo) * 100));
+
+            cont.innerHTML = metas.map(m => {
+                const atual = parseFloat(m.valor_atual || 0);
+                const alvo  = parseFloat(m.valor_alvo  || 1);
+                const faltam = Math.max(0, alvo - atual);
+                const p     = Math.min(100, Math.round((atual / alvo) * 100));
+
+                // Cor da barra baseada no progresso
+                const corBarra = p >= 70 ? 'bg-emerald-600' : p >= 30 ? 'bg-amber-500' : 'bg-rose-500';
+                const emoji    = m.emoji || '🎯';
+
+                // Data limite formatada
+                let dataLabel = '';
+                if (m.data_limite) {
+                    const d = new Date(m.data_limite + 'T12:00:00');
+                    dataLabel = `Meta para ${d.toLocaleDateString('pt-BR', {month:'short', year:'numeric'})}`;
+                }
+
                 return `
-                    <div class="rounded-3xl border border-border bg-card p-4 shadow-soft space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-foreground">${m.titulo}</span>
-                            <span class="text-xs font-bold text-primary">${p}%</span>
+                <div class="rounded-3xl border border-border bg-card shadow-2xs overflow-hidden">
+                    <!-- Cabeçalho do card -->
+                    <div class="p-4 pb-3 flex items-start gap-3">
+                        <div class="size-11 rounded-2xl bg-muted flex items-center justify-center text-xl shrink-0">
+                            ${emoji}
                         </div>
-                        <div class="h-2 rounded-full bg-muted overflow-hidden">
-                            <div class="h-full bg-primary rounded-full" style="width: ${p}%"></div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-extrabold text-foreground truncate">${m.titulo}</p>
+                            ${dataLabel ? `<span class="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg> ${dataLabel}</span>` : ''}
                         </div>
-                        <div class="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
-                            <span>${BRL(m.valor_atual)} de ${BRL(m.valor_alvo)}</span>
-                            <button onclick="depositarMeta(${m.id_meta})" class="text-primary font-bold hover:underline">+ Depositar</button>
+                        ${isLar ? '<span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold shrink-0">Lar</span>' : ''}
+                    </div>
+
+                    <!-- Barra de progresso -->
+                    <div class="px-4">
+                        <div class="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                            <div class="h-full ${corBarra} rounded-full transition-all duration-700" style="width:${p}%"></div>
                         </div>
                     </div>
-                `;
+
+                    <!-- Valores -->
+                    <div class="px-4 py-2 flex items-center justify-between text-xs text-muted-foreground">
+                        <span class="font-semibold text-foreground">${BRL(atual)}</span>
+                        <span>de ${BRL(alvo)} · <strong class="${corBarra === 'bg-emerald-600' ? 'text-emerald-600' : corBarra === 'bg-amber-500' ? 'text-amber-600' : 'text-rose-500'}">${p}%</strong></span>
+                    </div>
+
+                    <!-- Mini-cards informativos -->
+                    <div class="px-4 pb-3 grid grid-cols-2 gap-2">
+                        <div class="rounded-xl border border-border bg-muted/30 p-2.5 space-y-0.5">
+                            <span class="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                Guardado em
+                            </span>
+                            <p class="text-xs font-bold text-foreground truncate">${m.onde_guardado || 'Reserva Pessoal'}</p>
+                        </div>
+                        <div class="rounded-xl border border-border bg-muted/30 p-2.5 space-y-0.5">
+                            <span class="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                                Faltam
+                            </span>
+                            <p class="text-xs font-extrabold ${faltam <= 0 ? 'text-emerald-600' : 'text-foreground'}">${faltam <= 0 ? '🎉 Concluída!' : BRL(faltam)}</p>
+                        </div>
+                    </div>
+
+                    <!-- Botão de aporte -->
+                    <div class="px-4 pb-4">
+                        <button onclick="abrirGuardarNaMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${atual}, ${alvo}, '${isLar ? 'lar' : 'individual'}')"
+                                class="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-extrabold text-xs flex items-center justify-center gap-2 shadow-soft hover:bg-primary/90 transition">
+                            <i data-lucide="plus" class="size-4"></i>
+                            + Guardar para esta meta
+                        </button>
+                    </div>
+                </div>`;
             }).join('');
+            lucide.createIcons();
+        }
+
+        function abrirGuardarNaMeta(id, titulo, atual, alvo, tipo) {
+            // Reutilizar o modal de guardar meta existente
+            const modal = document.getElementById('modalGuardarMeta');
+            if (!modal) { seivaNotificar('Modal indisponível.', 'aviso'); return; }
+
+            // Preencher dados do modal
+            const tituloEl = document.getElementById('guardarMetaTitulo');
+            if (tituloEl) tituloEl.innerText = titulo;
+            const tipoEl = document.getElementById('guardarMetaTipo');
+            if (tipoEl) tipoEl.innerText = tipo === 'lar' ? 'Meta do Lar' : 'Meta pessoal';
+
+            // Progresso
+            const pct = alvo > 0 ? Math.round((atual / alvo) * 100) : 0;
+            const progAtualEl = document.getElementById('guardarMetaProgAtual');
+            if (progAtualEl) progAtualEl.innerText = `${BRL(atual)} de ${BRL(alvo)}`;
+
+            // Guardar referência da meta atual
+            const idInput = document.getElementById('guardarMetaIdInput');
+            if (idInput) idInput.value = id;
+
+            modal.classList.remove('hidden');
+            lucide.createIcons();
         }
 
         async function depositarMeta(id) {
@@ -1848,17 +3037,150 @@
         }
 
         async function adicionarMetaPrompt() {
-            const titulo = prompt('Título da meta:');
-            if (!titulo) return;
-            const valor_alvo = prompt('Valor alvo (R$):');
-            if (!valor_alvo) return;
+            abrirModalCriarMeta();
+        }
 
-            await fetch('/api/metas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ titulo, valor_alvo: parseFloat(valor_alvo), tipo_escopo: 'lar' })
+        // ==========================================
+        // RECEBIMENTOS — Relatórios por Período
+        // ==========================================
+        let recebMesAtivo = new Date().toISOString().slice(0,7);
+
+        async function carregarRecebimentosDados(mes) {
+            if (mes) recebMesAtivo = mes;
+            try {
+                const res = await fetch(`/api/recebimentos?mes=${recebMesAtivo}`);
+                if (!res.ok) return;
+                const d = await res.json();
+
+                // Cards de resumo
+                const eEl  = document.getElementById('recebCardReceitas');
+                const sEl  = document.getElementById('recebCardDespesas');
+                const soEl = document.getElementById('recebCardSobra');
+                if (eEl)  eEl.innerText  = BRL(d.total_entradas || 0);
+                if (sEl)  sEl.innerText  = BRL(d.total_saidas   || 0);
+                if (soEl) {
+                    soEl.innerText = BRL(Math.abs(d.sobra || 0));
+                    soEl.className = `text-sm font-extrabold block ${(d.sobra || 0) >= 0 ? 'text-emerald-600' : 'text-rose-500'}`;
+                }
+
+                // Receitas vs Despesas labels e barras
+                const rdR = document.getElementById('recebRDReceitas');
+                const rdD = document.getElementById('recebRDDespesas');
+                if (rdR) rdR.innerText = BRL(d.total_entradas || 0);
+                if (rdD) rdD.innerText = BRL(d.total_saidas   || 0);
+
+                const max = Math.max(d.total_entradas || 0, d.total_saidas || 0, 1);
+                const barraR = document.getElementById('recebGraficoReceitas');
+                const barraD = document.getElementById('recebGraficoDespesas');
+                if (barraR) barraR.style.width = Math.round(((d.total_entradas||0)/max)*100)+'%';
+                if (barraD) barraD.style.width = Math.round(((d.total_saidas  ||0)/max)*100)+'%';
+
+                // Taxa de economia
+                const taxaEl = document.getElementById('recebTaxaEconomia');
+                if (taxaEl) taxaEl.innerText = `${d.taxa_economia || 0}%`;
+
+                // Label de período
+                const rdLabel = document.getElementById('recebRDPeriodoLabel');
+                if (rdLabel && d.mes) {
+                    const dataRef = new Date(d.mes + '-01');
+                    rdLabel.innerText = dataRef.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+                }
+
+                // Gráfico de evolução
+                _renderizarGraficoEvolucao(d.historico || []);
+
+                // Lista de entradas
+                const entCont = document.getElementById('recebListaEntradas');
+                if (entCont) {
+                    if (!d.entradas?.length) {
+                        entCont.innerHTML = `<div class="py-8 text-center">
+                            <i data-lucide="trending-up" class="size-8 text-muted-foreground/30 mx-auto mb-2"></i>
+                            <p class="text-xs text-muted-foreground">Nenhuma entrada registrada.</p>
+                            <button onclick="abrirModalRegistrarRecebimento()" class="text-xs text-primary font-semibold hover:underline mt-1">+ Registrar agora</button>
+                        </div>`;
+                    } else {
+                        entCont.innerHTML = d.entradas.map(e => `
+                            <div class="flex items-center gap-3 py-3.5 border-b border-border/60 last:border-0">
+                                <span class="size-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 flex items-center justify-center shrink-0 text-sm">${e.emoji || '💰'}</span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-bold text-foreground truncate">${e.titulo}</p>
+                                    <span class="text-[11px] text-muted-foreground">${e.subtitulo || ''}</span>
+                                </div>
+                                <span class="text-sm font-extrabold text-emerald-600 shrink-0">+${BRL(e.valor)}</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                // Total de entradas
+                const totalEl = document.getElementById('recebTotalEntradas');
+                if (totalEl) totalEl.innerText = BRL(d.total_entradas || 0);
+
+                // Gastos por categoria
+                const catCont = document.getElementById('recebCategoriasLista');
+                if (catCont) {
+                    if (!d.gastos_por_categoria?.length) {
+                        catCont.innerHTML = '<p class="text-xs text-muted-foreground py-6 text-center">Nenhuma despesa neste período.</p>';
+                    } else {
+                        const cores = ['#1a4731','#15803d','#16a34a','#ca8a04','#ea580c','#86efac','#bbf7d0'];
+                        catCont.innerHTML = d.gastos_por_categoria.map((cat, i) => `
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-semibold text-foreground">${cat.nome}</span>
+                                    <span class="text-muted-foreground font-medium">${cat.percentual}% · ${BRL(cat.valor)}</span>
+                                </div>
+                                <div class="h-2 w-full rounded-full bg-muted overflow-hidden">
+                                    <div class="h-full rounded-full transition-all duration-700" style="width:${cat.percentual}%;background:${cores[i%cores.length]}"></div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                // Chips de meses
+                const chipsCont = document.getElementById('recebMesesChips');
+                if (chipsCont && d.meses_disponiveis) {
+                    chipsCont.innerHTML = d.meses_disponiveis.map(m => `
+                        <button onclick="carregarRecebimentosDados('${m.valor}')"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-semibold transition ${m.ativo ? 'bg-primary text-primary-foreground border-primary shadow-soft' : 'border-border bg-card text-muted-foreground hover:text-foreground'}">
+                            ${m.ativo ? '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' : ''}
+                            ${m.label}
+                        </button>
+                    `).join('');
+                }
+
+                lucide.createIcons();
+            } catch(e) { console.error('Erro recebimentos:', e); }
+        }
+
+        function _renderizarGraficoEvolucao(historico) {
+            const cont = document.getElementById('recebGraficoEvolucao');
+            if (!cont || !historico.length) return;
+
+            const maxVal = Math.max(...historico.map(h => Math.max(h.entradas, h.saidas)), 1);
+            const pct    = (v) => Math.max(8, Math.round((v / maxVal) * 100));
+
+            cont.innerHTML = historico.map((h, i) => `
+                <div class="flex-1 flex flex-col items-center gap-1 ${i < historico.length - 1 ? 'opacity-60' : ''}">
+                    <div class="w-full flex items-end gap-1 justify-center" style="height:80px">
+                        <div class="w-5 bg-emerald-600 rounded-t-md transition-all" style="height:${pct(h.entradas)}%"></div>
+                        <div class="w-5 bg-rose-500 rounded-t-md transition-all"   style="height:${pct(h.saidas)}%"></div>
+                    </div>
+                    <span class="text-[10px] text-muted-foreground ${i === historico.length - 1 ? 'font-semibold' : ''}">${h.mes}</span>
+                </div>
+            `).join('');
+        }
+
+        function filtrarRecebPeriodo(periodo) {
+            document.querySelectorAll('.receb-periodo-btn').forEach(btn => {
+                if (btn.dataset.recebPeriodo === periodo) {
+                    btn.className = 'receb-periodo-btn flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all bg-primary text-primary-foreground shadow-soft';
+                } else {
+                    btn.className = 'receb-periodo-btn flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all text-muted-foreground hover:text-foreground';
+                }
             });
-            carregarMetasDados();
+            // Para simplificação: sempre carrega o mês ativo
+            carregarRecebimentosDados();
         }
 
         // --- COBRADOR DIPLOMATA ---

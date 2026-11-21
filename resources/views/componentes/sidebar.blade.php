@@ -40,6 +40,10 @@
                     <i data-lucide="target" class="size-[18px]"></i>
                     <span>Metas</span>
                 </button>
+                <button onclick="trocarAbaApp('recebimentos')" class="nav-sidebar-item relative flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors text-muted-foreground hover:bg-accent/50 hover:text-foreground" data-screen="recebimentos">
+                    <i data-lucide="bar-chart-2" class="size-[18px]"></i>
+                    <span>Recebimentos</span>
+                </button>
             </div>
         </div>
 
