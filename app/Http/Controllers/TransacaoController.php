@@ -105,4 +105,80 @@ class TransacaoController extends Controller
             ->get();
         return response()->json($categorias);
     }
+
+    /**
+     * Retorna transações relacionadas ao Lar (compartilhadas/lar) do usuário logado e do parceiro.
+     */
+    public function indexLar(Request $request)
+    {
+        $user = Auth::user();
+        $lar  = $user->lares()->first();
+
+        if (!$lar) {
+            return response()->json([
+                'lar'           => null,
+                'eu_enviei'     => 0,
+                'parceiro_enviou' => 0,
+                'total'         => 0,
+                'transacoes'    => [],
+            ]);
+        }
+
+        // Pega todos os membros do lar
+        $membros = $lar->membros()->get();
+        $parceiro = $membros->where('id_usuario', '!=', $user->id_usuario)->first();
+
+        $mes = $request->mes ?? now()->format('Y-m');
+
+        // Transações do usuário para o lar
+        $minhasLar = Transacao::where('usuario_id', $user->id_usuario)
+            ->whereIn('visibilidade', ['lar', 'compartilhado'])
+            ->whereRaw("strftime('%Y-%m', data) = ?", [$mes])
+            ->with('categoria')
+            ->orderByDesc('data')
+            ->get();
+
+        // Transações do parceiro para o lar (visíveis)
+        $parceiroLar = collect([]);
+        if ($parceiro) {
+            $parceiroLar = Transacao::where('usuario_id', $parceiro->id_usuario)
+                ->whereIn('visibilidade', ['lar', 'compartilhado'])
+                ->whereRaw("strftime('%Y-%m', data) = ?", [$mes])
+                ->with('categoria')
+                ->orderByDesc('data')
+                ->get();
+        }
+
+        $euEnviei       = (float) $minhasLar->sum('valor');
+        $parceiroEnviou = (float) $parceiroLar->sum('valor');
+
+        $todasTransacoes = $minhasLar->map(fn($t) => [
+            'id'          => $t->id_transacao,
+            'titulo'      => $t->titulo,
+            'subtitulo'   => ($user->iniciais ?? 'EU') . ' · ' . \Carbon\Carbon::parse($t->data)->format('d/m') . ' · ' . ($t->categoria?->nome ?? 'Geral'),
+            'valor'       => (float) $t->valor,
+            'membro'      => 'eu',
+            'iniciais'    => $user->iniciais ?? 'EU',
+            'icone'       => $t->emoji ?? '💸',
+        ])->concat($parceiroLar->map(fn($t) => [
+            'id'          => $t->id_transacao,
+            'titulo'      => $t->titulo,
+            'subtitulo'   => ($parceiro ? ($parceiro->iniciais ?? 'IM') : 'IM') . ' · ' . \Carbon\Carbon::parse($t->data)->format('d/m'),
+            'valor'       => (float) $t->valor,
+            'membro'      => 'parceiro',
+            'iniciais'    => $parceiro ? ($parceiro->iniciais ?? 'IM') : 'IM',
+            'icone'       => $t->emoji ?? '💸',
+        ]))->sortByDesc('valor')->values();
+
+        return response()->json([
+            'lar'              => ['nome' => $lar->nome],
+            'eu_iniciais'      => $user->iniciais ?? 'EU',
+            'parceiro_iniciais' => $parceiro ? ($parceiro->iniciais ?? 'IM') : 'IM',
+            'parceiro_nome'    => $parceiro ? explode(' ', $parceiro->nome)[0] : 'Parceiro',
+            'eu_enviei'        => $euEnviei,
+            'parceiro_enviou'  => $parceiroEnviou,
+            'total'            => $euEnviei + $parceiroEnviou,
+            'transacoes'       => $todasTransacoes,
+        ]);
+    }
 }
