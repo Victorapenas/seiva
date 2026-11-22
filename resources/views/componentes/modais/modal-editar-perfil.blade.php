@@ -29,28 +29,36 @@
                 <label class="text-xs font-bold text-foreground block">Foto / Avatar de Identificação</label>
                 <div class="flex items-center gap-4">
                     <div id="previewAvatarPerfil" class="size-16 rounded-full bg-emerald-800 text-white font-black text-xl flex items-center justify-center ring-4 ring-emerald-500/20 shrink-0 shadow-2xs overflow-hidden">
+                        <img id="previewAvatarImgTag" src="" alt="Foto" class="hidden size-full object-cover">
                         <span id="previewAvatarIniciais">ME</span>
                     </div>
-                    <div class="flex-1 space-y-1.5">
-                        <div class="flex flex-wrap gap-1.5">
-                            <button type="button" onclick="selecionarAvatarPerfil('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150')" class="size-8 rounded-full border-2 border-transparent hover:border-emerald-600 overflow-hidden" title="Foto 1">
-                                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" class="size-full object-cover">
+                    <div class="flex-1 space-y-2">
+                        <input type="hidden" id="formPerfilAvatar" value="">
+                        <input type="file" id="inputFotoPerfilUpload" accept="image/*" class="hidden" onchange="lidarArquivoFotoPerfil(this)">
+                        
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" onclick="document.getElementById('inputFotoPerfilUpload').click()" 
+                                    class="px-3 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer">
+                                <i data-lucide="upload" class="size-3.5"></i>
+                                <span>Escolher foto do dispositivo</span>
                             </button>
-                            <button type="button" onclick="selecionarAvatarPerfil('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150')" class="size-8 rounded-full border-2 border-transparent hover:border-emerald-600 overflow-hidden" title="Foto 2">
-                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" class="size-full object-cover">
-                            </button>
-                            <button type="button" onclick="selecionarAvatarPerfil('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150')" class="size-8 rounded-full border-2 border-transparent hover:border-emerald-600 overflow-hidden" title="Foto 3">
-                                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" class="size-full object-cover">
-                            </button>
-                            <button type="button" onclick="selecionarAvatarPerfil('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150')" class="size-8 rounded-full border-2 border-transparent hover:border-emerald-600 overflow-hidden" title="Foto 4">
-                                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150" class="size-full object-cover">
-                            </button>
-                            <button type="button" onclick="selecionarAvatarPerfil('')" class="px-2.5 py-1 rounded-full border border-border bg-muted/60 text-[10px] font-bold text-muted-foreground hover:text-foreground">
-                                Iniciais
+                            <button type="button" onclick="removerFotoPerfil()" 
+                                    class="px-3 py-2 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-semibold shadow-2xs transition cursor-pointer">
+                                Usar Iniciais
                             </button>
                         </div>
-                        <input type="hidden" id="formPerfilAvatar" value="">
-                        <input type="url" id="formPerfilAvatarUrl" placeholder="Ou cole a URL da sua foto..." oninput="selecionarAvatarPerfil(this.value)"
+
+                        <!-- Dropzone e URL de foto -->
+                        <div id="dropzoneFotoPerfil" 
+                             ondragover="event.preventDefault(); this.classList.add('border-emerald-600', 'bg-emerald-50/20');"
+                             ondragleave="event.preventDefault(); this.classList.remove('border-emerald-600', 'bg-emerald-50/20');"
+                             ondrop="lidarDropFotoPerfil(event)"
+                             class="border border-dashed border-border rounded-xl p-2 text-center text-[10px] text-muted-foreground transition cursor-pointer hover:border-emerald-600/60"
+                             onclick="document.getElementById('inputFotoPerfilUpload').click()">
+                            <span>Ou arraste e solte uma imagem aqui (JPG ou PNG)</span>
+                        </div>
+
+                        <input type="url" id="formPerfilAvatarUrl" placeholder="Ou cole a URL direta de uma foto..." oninput="selecionarAvatarPerfil(this.value)"
                                class="w-full text-[11px] rounded-xl border border-border bg-background px-3 py-1.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-emerald-600">
                     </div>
                 </div>

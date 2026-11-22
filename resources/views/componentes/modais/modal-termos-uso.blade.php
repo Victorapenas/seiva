@@ -24,45 +24,81 @@
         </div>
 
         <div class="p-6 space-y-4 overflow-y-auto no-scrollbar text-xs leading-relaxed text-muted-foreground">
-            <div class="p-3.5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 text-foreground">
-                <strong class="block text-xs font-black text-emerald-800 dark:text-emerald-300 mb-1">
-                    Bordão Oficial: "Onde seu dinheiro cria raízes"
+            <!-- Banner Acadêmico de Alto Contraste -->
+            <div class="p-4 rounded-2xl bg-emerald-900 text-white shadow-xs space-y-2">
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded-full bg-emerald-800 text-[10px] font-black text-emerald-200 uppercase tracking-wider">Projeto Acadêmico</span>
+                    <span class="text-xs font-black text-emerald-100">SEIVA v2.0 · 2º Semestre de 2026</span>
+                </div>
+                <strong class="block text-sm font-black text-white">
+                    "Onde seu dinheiro cria raízes"
                 </strong>
-                <p class="text-[11px] text-muted-foreground leading-relaxed">
-                    O SEIVA é uma plataforma financeira bilateral e individual desenvolvida para conciliar transparência mútua no lar e autonomia financeira pessoal.
+                <p class="text-xs text-emerald-100/90 leading-relaxed">
+                    Este software é um <strong>Trabalho Prático e Interdisciplinar de Faculdade / Escola</strong>, desenvolvido exclusivamente para fins de estudo acadêmico, experimentação pedagógica e avaliação semestral. Não constitui instituição bancária nem presta serviços financeiros reais.
+                </p>
+            </div>
+
+            <!-- Ficha Técnica dos Alunos e Orientadores -->
+            <div class="p-3.5 rounded-2xl border border-border bg-muted/40 space-y-2">
+                <h4 class="font-black text-foreground text-xs uppercase tracking-wide flex items-center gap-1.5">
+                    <i data-lucide="graduation-cap" class="size-4 text-emerald-700 dark:text-emerald-400"></i>
+                    Corpo Discente e Docente Envolvido
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                    <div class="p-2 rounded-xl bg-card border border-border/60">
+                        <span class="text-[10px] text-muted-foreground font-bold block uppercase">Alunos Desenvolvedores</span>
+                        <ul class="font-bold text-foreground list-disc list-inside space-y-0.5 mt-1">
+                            <li>Ian Marcos</li>
+                            <li>Maria Eduarda (Duda)</li>
+                            <li>Jhon Abner</li>
+                            <li>Victor Hugo</li>
+                        </ul>
+                    </div>
+                    <div class="p-2 rounded-xl bg-card border border-border/60 flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] text-muted-foreground font-bold block uppercase">Orientação Pedagógica</span>
+                            <p class="font-bold text-foreground mt-1">Professores e Coordenadores do Curso</p>
+                            <p class="text-muted-foreground text-[10px] mt-0.5">Projeto Integrador de Software</p>
+                        </div>
+                        <span class="text-[10px] font-black text-emerald-700 dark:text-emerald-400">Versão 2.0 (2º Semestre 2026)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Termos e Diretrizes Pedagógicas -->
+            <div class="space-y-1.5">
+                <h4 class="font-extrabold text-foreground text-xs uppercase tracking-wide">1. Natureza do Projeto e Simulação Educacional</h4>
+                <p>
+                    A plataforma SEIVA foi concebida por estudantes para demonstrar a aplicação de Engenharia de Software e Design de Interação na conciliação entre finanças compartilhadas do casal e autonomia individual. Todos os dados financeiros e transações são fictícios ou simulados para o escopo escolar.
                 </p>
             </div>
 
             <div class="space-y-1.5">
-                <h4 class="font-extrabold text-foreground text-xs uppercase tracking-wide">1. Privacidade e Blindagem da Caixa Preta</h4>
+                <h4 class="font-extrabold text-foreground text-xs uppercase tracking-wide">2. Privacidade e Blindagem da Caixa Preta</h4>
                 <p>
-                    A <strong>Caixa Preta</strong> é um ambiente criptografado e protegido por senha/PIN exclusivo do titular. Lançamentos, metas e saldos marcados como privados <strong>nunca são compartilhados</strong> com o parceiro, garantindo a sua autonomia e dignidade financeira.
+                    A <strong>Caixa Preta</strong> é um ambiente criptografado e protegido por senha/PIN exclusivo do titular. Lançamentos, metas e saldos marcados como privados <strong>nunca são compartilhados</strong> com o parceiro, demonstrando arquiteturalmente a separação de escopos e a preservação da dignidade financeira.
                 </p>
             </div>
 
             <div class="space-y-1.5">
-                <h4 class="font-extrabold text-foreground text-xs uppercase tracking-wide">2. Área do Lar e Mesa de Acordos</h4>
+                <h4 class="font-extrabold text-foreground text-xs uppercase tracking-wide">3. Área do Lar e Mesa de Acordos</h4>
                 <p>
-                    Gastos e metas compartilhadas na <strong>Área do Lar</strong> e na <strong>Mesa de Acordos</strong> são visíveis por ambos os membros do Lar. Qualquer cancelamento, estorno ou alteração gera registro em auditoria permanente para prevenir discórdias e desconfianças.
+                    Gastos e metas compartilhadas na <strong>Área do Lar</strong> e na <strong>Mesa de Acordos</strong> são visíveis por ambos os membros do Lar. Qualquer cancelamento, estorno ou alteração gera registro em trilha de auditoria permanente para fins didáticos de prevenção de atritos.
                 </p>
             </div>
 
             <div class="space-y-1.5">
-                <h4 class="font-extrabold text-foreground text-xs uppercase tracking-wide">3. Conformidade com a LGPD (Lei nº 13.709/2018)</h4>
+                <h4 class="font-extrabold text-foreground text-xs uppercase tracking-wide">4. Conformidade Simula da LGPD (Lei nº 13.709/2018)</h4>
                 <p>
-                    Em estrito respeito ao Artigo 18 da LGPD, você possui o direito inalienável de <strong>consultar</strong>, <strong>exportar</strong> em formato aberto e <strong>solicitar a exclusão definitiva</strong> de todos os seus dados cadastrais, financeiros e históricos a qualquer momento.
+                    Em consonância com o Artigo 18 da LGPD, o projeto implementa os direitos de <strong>consulta de dados</strong>, <strong>exportação em formato aberto (CSV)</strong> e <strong>direito ao esquecimento</strong> (exclusão e anonimização de cadastro a pedido do titular).
                 </p>
             </div>
 
             <div class="space-y-1.5">
-                <h4 class="font-extrabold text-foreground text-xs uppercase tracking-wide">4. Cobrador Diplomata</h4>
+                <h4 class="font-extrabold text-foreground text-xs uppercase tracking-wide">5. Cobrador Diplomata</h4>
                 <p>
-                    O módulo Cobrador Diplomata tem finalidade exclusivamente pacífica e de auxílio de comunicação gentil entre casais, emitindo lembretes educados e descontraídos para apoiar o fluxo financeiro conjunto.
+                    O módulo Cobrador Diplomata é um recurso didático de comunicação não violenta para lembrar datas de rateio com mensagens gentis e bem-humoradas.
                 </p>
-            </div>
-
-            <div class="p-3 rounded-2xl bg-muted/40 border border-border text-center text-[11px] text-muted-foreground font-semibold">
-                Desenvolvimento Acadêmico Integrado · SEIVA v2.0 (2026)
             </div>
         </div>
 

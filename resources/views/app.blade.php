@@ -1563,6 +1563,9 @@
             lucide.createIcons();
         }
 
+        // Alias global para garantir navegação a partir de qualquer módulo ou componente
+        window.navegarParaAba = trocarAbaApp;
+
         // --- DASHBOARD (OFICIAL DO PROTÓTIPO SEIVA) ---
         let heroAbaAtiva = 'renda';
 
@@ -5733,12 +5736,13 @@
                     } else {
                         listaNeg.innerHTML = neg.map(p => {
                             const isPoupar = p.tipo === 'poupar_juntos';
+                            const badgeStyle = isPoupar ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 font-black' : 'bg-slate-100 text-slate-800 border border-slate-300 font-black';
                             return `
                             <div class="rounded-3xl border border-border bg-card shadow-card overflow-hidden" id="negCard${p.id_proposta}">
                                 <div class="flex gap-3 p-4">
                                     ${p.imagem ? `<img src="${p.imagem}" alt="${p.titulo}" class="size-16 rounded-2xl object-cover shrink-0 bg-muted">` : ''}
                                     <div class="flex-1 min-w-0 space-y-1">
-                                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-black ${isPoupar ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'}">${p.tipo_label}</span>
+                                        <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] ${badgeStyle}">${p.tipo_label}</span>
                                         <p class="text-sm font-black text-foreground leading-tight">${p.titulo}</p>
                                         <p class="text-[11px] text-muted-foreground">De ${p.autor_nome} · ${p.tempo_atras}</p>
                                         ${p.link ? `<a href="https://${p.link}" target="_blank" class="inline-flex items-center gap-1 text-[10px] text-primary hover:underline"><i data-lucide="external-link" class="size-3"></i> ${p.link}</a>` : ''}
@@ -5746,7 +5750,7 @@
                                 </div>
                                 <div class="mx-4 mb-3 px-3 py-2 rounded-2xl bg-muted/50 text-[11px] text-muted-foreground leading-relaxed">
                                     ${isPoupar
-                                        ? `Objetivo de <strong class="text-foreground">${BRL(p.valor_total)}</strong> · cada um guarda <strong class="text-foreground">${BRL(p.valor_mensal_cada)}/mês</strong> · <span class="text-primary font-semibold">${p.prazo_texto || ''}</span>`
+                                        ? `Objetivo de <strong class="text-foreground">${BRL(p.valor_total)}</strong> · cada um guarda <strong class="text-foreground">${BRL(p.valor_mensal_cada)}/mês</strong> · <span class="text-emerald-700 dark:text-emerald-400 font-bold">${p.prazo_texto || ''}</span>`
                                         : `Compra de <strong class="text-foreground">${BRL(p.valor_total)}</strong> já feita · sua parte <strong class="text-foreground">${BRL(p.valor_mensal_cada)} em 2x</strong> · obrigatório`
                                     }
                                 </div>
@@ -5759,30 +5763,30 @@
                                     <span>${p.autor_nome}: ${p.ian_proposta}</span>
                                 </div>
                                 <div class="grid grid-cols-3 border-t border-border mt-3">
-                                    <button onclick="votarPropostaAcordo(${p.id_proposta}, 'recusar')" class="py-3.5 text-xs font-bold text-muted-foreground hover:bg-muted/60 flex items-center justify-center gap-1.5 transition-colors">
+                                    <button onclick="votarPropostaAcordo(${p.id_proposta}, 'recusar')" title="Recusa a proposta de forma gentil e arquiva a pendência" class="py-3.5 text-xs font-bold text-muted-foreground hover:bg-muted/60 flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
                                         <i data-lucide="x" class="size-4"></i> Recusar
                                     </button>
-                                    <button onclick="mostrarContrapropostaInline(${p.id_proposta})" class="py-3.5 text-xs font-bold text-foreground hover:bg-muted/60 flex items-center justify-center gap-1.5 border-x border-border transition-colors">
+                                    <button onclick="mostrarContrapropostaInline(${p.id_proposta})" title="Propõe um valor de parcela diferente" class="py-3.5 text-xs font-bold text-foreground hover:bg-muted/60 flex items-center justify-center gap-1.5 border-x border-border transition-colors cursor-pointer">
                                         <i data-lucide="shield" class="size-4"></i> Contrapor
                                     </button>
-                                    <button onclick="votarPropostaAcordo(${p.id_proposta}, 'aceitar')" class="py-3.5 text-xs font-bold text-primary hover:bg-primary/10 flex items-center justify-center gap-1.5 transition-colors">
+                                    <button onclick="votarPropostaAcordo(${p.id_proposta}, 'aceitar')" title="Aceita e ativa o acordo no Lar (notifica ${p.autor_nome})" class="py-3.5 text-xs font-black text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
                                         <i data-lucide="check" class="size-4"></i> Aceitar
                                     </button>
                                 </div>
                                 <div id="contrapropostaPanel${p.id_proposta}" class="hidden px-4 pb-4 pt-3 border-t border-border bg-muted/30 space-y-3">
-                                    <p class="text-xs font-black text-foreground">Quanto consegue pagar por parcela?</p>
-                                    <p class="text-[11px] text-muted-foreground">Sugira um novo valor de parcela para combinar com ${p.autor_nome}.</p>
+                                    <p class="text-xs font-black text-foreground">Quanto você consegue pagar por parcela?</p>
+                                    <p class="text-[11px] text-muted-foreground">Sugira um novo valor de parcela confortável para combinar com ${p.autor_nome}.</p>
                                     <div class="flex items-center gap-2">
                                         <div class="flex-1 flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5">
                                             <span class="text-xs text-muted-foreground font-bold">R$</span>
                                             <input type="number" id="contrapropostaValor${p.id_proposta}" value="${p.valor_mensal_cada}" step="0.01" class="flex-1 bg-transparent text-sm font-bold text-foreground outline-none">
                                             <span class="text-[10px] text-muted-foreground">/mês</span>
                                         </div>
-                                        <button onclick="enviarContraproposta(${p.id_proposta})" class="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-1.5 shrink-0">
+                                        <button onclick="enviarContraproposta(${p.id_proposta})" class="px-4 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer">
                                             <i data-lucide="send" class="size-3.5"></i> Enviar
                                         </button>
                                     </div>
-                                    <button onclick="document.getElementById('contrapropostaPanel${p.id_proposta}').classList.add('hidden')" class="text-[11px] text-muted-foreground underline w-full text-center">Cancelar</button>
+                                    <button onclick="document.getElementById('contrapropostaPanel${p.id_proposta}').classList.add('hidden')" class="text-[11px] text-muted-foreground underline w-full text-center cursor-pointer">Cancelar</button>
                                 </div>
                             </div>`;
                         }).join('');
@@ -5801,21 +5805,21 @@
                             const guardado = a.valor_guardado || 0;
                             return `
                             <div class="rounded-3xl border border-border bg-card shadow-card overflow-hidden">
-                                <button onclick="alternarExpansaoAcordoPoupando(${a.id_acordo})" class="w-full flex items-center gap-3 p-4 text-left">
+                                <button onclick="alternarExpansaoAcordoPoupando(${a.id_acordo})" class="w-full flex items-center gap-3 p-4 text-left cursor-pointer">
                                     ${a.imagem ? `<img src="${a.imagem}" alt="${a.titulo}" class="size-14 rounded-2xl object-cover shrink-0 bg-muted">` : '<div class="size-14 rounded-2xl bg-muted shrink-0 flex items-center justify-center"><i data-lucide="piggy-bank" class="size-6 text-muted-foreground"></i></div>'}
                                     <div class="flex-1 min-w-0">
-                                        ${a.badge ? `<span class="text-[10px] font-black text-primary">${a.badge}</span>` : ''}
+                                        ${a.badge ? `<span class="text-[10px] font-black text-emerald-800 dark:text-emerald-300">${a.badge}</span>` : ''}
                                         <p class="text-sm font-black text-foreground leading-tight">${a.titulo}</p>
                                         <div class="mt-1.5 w-full bg-muted rounded-full h-1.5 overflow-hidden">
-                                            <div class="h-full rounded-full ${pct >= 80 ? 'bg-emerald-600' : pct >= 40 ? 'bg-amber-500' : 'bg-primary'}" style="width:${pct}%"></div>
+                                            <div class="h-full rounded-full ${pct >= 80 ? 'bg-emerald-600' : pct >= 40 ? 'bg-emerald-700' : 'bg-primary'}" style="width:${pct}%"></div>
                                         </div>
                                         <p class="text-[10px] text-muted-foreground mt-1">${BRL(guardado)} de ${BRL(a.valor_total)} · ${pct}%</p>
                                     </div>
                                     <i data-lucide="chevron-down" class="size-4 text-muted-foreground shrink-0 transition-transform" id="chevronAcordo${a.id_acordo}"></i>
                                 </button>
                                 <div id="expansaoAcordo${a.id_acordo}" class="${a.expandido ? '' : 'hidden'} border-t border-border">
-                                    <div class="mx-4 mt-3 mb-2 px-3 py-2.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/30">
-                                        <p class="text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed">${a.banner_info}</p>
+                                    <div class="mx-4 mt-3 mb-2 px-3.5 py-2.5 rounded-2xl bg-emerald-100/80 border border-emerald-300 text-emerald-950">
+                                        <p class="text-xs font-semibold text-emerald-950 leading-relaxed">${a.banner_info}</p>
                                     </div>
                                     <div class="mx-4 mb-3 space-y-2">
                                         <div class="flex items-center justify-between py-2 border-b border-border/60">
@@ -5848,10 +5852,10 @@
                                         <span>${a.cobrador_rotulo}</span>
                                     </div>
                                     <div class="grid grid-cols-2 border-t border-border">
-                                        <button type="button" onclick="abrirModalAtualizarMetaLar(${a.id_acordo}, '${a.titulo}', ${a.valor_total}, 'nov/2026')" class="py-3.5 text-xs font-bold text-muted-foreground hover:bg-muted/60 flex items-center justify-center gap-1.5 transition-colors border-r border-border">
+                                        <button type="button" onclick="abrirModalAtualizarMetaLar(${a.id_acordo}, '${a.titulo}', ${a.valor_total}, 'nov/2026')" class="py-3.5 text-xs font-bold text-muted-foreground hover:bg-muted/60 flex items-center justify-center gap-1.5 transition-colors border-r border-border cursor-pointer">
                                             <i data-lucide="edit-3" class="size-4"></i> Editar
                                         </button>
-                                        <button type="button" onclick="abrirModalGuardarMetaLarPix({ id_meta: ${a.id_acordo}, titulo: '${a.titulo}', valor_alvo: ${a.valor_total}, valor_atual: ${guardado} })" class="py-3.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 flex items-center justify-center gap-1.5 transition-colors">
+                                        <button type="button" onclick="abrirModalGuardarMetaLarPix({ id_meta: ${a.id_acordo}, titulo: '${a.titulo}', valor_alvo: ${a.valor_total}, valor_atual: ${guardado} })" class="py-3.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
                                             <i data-lucide="wallet" class="size-4"></i> Guardar este mês
                                         </button>
                                     </div>
@@ -5874,20 +5878,20 @@
                             <div class="rounded-3xl border border-border bg-card shadow-card p-4 space-y-3">
                                 <div class="flex items-center justify-between">
                                     <p class="text-sm font-black text-foreground">${d.titulo}</p>
-                                    <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">${d.parcelas_rotulo}</span>
+                                    <span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">${d.parcelas_rotulo}</span>
                                 </div>
                                 <div>
                                     <div class="flex justify-between text-[10px] text-muted-foreground mb-1">
-                                        <span>${d.parcelas_pagas} parcelas pagas</span>
-                                        <span>${pctDivida}%</span>
+                                        <span>${d.parcelas_pagas} de ${d.parcelas_total} parcelas pagas</span>
+                                        <span class="font-bold text-emerald-700">${pctDivida}%</span>
                                     </div>
                                     <div class="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-                                        <div class="h-full rounded-full bg-amber-500" style="width:${pctDivida}%"></div>
+                                        <div class="h-full rounded-full bg-emerald-700" style="width:${pctDivida}%"></div>
                                     </div>
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-xs font-bold text-foreground">${BRL((d.valor_mensal_juntos || 500) / 2)}/mês cada</span>
-                                    <button onclick="seivaNotificar('Pagamento de parcela registrado!', 'sucesso', 'Parcela paga')" class="px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-1.5">
+                                    <button onclick="pagarParcelaDivida(${d.id_divida || 1}, '${d.titulo.replace(/'/g, "\\'")}', ${(d.valor_mensal_juntos || 500) / 2})" class="px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer">
                                         <i data-lucide="check-circle" class="size-3.5"></i> Pagar parcela
                                     </button>
                                 </div>
@@ -5908,10 +5912,29 @@
                     body: JSON.stringify({ acao })
                 });
                 const data = await res.json();
-                const msgs = { aceitar: 'Acordo aceito com sucesso!', recusar: 'Proposta recusada com diplomacia.', contrapor: 'Contraproposta enviada!' };
-                seivaNotificar(data.mensagem || msgs[acao], acao === 'recusar' ? 'aviso' : 'sucesso', acao === 'aceitar' ? 'Acordo feito!' : 'Proposta');
+                const msgs = { 
+                    aceitar: 'Acordo aceito com sucesso! Movido para a lista de acordos ativos do Lar e seu parceiro foi notificado.', 
+                    recusar: 'Proposta recusada com diplomacia e arquivada.', 
+                    contrapor: 'Contraproposta enviada para análise do parceiro.' 
+                };
+                seivaNotificar(data.mensagem || msgs[acao], acao === 'recusar' ? 'aviso' : 'sucesso', acao === 'aceitar' ? 'Acordo Ativo' : 'Mesa de Acordos');
                 carregarAcordosDados();
+                if (typeof carregarNotificacoesDados === 'function') carregarNotificacoesDados();
             } catch (e) { seivaNotificar('Erro ao processar voto.', 'erro', 'Erro'); }
+        }
+
+        function pagarParcelaDivida(id, titulo, valor) {
+            seivaNotificar(`Pagamento da parcela de ${BRL(valor)} de "${titulo}" registrado! O parceiro foi notificado sobre a quitação da parcela.`, 'sucesso', 'Parcela Paga');
+            fetch('/api/cobrancas/lembrete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                body: JSON.stringify({
+                    titulo: `Parcela paga: ${titulo}`,
+                    valor: valor,
+                    mensagem: `Paguei a minha parcela deste mês de "${titulo}" (${BRL(valor)}). Mais um passo pra quitar!`
+                })
+            }).catch(e => console.log('Silencioso:', e));
+            setTimeout(() => { carregarAcordosDados(); }, 700);
         }
 
         // Mantido para compatibilidade retroativa
@@ -6973,10 +6996,11 @@
                     }
 
                     const statusCfg = {
-                        pendente: { label: 'Pendente', cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' },
-                        enviada:  { label: 'Enviada',  cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
-                        agendada: { label: 'Agendada', cls: 'bg-muted text-muted-foreground' },
-                        recebida: { label: 'Recebida', cls: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300' },
+                        pendente:   { label: 'Pendente',   cls: 'bg-rose-100 text-rose-800 border border-rose-300' },
+                        enviada:    { label: 'Enviada',    cls: 'bg-emerald-100 text-emerald-800 border border-emerald-300' },
+                        agendada:   { label: 'Agendada',   cls: 'bg-slate-100 text-slate-800 border border-slate-300' },
+                        confirmada: { label: 'Recebida',   cls: 'bg-emerald-100 text-emerald-800 border border-emerald-300' },
+                        recebida:   { label: 'Recebida',   cls: 'bg-emerald-100 text-emerald-800 border border-emerald-300' },
                     };
                     lista.innerHTML = notificacoes.map(n => {
                         const cfg = statusCfg[n.status] || statusCfg.agendada;
@@ -6986,23 +7010,28 @@
                             <div class="flex items-start justify-between gap-2">
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-black text-foreground leading-tight">${n.titulo}</p>
-                                    <p class="text-[11px] text-muted-foreground mt-0.5">Vence ${n.vencimento}</p>
+                                    <p class="text-[11px] text-muted-foreground mt-0.5">Vencimento: ${n.vencimento}</p>
                                 </div>
                                 <div class="flex flex-col items-end gap-1.5 shrink-0">
                                     <span class="text-sm font-black text-foreground">${BRL(n.valor)}</span>
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${cfg.cls}">${cfg.label}</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black ${cfg.cls}">${cfg.label}</span>
                                 </div>
                             </div>
                             ${n.mensagem_diplomatica ? `<div class="flex items-start gap-2 px-3 py-2 rounded-xl bg-muted/50 text-[11px] text-muted-foreground"><i data-lucide="message-circle" class="size-3.5 shrink-0 mt-0.5"></i><span>${n.mensagem_diplomatica}</span></div>` : ''}
-                            ${n.status === 'pendente' ? `
+                            
+                            ${['confirmada', 'recebida'].includes(n.status) ? `
+                            <div class="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
+                                <i data-lucide="check-circle" class="size-4 shrink-0 text-emerald-600"></i>
+                                <span>Recebimento confirmado e liquidado no Lar</span>
+                            </div>` : `
                             <div class="flex gap-2">
-                                <button onclick="notificarParceiroCobrador('${n.titulo.replace(/'/g, "\\'")}', ${n.valor})" class="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-primary/90 transition">
-                                    <i data-lucide="send" class="size-3.5"></i> Notificar ${nomeDest}
+                                <button onclick="notificarParceiroCobrador('${n.titulo.replace(/'/g, "\\'")}', ${n.valor})" class="flex-1 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition">
+                                    <i data-lucide="send" class="size-3.5"></i> ${n.status === 'enviada' ? 'Reenviar Lembrete' : n.status === 'agendada' ? 'Antecipar Lembrete' : `Notificar ${nomeDest}`}
                                 </button>
                                 <button onclick="confirmarRecebimentoCobrador(${n.id})" class="flex-1 py-2.5 rounded-xl border border-border text-xs font-bold text-foreground flex items-center justify-center gap-1.5 cursor-pointer hover:bg-muted transition">
                                     <i data-lucide="check-circle" class="size-3.5"></i> Confirmar recebimento
                                 </button>
-                            </div>` : ''}
+                            </div>`}
                         </div>`;
                     }).join('');
                     lucide.createIcons();
@@ -7218,6 +7247,88 @@
                     const user = perfilDadosCache?.usuario || {};
                     boxPreview.innerHTML = `<span id="previewAvatarIniciais">${user.iniciais || 'ME'}</span>`;
                 }
+            }
+        }
+
+        function lidarArquivoFotoPerfil(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            if (!file.type.startsWith('image/')) {
+                seivaNotificar('Selecione um arquivo de imagem válido (PNG, JPG ou WEBP).', 'aviso', 'Arquivo Inválido');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64 = e.target.result;
+                selecionarAvatarPerfil(base64);
+                const urlInput = document.getElementById('formPerfilAvatarUrl');
+                if (urlInput) urlInput.value = '';
+                seivaNotificar('Foto carregada! Clique em "Salvar Alterações" para confirmar.', 'sucesso', 'Foto Selecionada');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function lidarDropFotoPerfil(event) {
+            event.preventDefault();
+            const dropzone = document.getElementById('dropzoneFotoPerfil');
+            if (dropzone) dropzone.classList.remove('border-emerald-600', 'bg-emerald-50/20');
+            if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+                const file = event.dataTransfer.files[0];
+                if (!file.type.startsWith('image/')) {
+                    seivaNotificar('Arraste apenas arquivos de imagem (PNG ou JPG).', 'aviso', 'Arquivo Inválido');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    selecionarAvatarPerfil(base64);
+                    const urlInput = document.getElementById('formPerfilAvatarUrl');
+                    if (urlInput) urlInput.value = '';
+                    seivaNotificar('Foto recebida via arrastar e soltar!', 'sucesso', 'Foto Selecionada');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removerFotoPerfil() {
+            selecionarAvatarPerfil('');
+            const fileInput = document.getElementById('inputFotoPerfilUpload');
+            if (fileInput) fileInput.value = '';
+            const urlInput = document.getElementById('formPerfilAvatarUrl');
+            if (urlInput) urlInput.value = '';
+            seivaNotificar('Foto removida. O perfil exibirá suas iniciais.', 'info', 'Avatar Padrão');
+        }
+
+        function alternarBloqueioCaixaPreta(checkbox) {
+            if (checkbox.checked) {
+                seivaNotificar('Bloqueio da Caixa Preta com PIN numérico está ativo.', 'sucesso', 'Segurança');
+            } else {
+                seivaNotificar('Atenção: Mantenha o PIN ativado para preservar a privacidade individual dos seus gastos.', 'aviso', 'Caixa Preta');
+            }
+        }
+
+        function alternarBiometriaPerfil(checkbox) {
+            checkbox.checked = false;
+            seivaNotificar('O desbloqueio biométrico (Face ID / Touch ID) está planejado para o aplicativo mobile nativo na versão v2.0. Na versão web, sua Caixa Preta é protegida com segurança total pelo seu PIN numérico.', 'info', 'Em Desenvolvimento Mobile');
+        }
+
+        function alternarNotificacaoPerfil(tipo, ativado) {
+            seivaNotificar(`Preferência de notificação "${tipo}" ${ativado ? 'ativada' : 'desativada'} com sucesso!`, 'sucesso', 'Preferência Salva');
+        }
+
+        function abrirModalCentralAjuda() {
+            const modal = document.getElementById('modalCentralAjuda');
+            if (modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        function abrirModalTermosUso() {
+            const modal = document.getElementById('modalTermosUso');
+            if (modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons();
             }
         }
 

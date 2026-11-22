@@ -24,12 +24,13 @@
         </div>
 
         <div class="p-6 space-y-4 overflow-y-auto no-scrollbar text-xs leading-relaxed">
-            <div class="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 space-y-1.5">
-                <div class="flex items-center gap-1.5 font-black text-rose-700 dark:text-rose-300">
-                    <i data-lucide="alert-triangle" class="size-4 shrink-0"></i>
+            <!-- Box de Alerta de Alto Contraste -->
+            <div class="p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-950 space-y-2 shadow-xs">
+                <div class="flex items-center gap-2 font-black text-rose-800 text-sm">
+                    <i data-lucide="alert-triangle" class="size-5 shrink-0 text-rose-600"></i>
                     <span>Esta ação é irreversível</span>
                 </div>
-                <p class="text-[11px] leading-relaxed">
+                <p class="text-xs font-semibold text-rose-900 leading-relaxed">
                     Ao confirmar, todas as suas contas, transações, metas, registros da Caixa Preta e histórico de rateio serão excluídos e anonimizados de forma permanente.
                 </p>
             </div>
