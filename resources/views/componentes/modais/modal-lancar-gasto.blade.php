@@ -116,39 +116,62 @@
             </div>
 
             <!-- Switch / Card: Despesa Extraordinária / Imprevisto -->
-            <div class="space-y-1.5">
-                <div class="flex items-center justify-between p-3.5 rounded-2xl border border-amber-200/80 bg-amber-50/40 dark:bg-amber-950/20 dark:border-amber-800/50 transition">
+            <div class="space-y-2 rounded-2xl border border-emerald-600/20 bg-emerald-50/40 dark:bg-emerald-950/30 dark:border-emerald-800/40 p-3.5 transition">
+                <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2.5 text-xs font-bold text-foreground">
-                        <span class="size-7 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0">
+                        <span class="size-7 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
                             <i data-lucide="alert-triangle" class="size-4"></i>
                         </span>
-                        <span>Despesa Extraordinária / Imprevisto</span>
+                        <div>
+                            <span class="block text-xs font-bold text-foreground">Despesa Extraordinária / Imprevisto</span>
+                            <span class="text-[10px] text-muted-foreground">Gastos fora do orçamento habitual do mês</span>
+                        </div>
                     </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
+                    <label class="relative inline-flex items-center cursor-pointer shrink-0">
                         <input type="checkbox" id="gastoIsImprevisto" onchange="aoAlternarImprevistoGasto(this.checked)" class="sr-only peer">
-                        <div class="w-10 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-800"></div>
+                        <div class="w-10 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-700"></div>
                     </label>
                 </div>
-                <p id="textoAvisoImprevistoGasto" class="hidden text-[11px] text-muted-foreground px-1">
-                    Este gasto não estava no orçamento mensal.
-                </p>
+
+                <!-- Explicação Didática da Despesa Extraordinária e Matemática do Orçamento -->
+                <div id="textoAvisoImprevistoGasto" class="hidden pt-2 border-t border-emerald-600/15 space-y-1.5 text-[11px] leading-relaxed text-muted-foreground animate-fadeIn">
+                    <div class="flex items-start gap-1.5 text-foreground font-semibold">
+                        <i data-lucide="help-circle" class="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5"></i>
+                        <span>Como isso entra na conta do Lar?</span>
+                    </div>
+                    <p class="text-[11px] text-muted-foreground">
+                        <strong>O que é:</strong> Gastos pontuais não planejados (ex: farmácia emergencial, conserto de eletrodoméstico ou vazamento).
+                    </p>
+                    <p class="text-[11px] text-muted-foreground">
+                        <strong>Na matemática do SEIVA:</strong> O valor sai da sua conta, mas recebe a marcação <em>[Extraordinária]</em> para não distorcer a média do seu custo fixo mensal e poder ser compensado pela <strong>Reserva de Emergência</strong> ou rateado em parcelas suaves.
+                    </p>
+                </div>
             </div>
 
             <!-- Segmented Control: Manter privado vs Compartilhar -->
-            <div id="gastoContainerCompartilhar" class="space-y-1.5">
-                <div class="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-muted/40 border border-border/60">
+            <div id="gastoContainerCompartilhar" class="space-y-2">
+                <label class="text-xs font-bold text-foreground block">Destino da Despesa</label>
+                <div class="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-muted/50 border border-border/80">
                     <button type="button" id="btnGastoPrivado" onclick="selecionarVisibilidadeGasto('privado')" 
-                            class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-bold text-xs transition bg-card text-foreground shadow-2xs border border-border/40">
-                        <i data-lucide="lock" class="size-3.5"></i>
+                            class="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs border border-border/50">
+                        <i data-lucide="lock" class="size-4 shrink-0 text-foreground"></i>
                         <span>Manter privado</span>
                     </button>
                     <button type="button" id="btnGastoCompartilhado" onclick="selecionarVisibilidadeGasto('compartilhado')" 
-                            class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-bold text-xs transition text-muted-foreground hover:text-foreground">
-                        <i data-lucide="share-2" class="size-3.5 text-emerald-700"></i>
+                            class="w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground">
+                        <i data-lucide="share-2" class="size-4 shrink-0 text-emerald-600 dark:text-emerald-400"></i>
                         <span>Compartilhar</span>
                     </button>
                 </div>
                 <input type="hidden" id="gastoVisibilidade" value="privado">
+
+                <!-- Explicação Didática: Privado vs Compartilhado -->
+                <div id="gastoExplicacaoVisibilidade" class="rounded-xl border border-border/70 bg-card/60 p-2.5 text-[11px] text-muted-foreground flex items-start gap-2">
+                    <i id="gastoExplicacaoIcone" data-lucide="shield" class="size-3.5 text-muted-foreground shrink-0 mt-0.5"></i>
+                    <span id="gastoExplicacaoTexto" class="leading-relaxed">
+                        <strong>Privado:</strong> Apenas você visualiza este gasto na sua Caixa Preta e extrato individual. O parceiro não tem acesso e o valor não entra na divisão de contas do Lar.
+                    </span>
+                </div>
             </div>
 
             <!-- Botão Submit: Registrar gasto -->

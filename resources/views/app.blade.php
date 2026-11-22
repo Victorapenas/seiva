@@ -1817,8 +1817,9 @@
         let txCategoriaAtiva = '';
         let txContaAtiva = '';
         let txBuscaAtiva = '';
-        let txLarQuemAtivo = 'eu';
+        let txLarQuemAtivo = 'todos';
         let txDadosCache = [];
+        let txsLarCache = [];
 
         async function carregarExtratoDados() {
             try {
@@ -1906,16 +1907,48 @@
             lucide.createIcons();
         }
 
+        // Formatador Universal de Datas do SEIVA (Impedir "Invalid Date")
+        function formatarDataTransacaoBR(dataRaw, formato = 'curto') {
+            if (!dataRaw) return '';
+            let ano, mes, dia;
+            if (typeof dataRaw === 'string') {
+                const m = dataRaw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (m) {
+                    ano = parseInt(m[1], 10);
+                    mes = parseInt(m[2], 10) - 1;
+                    dia = parseInt(m[3], 10);
+                }
+            } else if (dataRaw instanceof Date && !isNaN(dataRaw.getTime())) {
+                ano = dataRaw.getFullYear();
+                mes = dataRaw.getMonth();
+                dia = dataRaw.getDate();
+            }
+
+            const d = (ano !== undefined) ? new Date(ano, mes, dia, 12, 0, 0) : new Date(dataRaw);
+            if (isNaN(d.getTime())) return '';
+
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+            const ontem = new Date(hoje); ontem.setDate(ontem.getDate() - 1);
+            const dZ = new Date(d); dZ.setHours(0,0,0,0);
+
+            if (formato === 'label') {
+                if (dZ.getTime() === hoje.getTime()) return 'HOJE';
+                if (dZ.getTime() === ontem.getTime()) return 'ONTEM';
+                return d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).toUpperCase();
+            }
+            return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        }
+
         function _renderizarListaAgrupada(txs) {
             const cont = document.getElementById('txListaAgrupada');
             if (!cont) return;
 
             // Aplica filtro de busca local
-            let lista = txs;
+            let lista = txs || [];
             if (txBuscaAtiva) {
                 const q = txBuscaAtiva.toLowerCase();
-                lista = txs.filter(t =>
-                    t.titulo.toLowerCase().includes(q) ||
+                lista = lista.filter(t =>
+                    (t.titulo || '').toLowerCase().includes(q) ||
                     (t.categoria?.nome || '').toLowerCase().includes(q) ||
                     (t.conta?.nome || '').toLowerCase().includes(q)
                 );
@@ -1931,18 +1964,10 @@
                 return;
             }
 
-            // Agrupar por data (HOJE, ONTEM, ou formatada)
-            const hoje    = new Date(); hoje.setHours(0,0,0,0);
-            const ontem   = new Date(hoje); ontem.setDate(ontem.getDate() - 1);
-            const grupos  = {};
-
+            // Agrupar por data (HOJE, ONTEM, ou formatada sem Invalid Date)
+            const grupos = {};
             lista.forEach(t => {
-                const d = new Date(t.data + 'T12:00:00');
-                d.setHours(0,0,0,0);
-                let label;
-                if (d.getTime() === hoje.getTime())  label = 'HOJE';
-                else if (d.getTime() === ontem.getTime()) label = 'ONTEM';
-                else label = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).toUpperCase();
+                const label = formatarDataTransacaoBR(t.data, 'label') || 'RECENTES';
                 if (!grupos[label]) grupos[label] = [];
                 grupos[label].push(t);
             });
@@ -1985,7 +2010,7 @@
             const iconeNome = obterIconeTransacao(t);
             const contaNome = t.conta?.nome || '';
             const catNome   = t.categoria?.nome || '';
-            const dataFmt   = t.data ? new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+            const dataFmt   = formatarDataTransacaoBR(t.data, 'curto');
 
             let badge = '';
             if (t.visibilidade === 'pessoal') {
@@ -1995,6 +2020,12 @@
             } else if (t.visibilidade === 'compartilhado' || t.visibilidade === 'lar') {
                 badge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[9px] font-bold">
                             <i data-lucide="users" class="size-2.5"></i> Compartilhado
+                         </span>`;
+            }
+
+            if (t.is_imprevisto) {
+                badge += ` <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-bold border border-amber-500/20">
+                            <i data-lucide="alert-triangle" class="size-2.5"></i> Imprevisto
                          </span>`;
             }
 
@@ -2026,141 +2057,201 @@
         function alternarAbaTransacoes(aba) {
             const paneMin = document.getElementById('paneMinhasTransacoes');
             const paneLar = document.getElementById('paneLarTransacoes');
-            const btnMin  = document.getElementById('abaMinhasTransacoes');
-            const btnLar  = document.getElementById('abaLarTransacoes');
+            const btnMin  = document.getElementById('tabMinhasTransacoes');
+            const btnLar  = document.getElementById('tabLarTransacoes');
 
-            const ativoClass   = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all bg-card text-foreground shadow-2xs';
-            const inativoClass = 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all text-muted-foreground hover:text-foreground';
+            const ativoClass   = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all bg-card text-foreground shadow-2xs flex items-center justify-center gap-2';
+            const inativoClass = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all text-muted-foreground hover:text-foreground flex items-center justify-center gap-2';
 
             if (aba === 'minhas') {
                 if (paneMin) paneMin.classList.remove('hidden');
                 if (paneLar) paneLar.classList.add('hidden');
-                if (btnMin)  btnMin.className  = ativoClass;
-                if (btnLar)  btnLar.className  = inativoClass;
+                if (btnMin)  btnMin.className = ativoClass;
+                if (btnLar)  btnLar.className = inativoClass;
             } else {
                 if (paneMin) paneMin.classList.add('hidden');
                 if (paneLar) paneLar.classList.remove('hidden');
-                if (btnMin)  btnMin.className  = inativoClass;
-                if (btnLar)  btnLar.className  = ativoClass;
+                if (btnMin)  btnMin.className = inativoClass;
+                if (btnLar)  btnLar.className = ativoClass;
                 carregarTransacoesLar();
             }
-        }
-
-        function filtrarTransacoesPeriodo(periodo, btn) {
-            txPeriodoAtivo = periodo;
-            document.querySelectorAll('.tx-periodo-btn').forEach(b => {
-                b.className = 'tx-periodo-btn px-4 py-2 rounded-xl border border-border bg-card text-muted-foreground text-xs font-bold transition hover:text-foreground';
-            });
-            if (btn) btn.className = 'tx-periodo-btn px-4 py-2 rounded-xl border border-primary bg-primary text-primary-foreground text-xs font-bold transition';
-            carregarExtratoDados();
-        }
-
-        function filtrarTransacoesCategoria(cat, btn) {
-            txCategoriaAtiva = cat;
-            document.querySelectorAll('.tx-cat-chip').forEach(b => {
-                b.className = 'tx-cat-chip flex-shrink-0 px-3.5 py-1.5 rounded-full border border-border bg-card text-muted-foreground text-xs font-bold transition hover:text-foreground';
-            });
-            if (btn) btn.className = 'tx-cat-chip flex-shrink-0 px-3.5 py-1.5 rounded-full border border-primary bg-primary text-primary-foreground text-xs font-bold transition';
-            carregarExtratoDados();
-        }
-
-        function filtrarTransacoesConta(contaId, btn) {
-            txContaAtiva = contaId;
-            // Reset todos os chips de conta
-            document.querySelectorAll('.tx-conta-chip').forEach(b => {
-                b.className = 'tx-conta-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border bg-card text-muted-foreground text-xs font-bold transition hover:text-foreground';
-            });
-            if (btn) btn.className = 'tx-conta-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-primary bg-primary text-primary-foreground text-xs font-bold transition';
-            carregarExtratoDados();
-        }
-
-        function buscarTransacoes(q) {
-            txBuscaAtiva = q;
-            _renderizarListaAgrupada(txDadosCache);
+            lucide.createIcons();
         }
 
         async function carregarTransacoesLar() {
             try {
                 const res = await fetch('/api/transacoes?visibilidade=lar');
                 if (!res.ok) return;
-                const txs = await res.json();
+                const todasTxs = await res.json();
+
+                // Filtrar apenas DESPESAS (saídas) compartilhadas do Lar para o cálculo matemático
+                const despesasLar = todasTxs.filter(t => t.tipo === 'saida');
+                txsLarCache = despesasLar;
 
                 const userId = usuarioSessao?.id_usuario;
-                const minhas  = txs.filter(t => t.usuario_id === userId);
-                const demais  = txs.filter(t => t.usuario_id !== userId);
+                const minhasDespesas = despesasLar.filter(t => t.usuario_id === userId);
+                const parceiroDespesas = despesasLar.filter(t => t.usuario_id !== userId);
 
-                const totalMeu      = minhas.reduce((s, t) => s + parseFloat(t.valor), 0);
-                const totalParceiro = demais.reduce((s, t) => s + parseFloat(t.valor), 0);
-                const totalGeral    = totalMeu + totalParceiro;
+                const totalEu = minhasDespesas.reduce((s, t) => s + parseFloat(t.valor || 0), 0);
+                const totalParceiro = parceiroDespesas.reduce((s, t) => s + parseFloat(t.valor || 0), 0);
+                const totalCustoLar = totalEu + totalParceiro;
 
-                const elBannerTotal = document.getElementById('txLarBannerTotal');
-                const elEuEnviei    = document.getElementById('txLarEuEnviei');
-                const elParc        = document.getElementById('txLarParceiroEnviou');
-                if (elBannerTotal) elBannerTotal.textContent = BRL(totalGeral);
-                if (elEuEnviei)    elEuEnviei.textContent    = BRL(totalMeu);
-                if (elParc)        elParc.textContent        = BRL(totalParceiro);
+                // Percentual de rateio (Ex: Duda 40% / Ian 60%)
+                const isDuda = (usuarioSessao?.email || '').toLowerCase().includes('duda') || (usuarioSessao?.nome || '').toLowerCase().includes('maria');
+                const pctEu = isDuda ? 40 : 60;
+                const pctParceiro = isDuda ? 60 : 40;
+                const parceiroNome = isDuda ? 'Ian' : 'Maria Eduarda';
 
-                // Iniciais do parceiro via lar
-                if (larSessao?.membros) {
-                    const parceiro = larSessao.membros.find(m => m.id_usuario !== userId);
-                    if (parceiro) {
-                        const elParceiroIni = document.getElementById('txLarParceiroIniciais');
-                        const elParceiroLbl = document.getElementById('txLarParceiroLabel');
-                        if (elParceiroIni) elParceiroIni.textContent = (parceiro.iniciais || parceiro.nome?.substring(0,2) || 'PA').toUpperCase();
-                        if (elParceiroLbl) elParceiroLbl.textContent = `${parceiro.nome?.split(' ')[0] || 'Parceiro(a)'} enviou`;
-                        const btnParceiro = document.querySelector('.tx-lar-quem-btn:last-child');
-                        if (btnParceiro) btnParceiro.textContent = parceiro.nome?.split(' ')[0] || 'Parceiro(a)';
+                // Cota ideal de cada um de acordo com o acordo
+                const cotaIdealEu = totalCustoLar * (pctEu / 100);
+                const cotaIdealParceiro = totalCustoLar * (pctParceiro / 100);
+
+                // Diferença / Saldo de Acerto: Quanto Eu paguei menos o que Eu deveria pagar
+                // Se dif > 0: Eu paguei a mais, parceiro me deve
+                // Se dif < 0: Parceiro pagou a mais, eu devo a ele
+                const saldoAcerto = totalEu - cotaIdealEu;
+
+                // Alimentar elementos da tela
+                const elTotal = document.getElementById('txLarBannerTotal');
+                const elEu = document.getElementById('txLarEuEnviei');
+                const elParc = document.getElementById('txLarParceiroEnviou');
+                const elEuCota = document.getElementById('txLarEuCotaIdeal');
+                const elParcCota = document.getElementById('txLarParceiroCotaIdeal');
+                const elEuPct = document.getElementById('txLarEuCotaPercentual');
+                const elParcPct = document.getElementById('txLarParceiroCotaPercentual');
+                const elAcordoTxt = document.getElementById('txLarAcordoTexto');
+                const elParcLabel = document.getElementById('txLarParceiroLabel');
+                const elParcIni = document.getElementById('txLarParceiroIniciais');
+                const elEuIni = document.getElementById('txLarEuIniciais');
+                const elQtdDesp = document.getElementById('txLarQtdTotalDespesas');
+
+                if (elTotal) elTotal.textContent = BRL(totalCustoLar);
+                if (elEu) elEu.textContent = BRL(totalEu);
+                if (elParc) elParc.textContent = BRL(totalParceiro);
+                if (elEuCota) elEuCota.textContent = `Sua cota ideal: ${BRL(cotaIdealEu)}`;
+                if (elParcCota) elParcCota.textContent = `Cota ideal dele: ${BRL(cotaIdealParceiro)}`;
+                if (elEuPct) elEuPct.textContent = `Cota ${pctEu}%`;
+                if (elParcPct) elParcPct.textContent = `Cota ${pctParceiro}%`;
+                if (elAcordoTxt) elAcordoTxt.textContent = `Rateio: Duda (40%) · Ian (60%)`;
+                if (elParcLabel) elParcLabel.textContent = `${parceiroNome} pagou`;
+                if (elParcIni) elParcIni.textContent = isDuda ? 'IM' : 'ME';
+                if (elEuIni) elEuIni.textContent = isDuda ? 'ME' : 'IM';
+                if (elQtdDesp) elQtdDesp.textContent = `${despesasLar.length} ${despesasLar.length === 1 ? 'despesa' : 'despesas'} no mês`;
+
+                // Card de Balanço do Casal
+                const acertoMsg = document.getElementById('txLarAcertoMensagem');
+                const acertoIcone = document.getElementById('txLarAcertoIcone');
+                const acertoBtn = document.getElementById('txLarBtnLembreteAcerto');
+
+                if (acertoMsg && acertoIcone) {
+                    if (Math.abs(saldoAcerto) < 0.5) {
+                        acertoMsg.innerHTML = '<strong>Contas perfeitamente equilibradas!</strong> Nenhum acerto pendente.';
+                        acertoIcone.className = 'size-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0';
+                        acertoIcone.innerHTML = '<i data-lucide="check-circle-2" class="size-5"></i>';
+                        if (acertoBtn) acertoBtn.classList.add('hidden');
+                    } else if (saldoAcerto > 0) {
+                        acertoMsg.innerHTML = `Você adiantou <strong>${BRL(saldoAcerto)}</strong> a mais que sua cota. <strong>${parceiroNome}</strong> deve acertar com você.`;
+                        acertoIcone.className = 'size-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0';
+                        acertoIcone.innerHTML = '<i data-lucide="arrow-down-left" class="size-5"></i>';
+                        if (acertoBtn) {
+                            acertoBtn.classList.remove('hidden');
+                            acertoBtn.innerHTML = '<i data-lucide="send" class="size-3.5"></i> <span>Pedir PIX amigável</span>';
+                        }
+                    } else {
+                        const valorDevido = Math.abs(saldoAcerto);
+                        acertoMsg.innerHTML = `${parceiroNome} adiantou despesas. Você tem <strong>${BRL(valorDevido)}</strong> a acertar para equilibrar o rateio.`;
+                        acertoIcone.className = 'size-9 rounded-xl bg-rose-500/20 text-rose-300 flex items-center justify-center shrink-0';
+                        acertoIcone.innerHTML = '<i data-lucide="arrow-up-right" class="size-5"></i>';
+                        if (acertoBtn) {
+                            acertoBtn.classList.remove('hidden');
+                            acertoBtn.innerHTML = '<i data-lucide="credit-card" class="size-3.5"></i> <span>Acertar via PIX</span>';
+                        }
                     }
                 }
 
-                filtrarTransacoesLar(txLarQuemAtivo, null, txs);
-            } catch (e) { console.error('Erro ao carregar transações do lar:', e); }
+                // Mini Relatório por Categorias do Lar
+                const gridCat = document.getElementById('txLarCategoriasGrid');
+                if (gridCat) {
+                    const categoriasMap = {};
+                    despesasLar.forEach(t => {
+                        const catNome = t.categoria?.nome || 'Geral';
+                        categoriasMap[catNome] = (categoriasMap[catNome] || 0) + parseFloat(t.valor || 0);
+                    });
+
+                    const catsArray = Object.entries(categoriasMap).sort((a,b) => b[1] - a[1]);
+                    if (catsArray.length) {
+                        gridCat.innerHTML = catsArray.slice(0, 4).map(([cat, val]) => {
+                            const pct = totalCustoLar > 0 ? Math.round((val / totalCustoLar) * 100) : 0;
+                            return `
+                            <div class="rounded-xl border border-border/70 bg-muted/30 p-2.5 space-y-1">
+                                <div class="flex items-center justify-between text-[11px] font-bold text-foreground">
+                                    <span class="truncate">${cat}</span>
+                                    <span class="text-muted-foreground text-[10px]">${pct}%</span>
+                                </div>
+                                <strong class="text-xs font-black text-foreground block">${BRL(val)}</strong>
+                            </div>`;
+                        }).join('');
+                    } else {
+                        gridCat.innerHTML = `<p class="col-span-full text-[11px] text-muted-foreground py-1 text-center">Nenhuma categoria registrada.</p>`;
+                    }
+                }
+
+                filtrarTransacoesLar(txLarQuemAtivo, null);
+                lucide.createIcons();
+            } catch (e) {
+                console.error('Erro ao carregar transações do lar:', e);
+            }
         }
 
-        function filtrarTransacoesLar(quem, btn, txsParam) {
-            txLarQuemAtivo = quem;
-            document.querySelectorAll('.tx-lar-quem-btn').forEach(b => {
-                b.className = 'tx-lar-quem-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all text-muted-foreground hover:text-foreground';
-            });
-            if (btn) btn.className = 'tx-lar-quem-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all bg-card text-foreground shadow-2xs';
+        function filtrarTransacoesLar(filtro, btn) {
+            txLarQuemAtivo = filtro || 'todos';
 
-            const userId = usuarioSessao?.id_usuario;
-            const txs    = txsParam || [];
-            let lista    = txs;
-            if (quem === 'eu')       lista = txs.filter(t => t.usuario_id === userId);
-            if (quem === 'parceiro') lista = txs.filter(t => t.usuario_id !== userId);
+            if (btn) {
+                document.querySelectorAll('#txLarFiltros .tx-lar-btn').forEach(b => {
+                    b.className = 'tx-lar-btn px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground text-xs font-semibold transition';
+                });
+                btn.className = 'tx-lar-btn px-3 py-1.5 rounded-lg bg-card text-foreground text-xs font-bold shadow-2xs transition';
+            }
 
             const cont = document.getElementById('txLarLista');
             if (!cont) return;
 
+            const userId = usuarioSessao?.id_usuario;
+            let lista = txsLarCache || [];
+
+            if (txLarQuemAtivo === 'eu') {
+                lista = lista.filter(t => t.usuario_id === userId);
+            } else if (txLarQuemAtivo === 'parceiro') {
+                lista = lista.filter(t => t.usuario_id !== userId);
+            } else if (txLarQuemAtivo === 'imprevistos') {
+                lista = lista.filter(t => Boolean(t.is_imprevisto));
+            }
+
             if (!lista.length) {
-                cont.innerHTML = `<div class="rounded-3xl border border-border bg-card p-8 shadow-card text-center">
-                    <i data-lucide="inbox" class="size-8 text-muted-foreground mx-auto mb-2"></i>
-                    <p class="text-xs text-muted-foreground">Nenhuma transação do lar encontrada.</p>
+                cont.innerHTML = `
+                <div class="rounded-3xl border border-border bg-card p-8 shadow-card text-center space-y-2">
+                    <i data-lucide="inbox" class="size-8 text-muted-foreground/50 mx-auto"></i>
+                    <p class="text-xs text-muted-foreground">Nenhuma despesa compartilhada encontrada para este filtro.</p>
                 </div>`;
                 lucide.createIcons();
                 return;
             }
 
-            cont.innerHTML = `<div class="rounded-3xl border border-border bg-card shadow-card overflow-hidden">
+            cont.innerHTML = `
+            <div class="rounded-3xl border border-border bg-card shadow-card overflow-hidden">
                 <div class="divide-y divide-border/60">
                     ${lista.map(t => {
                         const iconeNome = obterIconeTransacao(t);
-                        const dataFmt = t.data ? new Date(t.data + 'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : '';
-                        const quemNome = t.usuario_id === userId
-                            ? (usuarioSessao?.nome?.split(' ')[0] || 'Eu')
-                            : (larSessao?.membros?.find(m => m.id_usuario !== userId)?.nome?.split(' ')[0] || 'Parceiro(a)');
-                        
-                        // Detalhe de rateio estilo Imagem 5
+                        const dataFmt = formatarDataTransacaoBR(t.data, 'curto');
+                        const isEu = t.usuario_id === userId;
+                        const quemNome = isEu ? 'Pago por Você' : (larSessao?.membros?.find(m => m.id_usuario !== userId)?.nome?.split(' ')[0] || 'Parceiro');
                         const metade = (parseFloat(t.valor) / 2).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                        const parceiroPrimeiroNome = larSessao?.membros?.find(m => m.id_usuario !== userId)?.nome?.split(' ')[0] || 'Ian';
-                        let detalheTexto = `${quemNome} · ${dataFmt}`;
-                        if (t.detalhe_rateio) {
-                            detalheTexto += ` · ${t.detalhe_rateio}`;
-                        } else if ((t.titulo || '').toLowerCase().includes('luz') || (t.titulo || '').toLowerCase().includes('aluguel') || (t.titulo || '').toLowerCase().includes('água')) {
-                            detalheTexto += ` · Transferido p/ conta do Lar`;
-                        } else {
-                            detalheTexto += ` · 50/50 · ${parceiroPrimeiroNome} deve R$ ${metade}`;
+
+                        let badgeExtra = '';
+                        if (t.is_imprevisto) {
+                            badgeExtra = `<span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-bold border border-amber-500/20">
+                                            <i data-lucide="alert-triangle" class="size-2.5"></i> Imprevisto
+                                          </span>`;
                         }
 
                         return `
@@ -2170,8 +2261,13 @@
                                     <i data-lucide="${iconeNome}" class="size-5"></i>
                                 </span>
                                 <div class="min-w-0">
-                                    <p class="text-xs font-bold text-foreground truncate">${t.titulo}</p>
-                                    <span class="text-[10px] text-muted-foreground truncate block mt-0.5">${detalheTexto}</span>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <p class="text-xs font-bold text-foreground truncate">${t.titulo}</p>
+                                        ${badgeExtra}
+                                    </div>
+                                    <span class="text-[10px] text-muted-foreground truncate block mt-0.5">
+                                        ${quemNome} · ${dataFmt} · 50/50 (R$ ${metade} cada)
+                                    </span>
                                 </div>
                             </div>
                             <span class="text-xs font-black text-foreground shrink-0 ml-3">${BRL(t.valor)}</span>
@@ -2179,6 +2275,7 @@
                     }).join('')}
                 </div>
             </div>`;
+
             lucide.createIcons();
         }
 
@@ -4549,8 +4646,11 @@
                 // Data limite formatada
                 let dataLabel = '';
                 if (m.data_limite) {
-                    const d = new Date(m.data_limite + 'T12:00:00');
-                    dataLabel = `Meta para ${d.toLocaleDateString('pt-BR', {month:'short', year:'numeric'})}`;
+                    const dataPura = String(m.data_limite).substring(0, 10);
+                    const d = new Date(dataPura + 'T12:00:00');
+                    if (!isNaN(d.getTime())) {
+                        dataLabel = `Meta para ${d.toLocaleDateString('pt-BR', {month:'short', year:'numeric'})}`;
+                    }
                 }
 
                 // Imagem real ou ícone Lucide
@@ -6900,15 +7000,34 @@
 
         function selecionarVisibilidadeGasto(tipo) {
             visibilidadeGastoAtual = tipo;
+            const inputVis = document.getElementById('gastoVisibilidade');
+            if (inputVis) inputVis.value = tipo;
+
             const btnPriv = document.getElementById('btnGastoPrivado');
-            const btnComp = document.getElementById('btnGastoCompartilhar');
+            const btnComp = document.getElementById('btnGastoCompartilhado') || document.getElementById('btnGastoCompartilhar');
+            const expTexto = document.getElementById('gastoExplicacaoTexto');
+            const expIcone = document.getElementById('gastoExplicacaoIcone');
+
             if (tipo === 'privado') {
-                if (btnPriv) btnPriv.className = 'flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs';
-                if (btnComp) btnComp.className = 'flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+                if (btnPriv) btnPriv.className = 'w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs border border-border/60';
+                if (btnComp) btnComp.className = 'w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground border border-transparent';
+                if (expTexto) {
+                    expTexto.innerHTML = '<strong>Privado:</strong> Apenas você visualiza este gasto na sua Caixa Preta e extrato individual. O parceiro não tem acesso e o valor não entra na divisão de contas do Lar.';
+                }
+                if (expIcone) {
+                    expIcone.setAttribute('data-lucide', 'shield');
+                }
             } else {
-                if (btnComp) btnComp.className = 'flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs';
-                if (btnPriv) btnPriv.className = 'flex-1 py-2 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+                if (btnComp) btnComp.className = 'w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-bold text-xs transition-all bg-card text-emerald-800 dark:text-emerald-300 shadow-2xs border border-emerald-600/40';
+                if (btnPriv) btnPriv.className = 'w-full inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground border border-transparent';
+                if (expTexto) {
+                    expTexto.innerHTML = '<strong>Compartilhado:</strong> Visível para o casal em Transações do Lar e calculado no rateio proporcional. Entra na Mesa de Acordos para divisão justa.';
+                }
+                if (expIcone) {
+                    expIcone.setAttribute('data-lucide', 'users');
+                }
             }
+            lucide.createIcons();
         }
 
         async function executarSalvarGastoRapido(e) {

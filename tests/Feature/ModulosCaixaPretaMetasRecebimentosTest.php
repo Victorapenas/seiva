@@ -352,4 +352,30 @@ class ModulosCaixaPretaMetasRecebimentosTest extends TestCase
             'id_produto' => $idProd,
         ]);
     }
+
+    public function test_lancar_gasto_imprevisto_compartilhado_com_rateio()
+    {
+        $this->actingAs($this->userDuda);
+
+        // Lançar gasto imprevisto compartilhado
+        $res = $this->postJson('/api/transacoes', [
+            'tipo' => 'saida',
+            'titulo' => 'Conserto Chuveiro Queimado',
+            'valor' => 180.00,
+            'conta_id' => $this->contaDuda->id_conta,
+            'categoria_nome' => 'Moradia',
+            'is_imprevisto' => true,
+            'compartilhado' => true,
+        ]);
+
+        $res->assertStatus(201);
+
+        $this->assertDatabaseHas('transacoes', [
+            'usuario_id' => $this->userDuda->id_usuario,
+            'titulo' => 'Conserto Chuveiro Queimado',
+            'valor' => 180.00,
+            'tipo' => 'saida',
+            'visibilidade' => 'compartilhado',
+        ]);
+    }
 }
