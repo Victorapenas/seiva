@@ -13,7 +13,7 @@
             <i data-lucide="credit-card" class="size-5"></i>
             <span class="text-[10px] font-medium">Gastos</span>
         </button>
-        <button onclick="trocarAbaApp('acordos')" class="flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-muted-foreground" data-screen="acordos">
+        <button id="bottomNavAcordos" onclick="trocarAbaApp('acordos')" class="flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-muted-foreground" data-screen="acordos">
             <i data-lucide="handshake" class="size-5"></i>
             <span class="text-[10px] font-medium">Acordos</span>
         </button>
@@ -21,7 +21,7 @@
             <i data-lucide="target" class="size-5"></i>
             <span class="text-[10px] font-medium">Metas</span>
         </button>
-        <button onclick="trocarAbaApp('lar')" class="flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-muted-foreground" data-screen="lar">
+        <button id="bottomNavLar" onclick="trocarAbaApp('lar')" class="flex flex-1 flex-col items-center gap-1 rounded-lg py-1.5 text-muted-foreground" data-screen="lar">
             <i data-lucide="leaf" class="size-5"></i>
             <span class="text-[10px] font-medium">Lar</span>
         </button>

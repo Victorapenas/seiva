@@ -93,7 +93,7 @@ class LgpdController extends Controller
             'renda_extra'     => 'nullable|numeric|min:0',
             'banco_principal' => 'nullable|string|max:100',
             'chave_pix'       => 'nullable|string|max:100',
-            'avatar'          => 'nullable|string|max:255',
+            'avatar'          => 'nullable|string|max:500000',
             'pin_caixa_preta' => 'nullable|string|max:10',
         ]);
 

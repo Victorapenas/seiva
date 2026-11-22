@@ -7,6 +7,31 @@
 --}}
 <div id="pane-acordos" class="sub-screen space-y-6 hidden max-w-5xl mx-auto pb-12">
 
+    <!-- ESTADO VAZIO / SEM LAR (PARA USUÁRIOS INDIVIDUAIS) -->
+    <div id="acordosCardBloqueioSemLar" class="hidden p-8 sm:p-12 rounded-3xl border border-border bg-card shadow-card text-center space-y-5 max-w-xl mx-auto my-8">
+        <div class="size-20 rounded-3xl bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 mx-auto flex items-center justify-center shadow-soft">
+            <i data-lucide="handshake" class="size-10"></i>
+        </div>
+        <div class="space-y-1.5">
+            <h2 class="text-xl font-black text-foreground">Mesa de Acordos Requer um Lar</h2>
+            <p class="text-xs text-muted-foreground leading-relaxed">
+                A <strong>Mesa de Acordos</strong> foi desenvolvida para consensos diplomáticos entre casais (propostas, contrapropostas e metas de poupança conjunta). Convide seu parceiro(a) para começar a selar combinados tranquilos!
+            </p>
+        </div>
+        <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button type="button" onclick="trocarAbaApp('dashboard')" class="w-full sm:w-auto px-5 py-3 rounded-2xl border border-border bg-card text-foreground font-bold text-xs hover:bg-muted transition">
+                Voltar ao Início
+            </button>
+            <button type="button" onclick="abrirModalConvidarParceiro()" 
+                    class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs transition shadow-soft inline-flex items-center justify-center gap-2">
+                <i data-lucide="heart-handshake" class="size-4"></i>
+                <span>Convidar Parceiro(a)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO OFICIAL DA MESA DE ACORDOS -->
+    <div id="acordosConteudoCasal" class="space-y-6">
     <!-- 1. HEADER DA MESA DE ACORDOS (IMAGEM 1) -->
     <header class="space-y-1">
         <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Mesa de Acordos</h1>
@@ -85,6 +110,7 @@
             <i data-lucide="plus" class="size-5"></i>
             <span>+ Propor novo acordo ao parceiro</span>
         </button>
+    </div>
     </div>
 
 </div>

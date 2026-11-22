@@ -8,6 +8,31 @@
 --}}
 <div id="pane-lar" class="sub-screen space-y-6 hidden max-w-6xl mx-auto pb-12">
 
+    <!-- ESTADO VAZIO / SEM LAR (PARA USUÁRIOS INDIVIDUAIS) -->
+    <div id="larCardBloqueioSemLar" class="hidden p-8 sm:p-12 rounded-3xl border border-border bg-card shadow-card text-center space-y-5 max-w-xl mx-auto my-8">
+        <div class="size-20 rounded-3xl bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 mx-auto flex items-center justify-center shadow-soft">
+            <i data-lucide="home" class="size-10"></i>
+        </div>
+        <div class="space-y-1.5">
+            <h2 class="text-xl font-black text-foreground">Você ainda não tem um Lar cadastrado</h2>
+            <p class="text-xs text-muted-foreground leading-relaxed">
+                A <strong>Área do Lar</strong> é o espaço bilateral onde o casal organiza despesas divididas, rateio justo e fundo de reserva conjunto. Como sua conta é <strong>Individual</strong>, convide seu parceiro(a) para começar mantendo sua Caixa Preta 100% privativa.
+            </p>
+        </div>
+        <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button type="button" onclick="trocarAbaApp('dashboard')" class="w-full sm:w-auto px-5 py-3 rounded-2xl border border-border bg-card text-foreground font-bold text-xs hover:bg-muted transition">
+                Voltar ao Início
+            </button>
+            <button type="button" onclick="abrirModalConvidarParceiro()" 
+                    class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs transition shadow-soft inline-flex items-center justify-center gap-2">
+                <i data-lucide="heart-handshake" class="size-4"></i>
+                <span>Convidar Parceiro(a) para o Lar</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO OFICIAL DO LAR COMPARTILHADO -->
+    <div id="larConteudoCasal" class="space-y-6">
     <!-- 1. HERO BANNER NOBRE & IMERSIVO DO LAR (CASA ACONCHEGANTE DO CASAL) -->
     <div class="relative rounded-3xl overflow-hidden border border-border shadow-elevated bg-card">
         <!-- Foto de Capa Aconchegante com Iluminação Quente -->
@@ -410,5 +435,6 @@
                 <span id="larBtnSolicitarAcordoTexto">Propor novo combinado financeiro ao Ian</span>
             </button>
         </div>
+    </div>
     </div>
 </div>

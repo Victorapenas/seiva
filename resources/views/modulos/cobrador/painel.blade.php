@@ -7,6 +7,31 @@
 --}}
 <div id="pane-cobrador" class="sub-screen space-y-6 hidden max-w-5xl mx-auto pb-12">
 
+    <!-- ESTADO VAZIO / SEM LAR (PARA USUÁRIOS INDIVIDUAIS) -->
+    <div id="cobradorCardBloqueioSemLar" class="hidden p-8 sm:p-12 rounded-3xl border border-border bg-card shadow-card text-center space-y-5 max-w-xl mx-auto my-8">
+        <div class="size-20 rounded-3xl bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 mx-auto flex items-center justify-center shadow-soft">
+            <i data-lucide="bell-ring" class="size-10"></i>
+        </div>
+        <div class="space-y-1.5">
+            <h2 class="text-xl font-black text-foreground">Cobrador Diplomata Requer um Lar</h2>
+            <p class="text-xs text-muted-foreground leading-relaxed">
+                O <strong>Cobrador Diplomata</strong> evita constrangimentos financeiros enviando lembretes suaves e automáticos de rateio entre parceiros do Lar. Para ativar a diplomacia financeira, convide seu parceiro(a)!
+            </p>
+        </div>
+        <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button type="button" onclick="trocarAbaApp('dashboard')" class="w-full sm:w-auto px-5 py-3 rounded-2xl border border-border bg-card text-foreground font-bold text-xs hover:bg-muted transition">
+                Voltar ao Início
+            </button>
+            <button type="button" onclick="abrirModalConvidarParceiro()" 
+                    class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs transition shadow-soft inline-flex items-center justify-center gap-2">
+                <i data-lucide="heart-handshake" class="size-4"></i>
+                <span>Convidar Parceiro(a)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO OFICIAL DO COBRADOR DIPLOMATA -->
+    <div id="cobradorConteudoCasal" class="space-y-6">
     <!-- HERO CARD VERDE ESCURO -->
     <div class="rounded-3xl bg-emerald-900 p-6 text-white shadow-card space-y-4">
         <div class="flex items-start justify-between">
@@ -121,6 +146,7 @@
                 class="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-black flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors">
             <i data-lucide="save" class="size-4"></i> Salvar configurações
         </button>
+    </div>
     </div>
 
 </div>

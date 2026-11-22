@@ -15,7 +15,7 @@
     </header>
 
     <!-- ABAS PRINCIPAIS: Minhas Transações | Transações do Lar -->
-    <div class="p-1 rounded-2xl bg-muted/60 flex gap-1 shadow-2xs">
+    <div id="txAbasPrincipalContainer" class="p-1 rounded-2xl bg-muted/60 flex gap-1 shadow-2xs">
         <button id="tabMinhasTransacoes"
                 onclick="alternarAbaTransacoes('minhas')"
                 class="flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all bg-card text-foreground shadow-2xs flex items-center justify-center gap-2">

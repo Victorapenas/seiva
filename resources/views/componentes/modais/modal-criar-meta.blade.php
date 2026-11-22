@@ -129,11 +129,11 @@
             </div>
 
             <!-- De quem é essa meta? (3 Opções do Protótipo Imagem 11) -->
-            <div class="space-y-2 pt-1">
+            <div class="space-y-2 pt-1" id="boxPosseMetaContainer">
                 <label class="text-xs font-bold text-foreground block">De quem é essa meta?</label>
 
                 <!-- Opção 1: Só minha -->
-                <button type="button" onclick="selecionarPosseMeta(this, 'so_minha')" 
+                <button type="button" id="opcaoPosseSoMinha" onclick="selecionarPosseMeta(this, 'so_minha')" 
                         class="chip-posse-meta active w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition">
                     <div class="flex items-center gap-3">
                         <span class="size-8 rounded-xl bg-emerald-800 text-white flex items-center justify-center shrink-0">
@@ -148,7 +148,7 @@
                 </button>
 
                 <!-- Opção 2: Do Lar, pago sozinha -->
-                <button type="button" onclick="selecionarPosseMeta(this, 'lar')" 
+                <button type="button" id="opcaoPosseLar" onclick="selecionarPosseMeta(this, 'lar')" 
                         class="chip-posse-meta w-full flex items-center justify-between p-3.5 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/20">
                     <div class="flex items-center gap-3">
                         <span class="size-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
@@ -162,7 +162,7 @@
                 </button>
 
                 <!-- Opção 3: Compartilhada -->
-                <button type="button" onclick="selecionarPosseMeta(this, 'compartilhada')" 
+                <button type="button" id="opcaoPosseCompartilhada" onclick="selecionarPosseMeta(this, 'compartilhada')" 
                         class="chip-posse-meta w-full flex items-center justify-between p-3.5 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/20">
                     <div class="flex items-center gap-3">
                         <span class="size-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
@@ -174,6 +174,12 @@
                         </div>
                     </div>
                 </button>
+
+                <!-- Aviso para Usuários Individuais -->
+                <div id="avisoSemLarOpcoesMeta" class="hidden p-3 rounded-2xl bg-muted/50 border border-border text-[11px] text-muted-foreground flex items-center gap-2">
+                    <i data-lucide="info" class="size-4 text-emerald-600 shrink-0"></i>
+                    <span>Como sua conta é individual, suas metas são privadas. Para metas conjuntas, convide seu parceiro(a) no Perfil.</span>
+                </div>
 
                 <!-- Aviso de Meta Compartilhada: Alto Contraste e Legibilidade Perfeita -->
                 <div id="avisoMetaCompartilhada" class="hidden mt-3 p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 space-y-3">

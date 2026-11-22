@@ -92,6 +92,19 @@
             <span class="text-muted-foreground font-semibold">Modalidade de Acesso</span>
             <span class="font-black text-emerald-700 dark:text-emerald-400">100% Autônomo / Solo</span>
         </div>
+
+        <!-- Ação: Convidar Parceiro para o Lar -->
+        <div class="pt-2 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <span class="text-xs font-bold text-foreground block">Deseja formar um Lar com seu parceiro(a)?</span>
+                <span class="text-[11px] text-muted-foreground">Convide sua namorada ou parceiro(a) para organizar despesas do lar mantendo sua Caixa Preta 100% privada.</span>
+            </div>
+            <button type="button" onclick="abrirModalConvidarParceiro()" 
+                    class="px-4 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-black text-xs transition shadow-soft flex items-center justify-center gap-2 shrink-0">
+                <i data-lucide="heart-handshake" class="size-4"></i>
+                <span>Convidar Parceiro(a)</span>
+            </button>
+        </div>
     </div>
 
     <!-- 3. RECURSOS -->

@@ -14,6 +14,7 @@ use App\Http\Controllers\CobrancaController;
 use App\Http\Controllers\LgpdController;
 use App\Http\Controllers\RecebimentosController;
 use App\Http\Controllers\NotificacoesController;
+use App\Http\Controllers\ConviteController;
 
 // Rota principal da aplicação SEIVA
 Route::get('/', function () {
@@ -31,6 +32,11 @@ Route::get('/auth/google/popup', function () {
     return view('auth.google-popup');
 });
 
+// Rota de visualização de convite do lar (pública)
+Route::get('/convite/{token}', function ($token) {
+    return view('app');
+});
+
 // APIs Públicas / Auth (RF001)
 Route::prefix('api')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -38,6 +44,7 @@ Route::prefix('api')->group(function () {
     Route::post('/auth/google', [AuthController::class, 'googleLogin']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/convite/{token}', [ConviteController::class, 'visualizar']);
 
     // Categorias padrão
     Route::get('/categorias', [TransacaoController::class, 'categorias']);
@@ -86,6 +93,10 @@ Route::prefix('api')->group(function () {
         Route::post('/lar', [LarController::class, 'store']);
         Route::post('/lar/convite', [LarController::class, 'invite']);
         Route::post('/lar/entrar', [LarController::class, 'join']);
+        Route::post('/lar/convidar', [ConviteController::class, 'convidar']);
+        Route::get('/lar/convites', [ConviteController::class, 'listarConvites']);
+        Route::post('/lar/aceitar-convite', [ConviteController::class, 'aceitar']);
+        Route::post('/lar/recusar-convite', [ConviteController::class, 'recusar']);
         Route::get('/lar/despesas', [LarController::class, 'despesas']);
         Route::post('/lar/despesas', [LarController::class, 'storeDespesa']);
         Route::post('/lar/despesas/{id}/atualizar', [LarController::class, 'updateDespesa']);
@@ -97,6 +108,10 @@ Route::prefix('api')->group(function () {
         Route::post('/lar/fundo-emergencia/resgatar', [LarController::class, 'solicitarResgateEmergencia']);
         Route::post('/lar/notificar-pendencia', [LarController::class, 'notificarPendencia']);
         Route::post('/lar/foto-capa', [LarController::class, 'atualizarFotoCapa']);
+    Route::post('/lar/convidar', [ConviteController::class, 'convidar']);
+    Route::get('/lar/convites', [ConviteController::class, 'listarConvites']);
+    Route::post('/lar/aceitar-convite', [ConviteController::class, 'aceitar']);
+    Route::post('/lar/recusar-convite', [ConviteController::class, 'recusar']);
 
         // RF006: Mesa de Acordos
         Route::get('/acordos', [AcordoController::class, 'index']);
@@ -244,6 +259,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/lar/fundo-emergencia/resgatar', [LarController::class, 'solicitarResgateEmergencia']);
     Route::post('/lar/notificar-pendencia', [LarController::class, 'notificarPendencia']);
     Route::post('/lar/foto-capa', [LarController::class, 'atualizarFotoCapa']);
+    Route::post('/lar/convidar', [ConviteController::class, 'convidar']);
+    Route::get('/lar/convites', [ConviteController::class, 'listarConvites']);
+    Route::post('/lar/aceitar-convite', [ConviteController::class, 'aceitar']);
+    Route::post('/lar/recusar-convite', [ConviteController::class, 'recusar']);
 
     // Aliases de Cobrador Diplomata sem /api
     Route::post('/cobrancas/lembrete', [CobrancaController::class, 'enviarLembrete']);

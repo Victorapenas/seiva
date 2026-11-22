@@ -241,6 +241,8 @@
     @include('componentes.modais.modal-termos-uso')
     @include('componentes.modais.modal-central-ajuda')
     @include('componentes.modais.modal-apagar-conta')
+    @include('componentes.modais.modal-convidar-parceiro')
+    @include('componentes.modais.modal-aceitar-convite-lar')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -1482,6 +1484,42 @@
         // ==========================================
         // AMBIENTE LOGADO (APP SHELL & SUB-TELAS)
         // ==========================================
+        window._isCasalGlobal = false;
+
+        function aplicarAvatarGlobal(avatarUrl, iniciais = 'SE') {
+            const sideAv = document.getElementById('userAvatarSidebar');
+            if (sideAv) {
+                if (avatarUrl && avatarUrl.length > 5) {
+                    sideAv.innerHTML = `<img src="${avatarUrl}" alt="Avatar" class="size-full rounded-full object-cover">`;
+                } else {
+                    sideAv.innerHTML = iniciais;
+                }
+            }
+
+            const dashAv = document.getElementById('dashAvatar');
+            if (dashAv) {
+                if (avatarUrl && avatarUrl.length > 5) {
+                    dashAv.innerHTML = `<img src="${avatarUrl}" alt="Avatar" class="size-full rounded-full object-cover">`;
+                } else {
+                    dashAv.innerHTML = iniciais;
+                }
+            }
+
+            const avatarImg = document.getElementById('perfilAvatarImg');
+            const avatarIniciais = document.getElementById('perfilAvatarIniciais');
+            if (avatarImg && avatarIniciais) {
+                if (avatarUrl && avatarUrl.length > 5) {
+                    avatarImg.src = avatarUrl;
+                    avatarImg.classList.remove('hidden');
+                    avatarIniciais.classList.add('hidden');
+                } else {
+                    avatarImg.classList.add('hidden');
+                    avatarIniciais.textContent = iniciais;
+                    avatarIniciais.classList.remove('hidden');
+                }
+            }
+        }
+
         function montarAmbienteLogado() {
             if (!usuarioSessao) return;
             const iniciais = usuarioSessao.iniciais || (usuarioSessao.nome ? usuarioSessao.nome.substring(0, 2).toUpperCase() : 'SE');
@@ -1490,11 +1528,7 @@
             const elUserSide = document.getElementById('userNameSidebar');
             if (elUserSide) elUserSide.innerText = usuarioSessao.nome;
 
-            const elAvSide = document.getElementById('userAvatarSidebar');
-            if (elAvSide) elAvSide.innerText = iniciais;
-
-            const elDashAv = document.getElementById('dashAvatar');
-            if (elDashAv) elDashAv.innerText = iniciais;
+            aplicarAvatarGlobal(usuarioSessao.avatar, iniciais);
 
             const elDashGreet = document.getElementById('dashGreeting');
             if (elDashGreet) elDashGreet.innerText = `${getSaudacao()}, ${primeiroNome}`;
@@ -1505,12 +1539,10 @@
             const elPerfEmail = document.getElementById('perfilEmailTxt');
             if (elPerfEmail) elPerfEmail.innerText = usuarioSessao.email;
 
-            const elPerfAv = document.getElementById('perfilAvatarCircle');
-            if (elPerfAv) elPerfAv.innerText = iniciais;
-
             const secaoLarSide = document.getElementById('secaoLarSidebar');
             const elLarPill = document.getElementById('userLarPillSidebar');
             if (larSessao) {
+                window._isCasalGlobal = true;
                 if (secaoLarSide) secaoLarSide.classList.remove('hidden');
                 if (elLarPill) {
                     elLarPill.innerText = larSessao.nome;
@@ -1523,6 +1555,7 @@
                 const elLarHead = document.getElementById('larHeaderTitle');
                 if (elLarHead) elLarHead.innerText = larSessao.nome;
             } else {
+                window._isCasalGlobal = false;
                 if (secaoLarSide) secaoLarSide.classList.add('hidden');
                 if (elLarPill) {
                     elLarPill.innerText = 'Individual';
@@ -1532,6 +1565,27 @@
 
             carregarDashboardDados();
             carregarNotificacoesPopup();
+            verificarConvitesPendentes();
+
+            // Checar se a URL atual contém token de convite
+            const pathSegments = window.location.pathname.split('/');
+            const idxConvite = pathSegments.indexOf('convite');
+            if (idxConvite !== -1 && pathSegments[idxConvite + 1]) {
+                const tokenUrl = pathSegments[idxConvite + 1];
+                fetch(`/api/convite/${tokenUrl}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data && data.valido) {
+                            abrirModalAceitarConvite({
+                                token_convite: tokenUrl,
+                                remetente: data.remetente,
+                                lar: data.lar
+                            });
+                        }
+                    })
+                    .catch(() => {});
+            }
+
             // Exibe o painel de boas-vindas ao entrar (respeitando "não mostrar hoje")
             setTimeout(() => abrirBoasVindas(), 700);
         }
@@ -1540,6 +1594,21 @@
             document.querySelectorAll('.sub-screen').forEach(el => el.classList.add('hidden'));
             const target = document.getElementById(`pane-${tabId}`);
             if (target) target.classList.remove('hidden');
+
+            // Ajuste do estado de bloqueio para abas do Lar
+            const abasCasal = ['lar', 'acordos', 'cobrador'];
+            if (abasCasal.includes(tabId)) {
+                const cardSemLar = document.getElementById(`${tabId}CardBloqueioSemLar`);
+                const conteudoCasal = document.getElementById(`${tabId}ConteudoCasal`);
+                const isCasal = Boolean(window._isCasalGlobal);
+                if (!isCasal) {
+                    if (cardSemLar) cardSemLar.classList.remove('hidden');
+                    if (conteudoCasal) conteudoCasal.classList.add('hidden');
+                } else {
+                    if (cardSemLar) cardSemLar.classList.add('hidden');
+                    if (conteudoCasal) conteudoCasal.classList.remove('hidden');
+                }
+            }
 
             document.querySelectorAll('.nav-sidebar-item').forEach(btn => {
                 if (btn.getAttribute('data-screen') === tabId) {
@@ -5335,12 +5404,37 @@
         }
 
         // --- MODAL: CRIAR META ---
-        function abrirModalCriarMeta() {
+        function abrirModalCriarMeta(tipoInicial = 'individual') {
             const modal = document.getElementById('modalCriarMeta');
-            if (modal) {
-                modal.classList.remove('hidden');
-                lucide.createIcons();
+            if (!modal) return;
+
+            const isCasal = Boolean(window._isCasalGlobal);
+            const opcLar = document.getElementById('opcaoPosseLar');
+            const opcComp = document.getElementById('opcaoPosseCompartilhada');
+            const avisoSemLar = document.getElementById('avisoSemLarOpcoesMeta');
+            const btnSoMinha = document.getElementById('opcaoPosseSoMinha');
+
+            if (!isCasal) {
+                if (opcLar) opcLar.classList.add('hidden');
+                if (opcComp) opcComp.classList.add('hidden');
+                if (avisoSemLar) avisoSemLar.classList.remove('hidden');
+                if (btnSoMinha) selecionarPosseMeta(btnSoMinha, 'so_minha');
+            } else {
+                if (opcLar) opcLar.classList.remove('hidden');
+                if (opcComp) opcComp.classList.remove('hidden');
+                if (avisoSemLar) avisoSemLar.classList.add('hidden');
+
+                if (tipoInicial === 'compartilhada' && opcComp) {
+                    selecionarPosseMeta(opcComp, 'compartilhada');
+                } else if (tipoInicial === 'lar' && opcLar) {
+                    selecionarPosseMeta(opcLar, 'lar');
+                } else if (btnSoMinha) {
+                    selecionarPosseMeta(btnSoMinha, 'so_minha');
+                }
             }
+
+            modal.classList.remove('hidden');
+            lucide.createIcons();
         }
 
         function abrirModalCriarMetaComDados(nome, preco, loja = '', link = '', imagem = '', posse = 'so_minha') {
@@ -7128,15 +7222,7 @@
                 const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
                 // Avatar do usuário (Foto ou Iniciais)
-                const avatarImg = document.getElementById('perfilAvatarImg');
-                const avatarIniciais = document.getElementById('perfilAvatarIniciais');
-                if (user.avatar) {
-                    if (avatarImg) { avatarImg.src = user.avatar; avatarImg.classList.remove('hidden'); }
-                    if (avatarIniciais) avatarIniciais.classList.add('hidden');
-                } else {
-                    if (avatarImg) avatarImg.classList.add('hidden');
-                    if (avatarIniciais) { avatarIniciais.textContent = iniciais; avatarIniciais.classList.remove('hidden'); }
-                }
+                aplicarAvatarGlobal(user.avatar, iniciais);
 
                 set('perfilNomeTxt', nomeCompleto);
                 set('perfilEmailTxt', user.email || '');
@@ -7171,7 +7257,14 @@
                     if (lar.parceiro) {
                         set('perfilLarParceiroNome', lar.parceiro.nome);
                         set('perfilLarParceiroEmail', lar.parceiro.email);
-                        set('perfilLarParceiroIniciaisCircle', lar.parceiro.iniciais || 'P');
+                        const elCircle = document.getElementById('perfilLarParceiroIniciaisCircle');
+                        if (elCircle) {
+                            if (lar.parceiro.avatar && lar.parceiro.avatar.length > 5) {
+                                elCircle.innerHTML = `<img src="${lar.parceiro.avatar}" alt="${lar.parceiro.nome}" class="size-full rounded-full object-cover">`;
+                            } else {
+                                elCircle.innerText = lar.parceiro.iniciais || 'P';
+                            }
+                        }
                         set('perfilParceiroInfo', `${lar.parceiro.nome} · ${lar.parceiro.email}`);
                     }
 
@@ -7353,7 +7446,14 @@
                 if (res.ok) {
                     fecharModalId('modalEditarPerfil');
                     seivaNotificar(data.message || 'Perfil atualizado com sucesso!', 'sucesso', 'Perfil Atualizado');
+                    if (data.usuario) {
+                        usuarioSessao = data.usuario;
+                        const partes = (data.usuario.nome || nome).split(' ');
+                        const inc = partes.length >= 2 ? (partes[0][0] + partes[partes.length - 1][0]).toUpperCase() : (partes[0].slice(0, 2)).toUpperCase();
+                        aplicarAvatarGlobal(data.usuario.avatar || avatar, inc);
+                    }
                     carregarPerfilDados();
+                    carregarDashboardDados();
                     // Atualiza nome na barra de navegação se existir
                     const navNome = document.getElementById('navUserNome');
                     if (navNome) navNome.textContent = nome;
@@ -7363,6 +7463,178 @@
             } catch (e) {
                 seivaNotificar('Erro de conexão ao salvar perfil.', 'erro', 'Erro');
             }
+        }
+
+        // ==========================================
+        // SISTEMA DE CONVITES PARA O LAR (RF004, RF010)
+        // ==========================================
+        function abrirModalConvidarParceiro() {
+            const inputNome = document.getElementById('conviteNomeParceiro');
+            const inputEmail = document.getElementById('conviteEmailParceiro');
+            const inputLar = document.getElementById('conviteNomeLar');
+            const linkArea = document.getElementById('conviteLinkArea');
+            if (inputNome) inputNome.value = '';
+            if (inputEmail) inputEmail.value = '';
+            if (inputLar) inputLar.value = '';
+            if (linkArea) linkArea.classList.add('hidden');
+
+            abrirModalId('modalConvidarParceiro');
+        }
+
+        async function executarEnviarConviteLar(event) {
+            event.preventDefault();
+            const email = document.getElementById('conviteEmailParceiro')?.value.trim();
+            const nome = document.getElementById('conviteNomeParceiro')?.value.trim();
+            const nomeLar = document.getElementById('conviteNomeLar')?.value.trim();
+
+            if (!email) {
+                return seivaNotificar('Informe o e-mail do parceiro(a).', 'aviso', 'Campo Obrigatório');
+            }
+
+            const btn = document.getElementById('btnEnviarConviteLar');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i data-lucide="loader-2" class="size-3.5 animate-spin"></i><span>Gerando convite...</span>';
+                lucide.createIcons();
+            }
+
+            try {
+                const res = await fetch('/api/lar/convidar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({ email_convidado: email, nome_lar: nomeLar, nome_parceiro: nome })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    seivaNotificar(data.mensagem || 'Convite gerado com sucesso!', 'sucesso', 'Convite Enviado');
+                    const linkInput = document.getElementById('conviteLinkGerado');
+                    const linkArea = document.getElementById('conviteLinkArea');
+                    if (linkInput) linkInput.value = data.link_convite || `${window.location.origin}/convite/${data.token}`;
+                    if (linkArea) linkArea.classList.remove('hidden');
+                    carregarDashboardDados();
+                    if (typeof carregarPerfilDados === 'function') carregarPerfilDados();
+                } else {
+                    seivaNotificar(data.error || 'Não foi possível gerar o convite.', 'erro', 'Erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao convidar parceiro.', 'erro');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="send" class="size-3.5"></i><span>Gerar Convite</span>';
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        function copiarLinkConviteLar() {
+            const input = document.getElementById('conviteLinkGerado');
+            if (!input || !input.value) return;
+
+            navigator.clipboard.writeText(input.value).then(() => {
+                const txt = document.getElementById('txtBtnCopiarLink');
+                if (txt) txt.innerText = 'Copiado!';
+                seivaNotificar('Link copiado para a área de transferência! Envie para sua parceira pelo WhatsApp.', 'sucesso', 'Link Copiado');
+                setTimeout(() => { if (txt) txt.innerText = 'Copiar'; }, 3000);
+            }).catch(() => {
+                input.select();
+                document.execCommand('copy');
+                seivaNotificar('Link copiado!', 'sucesso');
+            });
+        }
+
+        async function verificarConvitesPendentes() {
+            try {
+                const res = await fetch('/api/lar/convites');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.recebidos && data.recebidos.length > 0) {
+                    const convite = data.recebidos[0];
+                    abrirModalAceitarConvite(convite);
+                }
+            } catch (e) {}
+        }
+
+        let conviteAtualAceite = null;
+
+        function abrirModalAceitarConvite(convite) {
+            conviteAtualAceite = convite;
+            const nomeRemetente = convite.remetente ? convite.remetente.nome : 'Seu parceiro(a)';
+            const nomeLar = convite.lar ? convite.lar.nome : 'Nosso Cantinho';
+
+            const elTitulo = document.getElementById('aceitarConviteTitulo');
+            const elDesc = document.getElementById('aceitarConviteDesc');
+            const elRem = document.getElementById('aceitarConviteRemetenteNome');
+            const elLar = document.getElementById('aceitarConviteNomeLar');
+            const elTok = document.getElementById('aceitarConviteToken');
+
+            if (elTitulo) elTitulo.innerText = `Convite de ${nomeRemetente}`;
+            if (elDesc) elDesc.innerHTML = `${nomeRemetente} convidou você para formar o Lar <strong>${nomeLar}</strong> no SEIVA!`;
+            if (elRem) elRem.innerText = nomeRemetente;
+            if (elLar) elLar.innerText = nomeLar;
+            if (elTok) elTok.value = convite.token_convite;
+
+            abrirModalId('modalAceitarConviteLar');
+        }
+
+        async function confirmarAceiteConviteLar() {
+            const token = document.getElementById('aceitarConviteToken')?.value || conviteAtualAceite?.token_convite;
+            if (!token) return;
+
+            const btn = document.getElementById('btnConfirmarAceiteConvite');
+            if (btn) btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/lar/aceitar-convite', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({ token })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    fecharModalId('modalAceitarConviteLar');
+                    seivaNotificar(data.mensagem || 'Convite aceito! Bem-vindo(a) ao Lar!', 'sucesso', 'Lar Formado!');
+                    window._isCasalGlobal = true;
+                    await carregarDashboardDados();
+                    if (typeof carregarLarDados === 'function') carregarLarDados();
+                    if (typeof carregarPerfilDados === 'function') carregarPerfilDados();
+                    trocarAbaApp('lar');
+                } else {
+                    seivaNotificar(data.error || 'Erro ao aceitar convite.', 'erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao aceitar convite.', 'erro');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        async function recusarConviteLarAtual() {
+            const token = document.getElementById('aceitarConviteToken')?.value || conviteAtualAceite?.token_convite;
+            if (token) {
+                try {
+                    await fetch('/api/lar/recusar-convite', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                        },
+                        body: JSON.stringify({ token })
+                    });
+                } catch (e) {}
+            }
+            fecharModalId('modalAceitarConviteLar');
         }
 
         function abrirModalDivisaoPersonalizada() {
@@ -8856,6 +9128,7 @@
 
         function renderizarSecoesDinamicasDashboard(data) {
             const isCasal = Boolean(data.is_casal && data.lar);
+            window._isCasalGlobal = isCasal;
 
             // — Ocultar/Exibir aba "Custo do Lar" conforme tipo de usuário —
             const tabLar         = document.getElementById('tabHeroCustoLar');
@@ -8868,6 +9141,22 @@
             const bannerAjuda    = document.getElementById('bannerPedidoAjuda');
             const secaoLarSide   = document.getElementById('secaoLarSidebar');
 
+            // Elementos de navegação e módulos do Lar
+            const bottomNavAcordos = document.getElementById('bottomNavAcordos');
+            const bottomNavLar     = document.getElementById('bottomNavLar');
+            const txAbasContainer  = document.getElementById('txAbasPrincipalContainer');
+            const txSubtitulo      = document.getElementById('txSubtitulo');
+            const tabPlanoLar      = document.getElementById('tabPlanoLar');
+            const painelPlanoLar   = document.getElementById('painelPlanoLar');
+            const btnFiltroProdLar = document.getElementById('btnFiltroProdOlhoLar');
+
+            const larCardBloqueio      = document.getElementById('larCardBloqueioSemLar');
+            const larConteudo          = document.getElementById('larConteudoCasal');
+            const acordosCardBloqueio  = document.getElementById('acordosCardBloqueioSemLar');
+            const acordosConteudo      = document.getElementById('acordosConteudoCasal');
+            const cobradorCardBloqueio = document.getElementById('cobradorCardBloqueioSemLar');
+            const cobradorConteudo     = document.getElementById('cobradorConteudoCasal');
+
             if (!isCasal) {
                 // Individual: ocultar tudo do Lar
                 if (tabLar)        tabLar.classList.add('hidden');
@@ -8879,6 +9168,24 @@
                 if (bannerAjuda)   bannerAjuda.classList.add('hidden');
                 if (heroTituloSec) heroTituloSec.innerText = 'Meu mês financeiro';
                 if (secaoLarSide)  secaoLarSide.classList.add('hidden');
+
+                if (bottomNavAcordos) bottomNavAcordos.classList.add('hidden');
+                if (bottomNavLar)     bottomNavLar.classList.add('hidden');
+
+                if (txAbasContainer) txAbasContainer.classList.add('hidden');
+                if (txSubtitulo)     txSubtitulo.innerText = 'Acompanhe suas entradas e saídas pessoais';
+
+                if (tabPlanoLar)      tabPlanoLar.classList.add('hidden');
+                if (painelPlanoLar)   painelPlanoLar.classList.add('hidden');
+                if (btnFiltroProdLar) btnFiltroProdLar.classList.add('hidden');
+
+                if (larCardBloqueio)      larCardBloqueio.classList.remove('hidden');
+                if (larConteudo)          larConteudo.classList.add('hidden');
+                if (acordosCardBloqueio)  acordosCardBloqueio.classList.remove('hidden');
+                if (acordosConteudo)      acordosConteudo.classList.add('hidden');
+                if (cobradorCardBloqueio) cobradorCardBloqueio.classList.remove('hidden');
+                if (cobradorConteudo)     cobradorConteudo.classList.add('hidden');
+
                 // Garante aba de renda ativa
                 alternarAbaHero('renda');
             } else {
@@ -8890,6 +9197,22 @@
                 if (sliderDica)    sliderDica.innerText = 'Arraste para o lado para ver o Custo do Lar';
                 if (heroTituloSec) heroTituloSec.innerText = `Seu mês de ${data.hero_mes?.mes_nome || 'novembro'}`;
                 if (secaoLarSide)  secaoLarSide.classList.remove('hidden');
+
+                if (bottomNavAcordos) bottomNavAcordos.classList.remove('hidden');
+                if (bottomNavLar)     bottomNavLar.classList.remove('hidden');
+
+                if (txAbasContainer) txAbasContainer.classList.remove('hidden');
+                if (txSubtitulo)     txSubtitulo.innerText = 'Acompanhe suas entradas, saídas e divisão do lar';
+
+                if (tabPlanoLar)      tabPlanoLar.classList.remove('hidden');
+                if (btnFiltroProdLar) btnFiltroProdLar.classList.remove('hidden');
+
+                if (larCardBloqueio)      larCardBloqueio.classList.add('hidden');
+                if (larConteudo)          larConteudo.classList.remove('hidden');
+                if (acordosCardBloqueio)  acordosCardBloqueio.classList.add('hidden');
+                if (acordosConteudo)      acordosConteudo.classList.remove('hidden');
+                if (cobradorCardBloqueio) cobradorCardBloqueio.classList.add('hidden');
+                if (cobradorConteudo)     cobradorConteudo.classList.remove('hidden');
             }
 
             // — Atualizar fontes de renda no hero card —
