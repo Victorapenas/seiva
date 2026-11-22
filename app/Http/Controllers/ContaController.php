@@ -75,7 +75,8 @@ class ContaController extends Controller
 
     public function update(Request $request, $id)
     {
-        $conta = Conta::where('usuario_id', Auth::id())->where('id_conta', $id)->firstOrFail();
+        $userId = Auth::id();
+        $conta = Conta::where('usuario_id', $userId)->where('id_conta', $id)->firstOrFail();
         
         $request->validate([
             'nome' => 'nullable|string|max:255',
@@ -86,7 +87,20 @@ class ContaController extends Controller
             'comprometido' => 'nullable|numeric',
         ]);
 
+        $dadosAntigos = $conta->only(['nome', 'tipo', 'saldo', 'cor']);
         $conta->update($request->only(['nome', 'tipo', 'saldo', 'comprometido', 'cor', 'chave_pix', 'limite']));
+        $dadosNovos = $conta->only(['nome', 'tipo', 'saldo', 'cor']);
+
+        // Registrar no Histórico de Auditoria para rastreabilidade contábil
+        \App\Models\HistoricoAuditoria::registrar(
+            $userId,
+            'conta',
+            $conta->id_conta,
+            'editado',
+            "Conta \"{$conta->nome}\" atualizada. Saldo ajustado para R$ " . number_format($conta->saldo, 2, ',', '.'),
+            $dadosAntigos,
+            $dadosNovos
+        );
         
         return response()->json([
             'sucesso' => true,
@@ -97,12 +111,49 @@ class ContaController extends Controller
 
     public function destroy($id)
     {
-        $conta = Conta::where('usuario_id', Auth::id())->where('id_conta', $id)->firstOrFail();
+        $userId = Auth::id();
+        $conta = Conta::where('usuario_id', $userId)->where('id_conta', $id)->firstOrFail();
         $nome = $conta->nome;
+        $totalTransacoes = $conta->transacoes()->count();
+
+        // Arquitetura de Integridade Contábil: se a conta possui transações vinculadas,
+        // ela NUNCA deve sofrer hard delete, preservando o histórico financeiro e relatórios.
+        if ($totalTransacoes > 0) {
+            $conta->update(['ativa' => false]);
+
+            \App\Models\HistoricoAuditoria::registrar(
+                $userId,
+                'conta',
+                $conta->id_conta,
+                'arquivado',
+                "Conta \"{$nome}\" arquivada. Preservadas {$totalTransacoes} transações vinculadas para integridade dos relatórios e balanço patrimonial.",
+                ['nome' => $nome, 'saldo' => $conta->saldo, 'transacoes_vinculadas' => $totalTransacoes],
+                ['ativa' => false]
+            );
+
+            return response()->json([
+                'sucesso' => true,
+                'arquivada' => true,
+                'mensagem' => "A conta \"{$nome}\" possui {$totalTransacoes} transações registradas. Para preservar seu histórico financeiro, a conta foi arquivada em vez de excluída."
+            ]);
+        }
+
+        // Sem transações vinculadas: exclusão segura
+        \App\Models\HistoricoAuditoria::registrar(
+            $userId,
+            'conta',
+            $conta->id_conta,
+            'excluido',
+            "Conta \"{$nome}\" sem lançamentos vinculados foi removida permanentemente.",
+            ['nome' => $nome, 'saldo' => $conta->saldo],
+            null
+        );
+
         $conta->delete();
         
         return response()->json([
             'sucesso' => true,
+            'arquivada' => false,
             'mensagem' => "Conta \"{$nome}\" removida com sucesso."
         ]);
     }

@@ -233,6 +233,7 @@
     @include('componentes.modais.modal-editar-despesa-lar')
     @include('componentes.modais.modal-editar-transacao')
     @include('componentes.modais.modal-editar-conta')
+    @include('componentes.modais.modal-historico-auditoria')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -243,6 +244,22 @@
     <!-- SCRIPT MASTER DE ORQUESTRAÇÃO & COMUNICAÇÃO COM O BACKEND       -->
     <!-- ============================================================== -->
     <script>
+        // ==========================================
+        // HELPERS GLOBAIS DE MODAIS & INTERFACES (FINTECH)
+        // ==========================================
+        window.abrirModalId = function(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('hidden');
+                if (window.lucide) lucide.createIcons();
+            }
+        };
+
+        window.fecharModalId = function(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        };
+
         // ==========================================
         // SISTEMA GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH)
         // Substitui alertas nativos feios estilo spam por cards elegantes
@@ -7523,6 +7540,71 @@
                 }
             } catch (e) {
                 seivaNotificar('Erro de conexão.', 'erro');
+            }
+        }
+
+        // ── HISTÓRICO DE AUDITORIA & RASTREABILIDADE FINANCEIRA (FINTECH) ──
+        async function abrirModalHistoricoAuditoria() {
+            abrirModalId('modalHistoricoAuditoria');
+            const container = document.getElementById('listaHistoricoAuditoriaContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="py-8 text-center text-muted-foreground text-xs space-y-2">
+                        <i data-lucide="loader-2" class="size-6 animate-spin mx-auto text-emerald-600"></i>
+                        <p>Consultando histórico contábil...</p>
+                    </div>`;
+                if (window.lucide) lucide.createIcons();
+            }
+
+            try {
+                const res = await fetch('/api/auditoria/historico', {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                const itens = data.historico || [];
+
+                if (!itens.length) {
+                    container.innerHTML = `
+                        <div class="py-8 text-center text-muted-foreground text-xs space-y-2">
+                            <i data-lucide="shield-check" class="size-8 mx-auto text-muted-foreground/40"></i>
+                            <p>Nenhuma alteração registrada ainda. Todas as operações respeitam integridade referencial.</p>
+                        </div>`;
+                } else {
+                    container.innerHTML = itens.map(h => {
+                        let corBadge = 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300';
+                        let iconeBadge = 'check-circle';
+                        if (h.acao === 'estornado') {
+                            corBadge = 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300';
+                            iconeBadge = 'undo-2';
+                        } else if (h.acao === 'arquivado' || h.acao === 'reajustado') {
+                            corBadge = 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300';
+                            iconeBadge = 'history';
+                        } else if (h.acao === 'editado') {
+                            corBadge = 'bg-blue-50 text-blue-800 border-blue-300 dark:bg-blue-950/40 dark:text-blue-300';
+                            iconeBadge = 'edit-3';
+                        }
+
+                        return `
+                        <div class="p-4 rounded-2xl border border-border bg-card space-y-2 shadow-2xs hover:border-emerald-500/30 transition">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black border ${corBadge}">
+                                        <i data-lucide="${iconeBadge}" class="size-3"></i>
+                                        <span class="capitalize">${h.acao}</span>
+                                    </span>
+                                    <span class="text-[11px] font-extrabold text-foreground">${h.autor}</span>
+                                </div>
+                                <span class="text-[10px] text-muted-foreground font-medium">${h.data_formatada || h.tempo_atras}</span>
+                            </div>
+                            <p class="text-xs text-foreground font-semibold leading-relaxed">${h.descricao}</p>
+                            <span class="text-[10px] text-muted-foreground block uppercase font-bold tracking-wider">Entidade: ${h.entidade_tipo}</span>
+                        </div>`;
+                    }).join('');
+                }
+                if (window.lucide) lucide.createIcons();
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = `<p class="py-4 text-center text-xs text-rose-500">Erro ao carregar registros de auditoria.</p>`;
             }
         }
 

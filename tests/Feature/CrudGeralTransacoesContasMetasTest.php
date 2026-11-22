@@ -135,10 +135,99 @@ class CrudGeralTransacoesContasMetasTest extends TestCase
             'saldo' => 2500.00,
         ]);
 
-        // Destroy conta
+        // Destroy conta sem movimentações -> hard delete seguro
         $resDel = $this->deleteJson("/api/contas/{$this->conta1->id_conta}");
         $resDel->assertStatus(200);
         $this->assertDatabaseMissing('contas', ['id_conta' => $this->conta1->id_conta]);
+    }
+
+    public function test_conta_com_transacoes_nao_pode_ser_destruida_e_eh_arquivada()
+    {
+        $this->actingAs($this->user);
+
+        // Cria transação na conta2 vinculada
+        Transacao::create([
+            'usuario_id' => $this->user->id_usuario,
+            'conta_id' => $this->conta2->id_conta,
+            'titulo' => 'Salário Antigo',
+            'valor' => 3000.00,
+            'tipo' => 'entrada',
+            'data' => now()->toDateString(),
+        ]);
+
+        // Ao tentar excluir conta com histórico, o sistema protege os dados e arquiva a conta
+        $res = $this->deleteJson("/api/contas/{$this->conta2->id_conta}");
+        $res->assertStatus(200);
+        $res->assertJsonFragment(['sucesso' => true, 'arquivada' => true]);
+
+        // A conta permanece no banco para garantir integridade contábil
+        $this->assertDatabaseHas('contas', [
+            'id_conta' => $this->conta2->id_conta,
+            'ativa' => false,
+        ]);
+
+        // E o histórico de auditoria registra a operação
+        $this->assertDatabaseHas('historico_auditoria', [
+            'entidade_tipo' => 'conta',
+            'entidade_id' => $this->conta2->id_conta,
+            'acao' => 'arquivado',
+        ]);
+    }
+
+    public function test_meta_com_saldo_acumulado_devolve_dinheiro_na_exclusao()
+    {
+        $this->actingAs($this->user);
+
+        $saldoInicial = $this->conta1->saldo;
+
+        $meta = Meta::create([
+            'usuario_id' => $this->user->id_usuario,
+            'titulo' => 'Notebook Dell',
+            'valor_alvo' => 4500.00,
+            'valor_atual' => 1000.00,
+            'categoria' => 'produto',
+            'status' => 'ativa',
+        ]);
+
+        // Excluir meta com R$ 1000 acumulados
+        $resDel = $this->deleteJson("/api/metas/{$meta->id_meta}");
+        $resDel->assertStatus(200);
+        $resDel->assertJsonFragment(['sucesso' => true]);
+
+        // Saldo da conta do usuário aumentou em R$ 1000 (estorno)
+        $this->assertEquals($saldoInicial + 1000.00, $this->conta1->fresh()->saldo);
+
+        // Transação de estorno gerada no banco
+        $this->assertDatabaseHas('transacoes', [
+            'usuario_id' => $this->user->id_usuario,
+            'valor' => 1000.00,
+            'tipo' => 'entrada',
+        ]);
+
+        // Histórico de auditoria registrado
+        $this->assertDatabaseHas('historico_auditoria', [
+            'entidade_tipo' => 'meta',
+            'entidade_id' => $meta->id_meta,
+            'acao' => 'excluido',
+        ]);
+    }
+
+    public function test_rota_auditoria_historico_retorna_eventos_com_sucesso()
+    {
+        $this->actingAs($this->user);
+
+        \App\Models\HistoricoAuditoria::registrar(
+            $this->user->id_usuario,
+            'conta',
+            $this->conta1->id_conta,
+            'editado',
+            'Conta Nubank reajustada com sucesso.'
+        );
+
+        $res = $this->getJson('/api/auditoria/historico');
+        $res->assertStatus(200);
+        $res->assertJsonFragment(['sucesso' => true]);
+        $this->assertNotEmpty($res->json('historico'));
     }
 
     public function test_meta_update_e_destroy()

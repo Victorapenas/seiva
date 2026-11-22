@@ -83,14 +83,21 @@
                     <i data-lucide="heart-pulse" class="size-4 text-emerald-600"></i>
                     <span>Saúde financeira do Lar</span>
                 </div>
-                <!-- Botão didático para abrir modal com os 4 parâmetros e a matemática com Alto Contraste -->
-                <button type="button" onclick="abrirModalSaudeFinanceiraLar()" 
-                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black shadow-soft transition cursor-pointer hover:opacity-95"
-                        style="background-color: #047857 !important; color: #ffffff !important;">
-                    <i data-lucide="info" class="size-3.5 text-emerald-200"></i>
-                    <span style="color: #ffffff !important;">Entenda os 4 critérios do cálculo</span>
-                    <i data-lucide="arrow-right" class="size-3 text-emerald-200"></i>
-                </button>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button" onclick="abrirModalHistoricoAuditoria()" 
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border border-border bg-card hover:bg-muted text-foreground transition cursor-pointer shadow-2xs">
+                        <i data-lucide="shield-check" class="size-3.5 text-emerald-600"></i>
+                        <span>Auditoria & Histórico</span>
+                    </button>
+                    <!-- Botão didático para abrir modal com os 4 parâmetros e a matemática com Alto Contraste -->
+                    <button type="button" onclick="abrirModalSaudeFinanceiraLar()" 
+                            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black shadow-soft transition cursor-pointer hover:opacity-95"
+                            style="background-color: #047857 !important; color: #ffffff !important;">
+                        <i data-lucide="info" class="size-3.5 text-emerald-200"></i>
+                        <span style="color: #ffffff !important;">Critérios do cálculo</span>
+                        <i data-lucide="arrow-right" class="size-3 text-emerald-200"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="flex flex-col md:flex-row items-center gap-6">

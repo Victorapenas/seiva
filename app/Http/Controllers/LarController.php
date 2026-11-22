@@ -488,6 +488,7 @@ class LarController extends Controller
             $lar = $user->lares()->firstOrFail();
 
             $despesa = DespesaLar::where('lar_id', $lar->id_lar)->find($id);
+            $valorAntigo = $despesa ? $despesa->valor_total : null;
             if (!$despesa) {
                 $despesa = DespesaLar::create([
                     'lar_id' => $lar->id_lar,
@@ -500,7 +501,19 @@ class LarController extends Controller
                     'data_vencimento' => $request->data_vencimento ?? now()->format('Y-m-d'),
                     'status' => 'pendente',
                 ]);
+
+                \App\Models\HistoricoAuditoria::registrar(
+                    $user->id_usuario,
+                    'despesa_lar',
+                    $despesa->id_despesa_lar,
+                    'criado',
+                    "Despesa do Lar \"{$despesa->titulo}\" cadastrada no valor de R$ " . number_format($despesa->valor_total, 2, ',', '.') . " com divisão {$despesa->divisao}.",
+                    null,
+                    ['valor_total' => $despesa->valor_total, 'divisao' => $despesa->divisao],
+                    $lar->id_lar
+                );
             } else {
+                $dadosAntigos = ['valor_total' => $despesa->valor_total, 'divisao' => $despesa->divisao];
                 $despesa->update([
                     'titulo' => $request->titulo,
                     'valor_total' => $request->valor_total,
@@ -508,6 +521,17 @@ class LarController extends Controller
                     'divisao' => $request->divisao,
                     'data_vencimento' => $request->data_vencimento ?? $despesa->data_vencimento,
                 ]);
+
+                \App\Models\HistoricoAuditoria::registrar(
+                    $user->id_usuario,
+                    'despesa_lar',
+                    $despesa->id_despesa_lar,
+                    'reajustado',
+                    "Despesa do Lar \"{$despesa->titulo}\" reajustada de R$ " . number_format($valorAntigo, 2, ',', '.') . " para R$ " . number_format($despesa->valor_total, 2, ',', '.') . " (divisão: {$despesa->divisao}).",
+                    $dadosAntigos,
+                    ['valor_total' => $despesa->valor_total, 'divisao' => $despesa->divisao],
+                    $lar->id_lar
+                );
             }
 
             $membros = LarMembro::where('lar_id', $lar->id_lar)->get();
@@ -548,6 +572,20 @@ class LarController extends Controller
 
         $despesa = DespesaLar::where('lar_id', $lar->id_lar)->find($id);
         if ($despesa) {
+            $titulo = $despesa->titulo;
+            $valor = $despesa->valor_total;
+            
+            \App\Models\HistoricoAuditoria::registrar(
+                $user->id_usuario,
+                'despesa_lar',
+                $despesa->id_despesa_lar,
+                'cancelado',
+                "Despesa do Lar \"{$titulo}\" de R$ " . number_format($valor, 2, ',', '.') . " foi removida do rateio por {$user->nome}.",
+                ['titulo' => $titulo, 'valor' => $valor],
+                null,
+                $lar->id_lar
+            );
+
             ParticipacaoDespesa::where('despesa_lar_id', $despesa->id_despesa_lar)->delete();
             $despesa->delete();
         }

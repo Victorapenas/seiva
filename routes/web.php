@@ -136,10 +136,74 @@ Route::prefix('api')->group(function () {
         // Notificações do Painel de Boas-Vindas
         Route::get('/notificacoes', [NotificacoesController::class, 'index']);
         Route::post('/notificacoes/ler', [NotificacoesController::class, 'marcarTodasLidas']);
+
+        // Auditoria e Histórico de Rastreabilidade Financeira
+        Route::get('/auditoria/historico', function () {
+            $user = Auth::user();
+            $larIds = $user->lares()->pluck('lares.id_lar')->toArray();
+
+            $historico = \App\Models\HistoricoAuditoria::with('usuario')
+                ->where(function ($q) use ($user, $larIds) {
+                    $q->where('usuario_id', $user->id_usuario);
+                    if (!empty($larIds)) {
+                        $q->orWhereIn('lar_id', $larIds);
+                    }
+                })
+                ->orderByDesc('created_at')
+                ->limit(40)
+                ->get()
+                ->map(function ($h) {
+                    return [
+                        'id' => $h->id_auditoria,
+                        'entidade_tipo' => $h->entidade_tipo,
+                        'acao' => $h->acao,
+                        'descricao' => $h->descricao,
+                        'autor' => $h->usuario ? $h->usuario->nome : 'Sistema',
+                        'data_formatada' => $h->created_at ? $h->created_at->format('d/m/Y H:i') : '',
+                        'tempo_atras' => $h->created_at ? $h->created_at->diffForHumans() : '',
+                    ];
+                });
+
+            return response()->json([
+                'sucesso' => true,
+                'historico' => $historico,
+            ]);
+        });
     });
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/auditoria/historico', function () {
+        $user = Auth::user();
+        $larIds = $user->lares()->pluck('lares.id_lar')->toArray();
+
+        $historico = \App\Models\HistoricoAuditoria::with('usuario')
+            ->where(function ($q) use ($user, $larIds) {
+                $q->where('usuario_id', $user->id_usuario);
+                if (!empty($larIds)) {
+                    $q->orWhereIn('lar_id', $larIds);
+                }
+            })
+            ->orderByDesc('created_at')
+            ->limit(40)
+            ->get()
+            ->map(function ($h) {
+                return [
+                    'id' => $h->id_auditoria,
+                    'entidade_tipo' => $h->entidade_tipo,
+                    'acao' => $h->acao,
+                    'descricao' => $h->descricao,
+                    'autor' => $h->usuario ? $h->usuario->nome : 'Sistema',
+                    'data_formatada' => $h->created_at ? $h->created_at->format('d/m/Y H:i') : '',
+                    'tempo_atras' => $h->created_at ? $h->created_at->diffForHumans() : '',
+                ];
+            });
+
+        return response()->json([
+            'sucesso' => true,
+            'historico' => $historico,
+        ]);
+    });
     Route::post('/transacoes/{id}/icone', [TransacaoController::class, 'atualizarIcone']);
     Route::put('/transacoes/{id}', [TransacaoController::class, 'update']);
     Route::post('/transacoes/{id}/atualizar', [TransacaoController::class, 'update']);

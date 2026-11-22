@@ -220,6 +220,15 @@ class TransacaoController extends Controller
 
             $iconeFinal = $request->emoji ?: ($iconeSugerido ?: $transacao->emoji ?: ($request->tipo === 'entrada' ? 'trending-up' : 'credit-card'));
 
+            $dadosAntigos = [
+                'titulo' => $transacao->titulo,
+                'valor' => $transacao->valor,
+                'tipo' => $transacao->tipo,
+                'conta_id' => $transacao->conta_id,
+                'data' => $transacao->data,
+                'visibilidade' => $transacao->visibilidade,
+            ];
+
             // 3. Atualizar campos da transação
             $transacao->update([
                 'titulo' => $request->titulo,
@@ -231,6 +240,26 @@ class TransacaoController extends Controller
                 'visibilidade' => $visibilidade,
                 'emoji' => $iconeFinal,
             ]);
+
+            $dadosNovos = [
+                'titulo' => $transacao->titulo,
+                'valor' => $transacao->valor,
+                'tipo' => $transacao->tipo,
+                'conta_id' => $transacao->conta_id,
+                'data' => $transacao->data,
+                'visibilidade' => $transacao->visibilidade,
+            ];
+
+            \App\Models\HistoricoAuditoria::registrar(
+                $userId,
+                'transacao',
+                $transacao->id_transacao,
+                'editado',
+                "Lançamento \"{$transacao->titulo}\" alterado para R$ " . number_format($transacao->valor, 2, ',', '.') . " na conta {$novaConta->nome}.",
+                $dadosAntigos,
+                $dadosNovos,
+                $transacao->lar_id
+            );
 
             return response()->json([
                 'sucesso' => true,
@@ -246,9 +275,15 @@ class TransacaoController extends Controller
         $transacao = Transacao::where('usuario_id', $userId)->where('id_transacao', $id)->firstOrFail();
 
         return DB::transaction(function () use ($transacao, $userId) {
+            $titulo = $transacao->titulo;
+            $valor = $transacao->valor;
+            $tipo = $transacao->tipo;
+            $contaNome = 'Conta Bancária';
+
             // Reverte saldo da conta caso ela pertença ao usuário
             $conta = Conta::where('usuario_id', $userId)->where('id_conta', $transacao->conta_id)->first();
             if ($conta) {
+                $contaNome = $conta->nome;
                 if ($transacao->tipo === 'entrada') {
                     $conta->decrement('saldo', $transacao->valor);
                 } else {
@@ -256,8 +291,22 @@ class TransacaoController extends Controller
                 }
             }
 
+            \App\Models\HistoricoAuditoria::registrar(
+                $userId,
+                'transacao',
+                $transacao->id_transacao,
+                'estornado',
+                "Lançamento \"{$titulo}\" de R$ " . number_format($valor, 2, ',', '.') . " foi estornado e removido. Saldo da conta {$contaNome} restaurado com sucesso.",
+                ['titulo' => $titulo, 'valor' => $valor, 'tipo' => $tipo, 'conta' => $contaNome],
+                null,
+                $transacao->lar_id
+            );
+
             $transacao->delete();
-            return response()->json(['message' => 'Transação excluída e saldo revertido.']);
+            return response()->json([
+                'sucesso' => true,
+                'message' => "Transação \"{$titulo}\" excluída e saldo revertido."
+            ]);
         });
     }
 

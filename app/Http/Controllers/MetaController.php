@@ -472,11 +472,45 @@ class MetaController extends Controller
         })->where('id_meta', $id)->firstOrFail();
 
         $titulo = $meta->titulo;
+        $valorAtual = (float)($meta->valor_atual ?? 0);
+
+        // Se houver saldo guardado na meta, devolve para a primeira conta do usuário garantindo que nenhum dinheiro se perca
+        if ($valorAtual > 0) {
+            $conta = Conta::where('usuario_id', $user->id_usuario)->where('ativa', true)->first()
+                  ?? Conta::where('usuario_id', $user->id_usuario)->first();
+            if ($conta) {
+                $conta->increment('saldo', $valorAtual);
+                Transacao::create([
+                    'usuario_id' => $user->id_usuario,
+                    'conta_id' => $conta->id_conta,
+                    'titulo' => "Estorno de Objetivo: {$titulo}",
+                    'valor' => $valorAtual,
+                    'tipo' => 'entrada',
+                    'data' => now()->toDateString(),
+                    'emoji' => 'undo-2',
+                    'visibilidade' => $meta->lar_id ? 'compartilhado' : 'pessoal',
+                ]);
+            }
+        }
+
+        \App\Models\HistoricoAuditoria::registrar(
+            $user->id_usuario,
+            'meta',
+            $meta->id_meta,
+            'excluido',
+            "Objetivo \"{$titulo}\" removido. " . ($valorAtual > 0 ? "Saldo guardado de R$ " . number_format($valorAtual, 2, ',', '.') . " foi devolvido para o saldo bancário com lançamento de estorno." : "Sem saldo acumulado a devolver."),
+            ['titulo' => $titulo, 'valor_alvo' => $meta->valor_alvo, 'valor_acumulado' => $valorAtual],
+            null,
+            $meta->lar_id
+        );
+
         $meta->delete();
 
         return response()->json([
             'sucesso' => true,
-            'mensagem' => "Objetivo \"{$titulo}\" removido com sucesso!",
+            'mensagem' => $valorAtual > 0 
+                ? "Objetivo \"{$titulo}\" removido. O saldo de R$ " . number_format($valorAtual, 2, ',', '.') . " foi estornado para sua conta!"
+                : "Objetivo \"{$titulo}\" removido com sucesso!",
         ]);
     }
 }
