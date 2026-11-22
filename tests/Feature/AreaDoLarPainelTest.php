@@ -266,4 +266,70 @@ class AreaDoLarPainelTest extends TestCase
             'divisao' => 'proporcional',
         ]);
     }
+
+    public function test_atualizar_e_reajustar_despesa_lar_com_recalculo_de_rateio()
+    {
+        $this->actingAs($this->userDuda);
+
+        // Cria despesa inicial
+        $despesa = DespesaLar::create([
+            'lar_id' => $this->lar->id_lar,
+            'registrada_por' => $this->userDuda->id_usuario,
+            'titulo' => 'Aluguel do Cantinho',
+            'valor_total' => 900.00,
+            'tipo' => 'fixa',
+            'divisao' => '50/50',
+            'data_vencimento' => '2026-12-05',
+            'status' => 'pendente',
+        ]);
+
+        // Reajusta aluguel para 1050 com rateio proporcional
+        $res = $this->postJson("/lar/despesas/{$despesa->id_despesa_lar}/atualizar", [
+            'titulo' => 'Aluguel Reajustado',
+            'valor_total' => 1050.00,
+            'tipo' => 'fixa',
+            'divisao' => 'proporcional',
+            'data_vencimento' => '2026-12-05',
+        ]);
+
+        $res->assertStatus(200)
+            ->assertJson(['sucesso' => true]);
+
+        $this->assertDatabaseHas('despesas_lares', [
+            'id_despesa_lar' => $despesa->id_despesa_lar,
+            'titulo' => 'Aluguel Reajustado',
+            'valor_total' => 1050.00,
+            'divisao' => 'proporcional',
+        ]);
+
+        // Verifica que participações foram recalculadas
+        $this->assertDatabaseHas('participacoes_despesas', [
+            'despesa_lar_id' => $despesa->id_despesa_lar,
+            'usuario_id' => $this->userDuda->id_usuario,
+        ]);
+    }
+
+    public function test_excluir_despesa_do_lar()
+    {
+        $this->actingAs($this->userDuda);
+
+        $despesa = DespesaLar::create([
+            'lar_id' => $this->lar->id_lar,
+            'registrada_por' => $this->userDuda->id_usuario,
+            'titulo' => 'Conta antiga',
+            'valor_total' => 150.00,
+            'tipo' => 'fixa',
+            'divisao' => '50/50',
+            'data_vencimento' => '2026-12-10',
+            'status' => 'pendente',
+        ]);
+
+        $res = $this->deleteJson("/lar/despesas/{$despesa->id_despesa_lar}");
+        $res->assertStatus(200)
+            ->assertJson(['sucesso' => true]);
+
+        $this->assertDatabaseMissing('despesas_lares', [
+            'id_despesa_lar' => $despesa->id_despesa_lar,
+        ]);
+    }
 }

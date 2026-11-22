@@ -82,6 +82,9 @@ Route::prefix('api')->group(function () {
         Route::post('/lar/entrar', [LarController::class, 'join']);
         Route::get('/lar/despesas', [LarController::class, 'despesas']);
         Route::post('/lar/despesas', [LarController::class, 'storeDespesa']);
+        Route::post('/lar/despesas/{id}/atualizar', [LarController::class, 'updateDespesa']);
+        Route::put('/lar/despesas/{id}', [LarController::class, 'updateDespesa']);
+        Route::delete('/lar/despesas/{id}', [LarController::class, 'destroyDespesa']);
         Route::post('/lar/despesas/quitar/{id}', [LarController::class, 'quitarParticipacao']);
         Route::post('/lar/despesas/pagar', [LarController::class, 'pagarDespesa']);
         Route::post('/lar/fundo-emergencia/reforcar', [LarController::class, 'reforcarFundoEmergencia']);
@@ -135,4 +138,16 @@ Route::prefix('api')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/transacoes/{id}/icone', [TransacaoController::class, 'atualizarIcone']);
     Route::match(['put', 'post'], '/transacoes/{id}', [TransacaoController::class, 'atualizarIcone']);
+
+    // Aliases sem prefixo /api para compatibilidade total do frontend
+    Route::post('/lar/despesas', [LarController::class, 'storeDespesa']);
+    Route::post('/lar/despesas/{id}/atualizar', [LarController::class, 'updateDespesa']);
+    Route::put('/lar/despesas/{id}', [LarController::class, 'updateDespesa']);
+    Route::delete('/lar/despesas/{id}', [LarController::class, 'destroyDespesa']);
+    Route::post('/lar/despesas/quitar/{id}', [LarController::class, 'quitarParticipacao']);
+    Route::post('/lar/despesas/pagar', [LarController::class, 'pagarDespesa']);
+    Route::post('/lar/fundo-emergencia/reforcar', [LarController::class, 'reforcarFundoEmergencia']);
+    Route::post('/lar/fundo-emergencia/resgatar', [LarController::class, 'solicitarResgateEmergencia']);
+    Route::post('/lar/notificar-pendencia', [LarController::class, 'notificarPendencia']);
+    Route::post('/lar/foto-capa', [LarController::class, 'atualizarFotoCapa']);
 });

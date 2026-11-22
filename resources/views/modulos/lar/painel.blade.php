@@ -83,12 +83,13 @@
                     <i data-lucide="heart-pulse" class="size-4 text-emerald-600"></i>
                     <span>Saúde financeira do Lar</span>
                 </div>
-                <!-- Botão didático para abrir modal com os 4 parâmetros e a matemática -->
+                <!-- Botão didático para abrir modal com os 4 parâmetros e a matemática com Alto Contraste -->
                 <button type="button" onclick="abrirModalSaudeFinanceiraLar()" 
-                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 text-xs font-bold hover:bg-emerald-100 transition shadow-2xs">
-                    <i data-lucide="info" class="size-3.5"></i>
-                    <span>Entenda os 4 critérios do cálculo</span>
-                    <i data-lucide="arrow-right" class="size-3"></i>
+                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black shadow-soft transition cursor-pointer hover:opacity-95"
+                        style="background-color: #047857 !important; color: #ffffff !important;">
+                    <i data-lucide="info" class="size-3.5 text-emerald-200"></i>
+                    <span style="color: #ffffff !important;">Entenda os 4 critérios do cálculo</span>
+                    <i data-lucide="arrow-right" class="size-3 text-emerald-200"></i>
                 </button>
             </div>
 
@@ -116,15 +117,20 @@
                         <i data-lucide="check-circle" class="size-3.5 text-emerald-600 shrink-0"></i>
                         <span>Custo fixo do Lar: <strong id="larTxtCustoFixo" class="font-extrabold text-foreground">R$ 1.667,90 (40% da renda — excelente!)</strong></span>
                     </div>
-                    <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800">
-                        <div class="flex items-center gap-2 text-amber-950 dark:text-amber-100 font-bold">
-                            <i data-lucide="alert-triangle" class="size-3.5 text-amber-600 shrink-0"></i>
-                            <span id="larTxtFaltaMembro">Falta a Duda contribuir: <strong>R$ 225,00 neste mês</strong></span>
+                    <!-- Box de Alerta com Contraste Perfeito e Legibilidade Garantida -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl shadow-2xs"
+                         style="background-color: #fef3c7 !important; border: 1.5px solid #f59e0b !important;">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="size-4 shrink-0" style="color: #b45309 !important;"></i>
+                            <span id="larTxtFaltaMembro" class="text-xs" style="color: #451a03 !important; font-weight: 800 !important;">
+                                Falta a Duda contribuir: <strong style="color: #451a03 !important; font-weight: 900 !important;">R$ 225,00 neste mês</strong>
+                            </span>
                         </div>
                         <button type="button" onclick="abrirModalContestarEnvioLar()" 
-                                class="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-[11px] shadow-2xs transition flex items-center gap-1">
-                            <i data-lucide="sparkles" class="size-3"></i>
-                            <span>Cobrador Diplomata</span>
+                                class="px-3 py-1.5 rounded-xl text-xs font-black shadow-2xs transition flex items-center gap-1.5 hover:opacity-95"
+                                style="background-color: #d97706 !important; color: #ffffff !important;">
+                            <i data-lucide="sparkles" class="size-3.5 text-amber-100"></i>
+                            <span style="color: #ffffff !important;">Cobrador Diplomata</span>
                         </button>
                     </div>
                 </div>
@@ -187,24 +193,27 @@
             </div>
 
             <!-- 3. Falta contribuir (Contraste Perfeito: Fundo Âmbar Claro + Texto Âmbar Escuro em Negrito) -->
-            <div class="rounded-3xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4 space-y-1 shadow-2xs cursor-pointer hover:border-amber-400 transition" onclick="abrirModalContestarEnvioLar()" title="Clique para gerenciar cota ou pedir comprovante">
+            <div class="rounded-3xl p-4 space-y-1 shadow-2xs cursor-pointer hover:opacity-95 transition" 
+                 style="background-color: #fef3c7 !important; border: 1.5px solid #f59e0b !important;"
+                 onclick="abrirModalContestarEnvioLar()" title="Clique para gerenciar cota ou pedir comprovante">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-black text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                        <i data-lucide="alert-triangle" class="size-3.5 text-amber-700 dark:text-amber-400"></i>
+                    <span class="text-[11px] font-black flex items-center gap-1.5" style="color: #78350f !important;">
+                        <i data-lucide="alert-triangle" class="size-3.5" style="color: #b45309 !important;"></i>
                         Falta contribuir
                     </span>
-                    <i data-lucide="chevron-right" class="size-3 text-amber-800 dark:text-amber-300"></i>
+                    <i data-lucide="chevron-right" class="size-3" style="color: #78350f !important;"></i>
                 </div>
-                <strong id="larCardFaltaContribuir" class="text-lg font-black text-amber-950 dark:text-amber-100 block">R$ 225,00</strong>
+                <strong id="larCardFaltaContribuir" class="text-lg font-black block" style="color: #451a03 !important;">R$ 225,00</strong>
             </div>
 
             <!-- 4. Sobra do casal (Contraste Perfeito: Fundo Esmeralda Claro + Texto Esmeralda Escuro em Negrito) -->
-            <div class="rounded-3xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-4 space-y-1 shadow-2xs">
-                <span class="text-[11px] font-black text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
-                    <i data-lucide="trending-up" class="size-3.5 text-emerald-700 dark:text-emerald-400"></i>
+            <div class="rounded-3xl p-4 space-y-1 shadow-2xs"
+                 style="background-color: #ecfdf5 !important; border: 1.5px solid #10b981 !important;">
+                <span class="text-[11px] font-black flex items-center gap-1.5" style="color: #065f46 !important;">
+                    <i data-lucide="trending-up" class="size-3.5" style="color: #059669 !important;"></i>
                     Sobra do casal
                 </span>
-                <strong id="larCardSobraCasal" class="text-lg font-black text-emerald-950 dark:text-emerald-100 block">R$ 2.532,10</strong>
+                <strong id="larCardSobraCasal" class="text-lg font-black block" style="color: #064e3b !important;">R$ 2.532,10</strong>
             </div>
         </div>
 
@@ -363,13 +372,15 @@
             </div>
 
             <div class="grid grid-cols-2 gap-3 pt-1">
-                <div class="rounded-2xl border border-border bg-muted/30 p-3.5 space-y-0.5">
-                    <span class="text-[11px] font-bold text-muted-foreground">Acordos ativos</span>
-                    <strong id="larAcordosAtivosContador" class="text-xl font-black text-foreground block">2</strong>
+                <div class="rounded-2xl p-3.5 space-y-0.5 shadow-2xs"
+                     style="background-color: #ecfdf5 !important; border: 1.5px solid #10b981 !important;">
+                    <span class="text-[11px] font-black" style="color: #065f46 !important;">Acordos ativos</span>
+                    <strong id="larAcordosAtivosContador" class="text-xl font-black block" style="color: #064e3b !important;">2</strong>
                 </div>
-                <div class="rounded-2xl border border-amber-300/60 dark:border-amber-800/40 bg-amber-50/60 dark:bg-amber-950/20 p-3.5 space-y-0.5">
-                    <span class="text-[11px] font-black text-amber-900 dark:text-amber-200">Em negociação</span>
-                    <strong id="larAcordosNegociacaoContador" class="text-xl font-black text-amber-950 dark:text-amber-100 block">2</strong>
+                <div class="rounded-2xl p-3.5 space-y-0.5 shadow-2xs"
+                     style="background-color: #fef3c7 !important; border: 1.5px solid #f59e0b !important;">
+                    <span class="text-[11px] font-black" style="color: #78350f !important;">Em negociação</span>
+                    <strong id="larAcordosNegociacaoContador" class="text-xl font-black block" style="color: #451a03 !important;">2</strong>
                 </div>
             </div>
         </div>

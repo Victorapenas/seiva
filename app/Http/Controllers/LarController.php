@@ -473,6 +473,91 @@ class LarController extends Controller
         });
     }
 
+    public function updateDespesa(Request $request, $id)
+    {
+        $request->validate([
+            'titulo' => 'required|string|max:255',
+            'valor_total' => 'required|numeric|min:0.01',
+            'tipo' => 'required|in:fixa,variavel,emergencia',
+            'divisao' => 'required|in:50/50,proporcional',
+            'data_vencimento' => 'nullable|date',
+        ]);
+
+        return DB::transaction(function () use ($request, $id) {
+            $user = Auth::user();
+            $lar = $user->lares()->firstOrFail();
+
+            $despesa = DespesaLar::where('lar_id', $lar->id_lar)->find($id);
+            if (!$despesa) {
+                $despesa = DespesaLar::create([
+                    'lar_id' => $lar->id_lar,
+                    'registrada_por' => $user->id_usuario,
+                    'titulo' => $request->titulo,
+                    'emoji' => 'receipt',
+                    'valor_total' => $request->valor_total,
+                    'tipo' => $request->tipo,
+                    'divisao' => $request->divisao,
+                    'data_vencimento' => $request->data_vencimento ?? now()->format('Y-m-d'),
+                    'status' => 'pendente',
+                ]);
+            } else {
+                $despesa->update([
+                    'titulo' => $request->titulo,
+                    'valor_total' => $request->valor_total,
+                    'tipo' => $request->tipo,
+                    'divisao' => $request->divisao,
+                    'data_vencimento' => $request->data_vencimento ?? $despesa->data_vencimento,
+                ]);
+            }
+
+            $membros = LarMembro::where('lar_id', $lar->id_lar)->get();
+            $totalRendas = $membros->sum('renda_declarada');
+            $numMembros = count($membros);
+
+            ParticipacaoDespesa::where('despesa_lar_id', $despesa->id_despesa_lar)->delete();
+
+            foreach ($membros as $m) {
+                if ($request->divisao === 'proporcional' && $totalRendas > 0) {
+                    $valorParte = round(($m->renda_declarada / $totalRendas) * $request->valor_total, 2);
+                } else {
+                    $valorParte = round($request->valor_total / max(1, $numMembros), 2);
+                }
+
+                $pago = ($m->usuario_id === $user->id_usuario);
+
+                ParticipacaoDespesa::create([
+                    'despesa_lar_id' => $despesa->id_despesa_lar,
+                    'usuario_id' => $m->usuario_id,
+                    'valor_parte' => $valorParte,
+                    'pago' => $pago,
+                ]);
+            }
+
+            return response()->json([
+                'sucesso' => true,
+                'mensagem' => "Despesa {$despesa->titulo} atualizada com sucesso no Lar!",
+                'despesa' => $despesa->load('participacoes.usuario'),
+            ]);
+        });
+    }
+
+    public function destroyDespesa($id)
+    {
+        $user = Auth::user();
+        $lar = $user->lares()->firstOrFail();
+
+        $despesa = DespesaLar::where('lar_id', $lar->id_lar)->find($id);
+        if ($despesa) {
+            ParticipacaoDespesa::where('despesa_lar_id', $despesa->id_despesa_lar)->delete();
+            $despesa->delete();
+        }
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => 'Despesa removida com sucesso do Lar!',
+        ]);
+    }
+
     public function quitarParticipacao($id)
     {
         $user = Auth::user();

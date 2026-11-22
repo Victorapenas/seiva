@@ -31,14 +31,14 @@
         </div>
 
         <form onsubmit="executarSolicitarResgateEmergenciaLar(event)" class="p-6 space-y-4 overflow-y-auto no-scrollbar">
-            <!-- Aviso Didático de Governança Compartilhada -->
-            <div class="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40 space-y-1">
-                <div class="flex items-center gap-2 text-amber-900 dark:text-amber-200 text-xs font-bold">
-                    <i data-lucide="info" class="size-4 shrink-0 text-amber-600"></i>
-                    <span>Regra de Consenso do Casal</span>
+            <!-- Aviso Didático de Governança Compartilhada com Alto Contraste -->
+            <div class="p-3.5 rounded-2xl space-y-1 shadow-2xs" style="background-color: #fef3c7 !important; border: 1.5px solid #f59e0b !important;">
+                <div class="flex items-center gap-2 text-xs font-bold">
+                    <i data-lucide="info" class="size-4 shrink-0 text-amber-700"></i>
+                    <span style="color: #78350f !important; font-weight: 900 !important;">Regra de Consenso do Casal</span>
                 </div>
-                <p class="text-[11px] text-amber-900/80 dark:text-amber-300/80 leading-relaxed">
-                    O Fundo de Emergência é o colchão de segurança do Lar. Para proteger o orçamento de ambos, <strong>toda retirada requer o consentimento mútuo do parceiro</strong> através da Mesa de Acordos antes da liberação.
+                <p class="text-xs leading-relaxed" style="color: #451a03 !important; font-weight: 600 !important;">
+                    O Fundo de Emergência é o colchão de segurança do Lar. Para proteger o orçamento de ambos, <strong style="color: #451a03 !important; font-weight: 900 !important;">toda retirada requer o consentimento mútuo do parceiro</strong> através da Mesa de Acordos antes da liberação do saldo.
                 </p>
             </div>
 

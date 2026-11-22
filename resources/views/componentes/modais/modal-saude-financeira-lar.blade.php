@@ -59,76 +59,76 @@
                 </span>
 
                 <!-- Pilar 1: Comprometimento de Renda Fixa -->
-                <div class="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-2">
+                <div class="p-4 rounded-2xl space-y-2 shadow-2xs" style="background-color: #ecfdf5 !important; border: 1.5px solid #10b981 !important;">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                            <span class="size-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">
+                            <span class="size-6 rounded-lg text-white flex items-center justify-center text-[10px] font-black" style="background-color: #059669 !important;">
                                 35%
                             </span>
-                            <h5 class="text-xs font-extrabold text-foreground">1. Comprometimento da Renda com Gastos Fixos</h5>
+                            <h5 class="text-xs font-black" style="color: #064e3b !important;">1. Comprometimento da Renda com Gastos Fixos</h5>
                         </div>
-                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 text-[11px] font-black">
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black" style="background-color: #d1fae5 !important; color: #065f46 !important; border: 1px solid #10b981 !important;">
                             90 / 100 · Excelente
                         </span>
                     </div>
-                    <p class="text-xs text-muted-foreground leading-relaxed">
-                        Os custos fixos essenciais do Lar somam <strong>R$ 1.667,90</strong>, o que representa <strong>40%</strong> da renda conjunta (R$ 4.200,00). 
+                    <p class="text-xs leading-relaxed" style="color: #1e293b !important; font-weight: 500 !important;">
+                        Os custos fixos essenciais do Lar somam <strong style="color: #064e3b !important;">R$ 1.667,90</strong>, o que representa <strong style="color: #064e3b !important;">40%</strong> da renda conjunta (R$ 4.200,00). 
                         A recomendação SEIVA é não ultrapassar 50% para garantir folga para lazer e investimentos.
                     </p>
                 </div>
 
                 <!-- Pilar 2: Reserva do Fundo de Emergência -->
-                <div class="p-4 rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 space-y-2">
+                <div class="p-4 rounded-2xl space-y-2 shadow-2xs" style="background-color: #fffbeb !important; border: 1.5px solid #f59e0b !important;">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                            <span class="size-6 rounded-lg bg-amber-600 text-white flex items-center justify-center text-[10px] font-black">
+                            <span class="size-6 rounded-lg text-white flex items-center justify-center text-[10px] font-black" style="background-color: #d97706 !important;">
                                 30%
                             </span>
-                            <h5 class="text-xs font-extrabold text-foreground">2. Reserva do Fundo de Emergência do Lar</h5>
+                            <h5 class="text-xs font-black" style="color: #78350f !important;">2. Reserva do Fundo de Emergência do Lar</h5>
                         </div>
-                        <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-300 text-[11px] font-black">
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black" style="background-color: #fef3c7 !important; color: #78350f !important; border: 1px solid #f59e0b !important;">
                             65 / 100 · Em Construção
                         </span>
                     </div>
-                    <p class="text-xs text-muted-foreground leading-relaxed">
-                        O casal acumulou <strong>R$ 5.000,00</strong> na conta conjunta (50% da meta de R$ 10.000,00). 
-                        Esse montante já cobre exatamente <strong>3 meses de despesas básicas</strong>. A pontuação subirá para 100 conforme a reserva atingir 6 meses.
+                    <p class="text-xs leading-relaxed" style="color: #1e293b !important; font-weight: 500 !important;">
+                        O casal acumulou <strong style="color: #78350f !important;">R$ 5.000,00</strong> na conta conjunta (50% da meta de R$ 10.000,00). 
+                        Esse montante já cobre exatamente <strong style="color: #78350f !important;">3 meses de despesas básicas</strong>. A pontuação subirá para 100 conforme a reserva atingir 6 meses.
                     </p>
                 </div>
 
                 <!-- Pilar 3: Equilíbrio de Contribuição Mensal -->
-                <div class="p-4 rounded-2xl border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 space-y-2">
+                <div class="p-4 rounded-2xl space-y-2 shadow-2xs" style="background-color: #fffbeb !important; border: 1.5px solid #f59e0b !important;">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                            <span class="size-6 rounded-lg bg-amber-600 text-white flex items-center justify-center text-[10px] font-black">
+                            <span class="size-6 rounded-lg text-white flex items-center justify-center text-[10px] font-black" style="background-color: #d97706 !important;">
                                 20%
                             </span>
-                            <h5 class="text-xs font-extrabold text-foreground">3. Cumprimento do Rateio Acordado no Mês</h5>
+                            <h5 class="text-xs font-black" style="color: #78350f !important;">3. Cumprimento do Rateio Acordado no Mês</h5>
                         </div>
-                        <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-300 text-[11px] font-black">
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black" style="background-color: #fef3c7 !important; color: #78350f !important; border: 1px solid #f59e0b !important;">
                             60 / 100 · Parcial
                         </span>
                     </div>
-                    <p class="text-xs text-muted-foreground leading-relaxed">
-                        Ian já quitou <strong>100%</strong> de sua cota do mês (R$ 1.187,90). Maria Eduarda contribuiu com <strong>53%</strong> (R$ 255,00 de R$ 480,00). 
-                        Faltam <strong>R$ 225,00</strong> para fechar as contas do cantinho com 100% de equilíbrio.
+                    <p class="text-xs leading-relaxed" style="color: #1e293b !important; font-weight: 500 !important;">
+                        Ian já quitou <strong style="color: #064e3b !important;">100%</strong> de sua cota do mês (R$ 1.187,90). Maria Eduarda contribuiu com <strong style="color: #78350f !important;">53%</strong> (R$ 255,00 de R$ 480,00). 
+                        Faltam <strong style="color: #78350f !important;">R$ 225,00</strong> para fechar as contas do cantinho com 100% de equilíbrio.
                     </p>
                 </div>
 
                 <!-- Pilar 4: Pontualidade de Vencimentos -->
-                <div class="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-2">
+                <div class="p-4 rounded-2xl space-y-2 shadow-2xs" style="background-color: #ecfdf5 !important; border: 1.5px solid #10b981 !important;">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                            <span class="size-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-[10px] font-black">
+                            <span class="size-6 rounded-lg text-white flex items-center justify-center text-[10px] font-black" style="background-color: #059669 !important;">
                                 15%
                             </span>
-                            <h5 class="text-xs font-extrabold text-foreground">4. Pontualidade de Contas e Acordos</h5>
+                            <h5 class="text-xs font-black" style="color: #064e3b !important;">4. Pontualidade de Contas e Acordos</h5>
                         </div>
-                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 text-[11px] font-black">
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black" style="background-color: #d1fae5 !important; color: #065f46 !important; border: 1px solid #10b981 !important;">
                             100 / 100 · Em Dia
                         </span>
                     </div>
-                    <p class="text-xs text-muted-foreground leading-relaxed">
+                    <p class="text-xs leading-relaxed" style="color: #1e293b !important; font-weight: 500 !important;">
                         Nenhuma conta em atraso crítico. O aluguel e a água já foram liquidados pontualmente, mantendo a credibilidade e harmonia da casa.
                     </p>
                 </div>

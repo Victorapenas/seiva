@@ -82,26 +82,31 @@
                 <input type="hidden" id="formLarDespTipo" value="fixa">
             </div>
 
-            <!-- Switch de Despesa Extraordinária / Imprevisto -->
-            <div class="p-3.5 rounded-2xl border border-amber-300/60 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20 space-y-2">
+            <!-- Switch de Despesa Extraordinária / Imprevisto (Alto Contraste WCAG AAA Garantido) -->
+            <div class="p-3.5 rounded-2xl space-y-2.5 shadow-2xs"
+                 style="background-color: #fef3c7 !important; border: 1.5px solid #f59e0b !important;">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <span class="size-6 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center">
-                            <i data-lucide="alert-triangle" class="size-3.5"></i>
+                        <span class="size-7 rounded-xl flex items-center justify-center shrink-0" style="background-color: #fde68a !important; color: #b45309 !important;">
+                            <i data-lucide="alert-triangle" class="size-4" style="color: #b45309 !important;"></i>
                         </span>
                         <div>
-                            <strong class="text-xs font-extrabold text-foreground block">Despesa Extraordinária / Imprevisto</strong>
-                            <span class="text-[10px] text-muted-foreground">Gasto fora da rotina planejada do mês</span>
+                            <strong class="text-xs font-black block" style="color: #451a03 !important;">Despesa Extraordinária / Imprevisto</strong>
+                            <span class="text-[10px] font-bold" style="color: #78350f !important;">Gasto fora da rotina planejada do mês</span>
                         </div>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="formLarDespExtraordinaria" class="sr-only peer" onchange="alternarAvisoExtraordinaria(this.checked)">
-                        <div class="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                        <div class="w-11 h-6 bg-amber-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
                     </label>
                 </div>
-                <p id="avisoExtraordinariaTxt" class="text-[11px] text-amber-900/80 dark:text-amber-300/80 leading-relaxed hidden">
-                    💡 <strong>Como entra na conta:</strong> Despesas extraordinárias são imprevistos (ex: vazamento, conserto de eletro). Elas não distorcem o custo fixo mensal do casal e entram na Mesa de Acordos para rateio pontual sem afetar metas de longo prazo.
-                </p>
+                <!-- Box de Explicação com Fundo Branco Sólido e Tipografia Escura de Máximo Contraste -->
+                <div id="avisoExtraordinariaTxt" class="hidden p-3 rounded-xl shadow-2xs leading-relaxed"
+                     style="background-color: #ffffff !important; border: 1.5px solid #fbbf24 !important; color: #451a03 !important;">
+                    <p class="text-xs font-semibold" style="color: #451a03 !important;">
+                        <strong style="color: #78350f !important; font-weight: 900 !important;">💡 Como entra na conta:</strong> Despesas extraordinárias são imprevistos (ex: vazamento, conserto de eletro). Elas <strong style="color: #065f46 !important;">não distorcem o custo fixo mensal</strong> do casal e entram na <strong>Mesa de Acordos</strong> para rateio pontual sem afetar metas de longo prazo.
+                    </p>
+                </div>
             </div>
 
             <!-- Regra de Divisão: Proporcional vs 50/50 -->
