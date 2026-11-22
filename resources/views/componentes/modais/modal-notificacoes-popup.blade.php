@@ -14,11 +14,11 @@
         <!-- Header -->
         <div class="px-5 py-4 border-b border-border/60 flex items-center justify-between gap-3 bg-card shrink-0">
             <div class="flex items-center gap-2.5">
-                <span class="size-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 flex items-center justify-center border border-emerald-500/20">
-                    <i data-lucide="bell" class="size-4"></i>
+                <span class="size-9 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 flex items-center justify-center border border-emerald-500/20 shadow-2xs">
+                    <i data-lucide="bell" class="size-4.5"></i>
                 </span>
                 <div>
-                    <h3 class="text-sm font-extrabold text-foreground flex items-center gap-2">
+                    <h3 class="text-sm font-black text-foreground flex items-center gap-2">
                         <span>Notificações</span>
                         <span id="popupNotifBadgeContador" class="hidden px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black leading-none">0</span>
                     </h3>
@@ -27,14 +27,30 @@
             </div>
 
             <div class="flex items-center gap-1.5">
-                <button type="button" onclick="marcarTodasLidasPopup()" title="Marcar todas como lidas" class="p-1.5 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-semibold flex items-center gap-1 transition">
-                    <i data-lucide="check-check" class="size-4"></i>
-                    <span class="text-[10px] hidden sm:inline">Lidas</span>
+                <button type="button" onclick="marcarTodasLidasPopup()" title="Marcar todas como lidas" class="px-2.5 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-bold flex items-center gap-1.5 transition shadow-2xs">
+                    <i data-lucide="check-check" class="size-3.5 text-emerald-600"></i>
+                    <span class="text-[11px] hidden sm:inline">Marcar lidas</span>
                 </button>
                 <button type="button" onclick="fecharModalNotificacoesPopup()" class="size-8 rounded-xl border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition">
                     <i data-lucide="x" class="size-4"></i>
                 </button>
             </div>
+        </div>
+
+        <!-- Filtros em Abas: Não lidas vs Histórico -->
+        <div class="px-4 py-2 border-b border-border/40 flex items-center gap-2 bg-muted/20 shrink-0">
+            <button type="button" id="tabNotifNaoLidas" onclick="alternarAbaNotificacoes('nao_lidas')" 
+                    class="flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition bg-card text-foreground shadow-2xs border border-border/60">
+                <i data-lucide="bell" class="size-3.5 text-emerald-600"></i>
+                <span>Não lidas</span>
+                <span id="notifNaoLidasCount" class="ml-1 px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 text-[10px] font-black">0</span>
+            </button>
+            <button type="button" id="tabNotifHistorico" onclick="alternarAbaNotificacoes('historico')" 
+                    class="flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition text-muted-foreground hover:text-foreground">
+                <i data-lucide="archive" class="size-3.5"></i>
+                <span>Histórico</span>
+                <span id="notifHistoricoCount" class="ml-1 text-[10px] text-muted-foreground">0</span>
+            </button>
         </div>
 
         <!-- Lista de Notificações com scroll -->

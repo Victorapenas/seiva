@@ -39,10 +39,13 @@ class NotificacoesController extends Controller
 
         foreach ($dbNotifs as $n) {
             $isLida = (bool)$n->lida || ($lidasAte > 0 && $n->created_at && $n->created_at->timestamp <= $lidasAte);
+            // Sanitiza emojis do titulo e mensagem antes de enviar ao frontend
+            $titulo  = preg_replace('/[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]/u', '', $n->titulo ?? '');
+            $mensagem = preg_replace('/[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]/u', '', $n->mensagem ?? '');
             $notifs[] = [
                 'id'      => 'notif_' . $n->id_notificacao,
-                'titulo'  => $n->titulo,
-                'texto'   => $n->mensagem,
+                'titulo'  => trim($titulo),
+                'texto'   => trim($mensagem),
                 'tipo'    => $n->tipo ?? 'info',
                 'lida'    => $isLida,
                 'tempo'   => $n->tempo ?? ($n->created_at ? Carbon::parse($n->created_at)->diffForHumans() : ''),
@@ -162,16 +165,24 @@ class NotificacoesController extends Controller
         ]);
     }
 
-    public function marcarTodasLidas()
+    public function marcarTodasLidas(Request $request)
     {
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Não autenticado'], 401);
 
-        Notificacao::where('usuario_id', $user->id_usuario)
-            ->where('lida', false)
-            ->update(['lida' => true]);
+        $id = $request->input('id');
+        if ($id && str_starts_with($id, 'notif_')) {
+            $notifId = str_replace('notif_', '', $id);
+            Notificacao::where('usuario_id', $user->id_usuario)
+                ->where('id_notificacao', $notifId)
+                ->update(['lida' => true]);
+        } else {
+            Notificacao::where('usuario_id', $user->id_usuario)
+                ->where('lida', false)
+                ->update(['lida' => true]);
 
-        session(['notificacoes_lidas_ate_' . $user->id_usuario => now()->timestamp]);
+            session(['notificacoes_lidas_ate_' . $user->id_usuario => now()->timestamp]);
+        }
 
         return response()->json(['ok' => true]);
     }

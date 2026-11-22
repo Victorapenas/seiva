@@ -643,12 +643,12 @@ class CenariosTesteSeeder extends Seeder
 
         // Notificação de Lembrete Diplomático
         Notificacao::updateOrCreate(
-            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Lembrete diplomático de Ian Silva'],
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Lembrete: Divisao do Aluguel'],
             [
                 'lar_id' => $lar->id_lar,
-                'mensagem' => 'Oi amor! Passando só pra lembrar com carinho da nossa divisão de Aluguel (R$ 1.280,00). Segue meu PIX: ian@seiva.com',
+                'mensagem' => 'Ian lembrou voce da sua parte · R$ 1.280,00 · PIX: ian@seiva.com',
                 'tipo' => 'lar',
-                'tempo' => 'Há 15 min',
+                'tempo' => 'Ha 15 min',
             ]
         );
     }

@@ -236,4 +236,120 @@ class ModulosCaixaPretaMetasRecebimentosTest extends TestCase
         $cob = Cobranca::find($cobrancaId);
         $this->assertEquals('confirmada', $cob->estado);
     }
+
+    public function test_caixa_preta_trancar_e_bloqueio_de_dados()
+    {
+        $this->actingAs($this->userDuda);
+
+        // Sem desbloquear PIN, dadosCompletos deve retornar 403
+        session()->forget('caixa_preta_unlocked');
+        $resSemPin = $this->getJson('/api/caixa-preta/dados');
+        $resSemPin->assertStatus(403)
+                  ->assertJson(['error' => 'Caixa Preta trancada. Digite seu PIN de 4 dígitos.']);
+
+        // Desbloqueia com PIN
+        $this->postJson('/api/caixa-preta/verificar-pin', ['pin' => '1234'])->assertStatus(200);
+        $this->getJson('/api/caixa-preta/dados')->assertStatus(200);
+
+        // Tranca
+        $resTrancar = $this->postJson('/api/caixa-preta/trancar');
+        $resTrancar->assertStatus(200)
+                   ->assertJson(['unlocked' => false]);
+
+        // Novamente bloqueada
+        $this->getJson('/api/caixa-preta/dados')->assertStatus(403);
+    }
+
+    public function test_caixa_preta_contraproposta_com_valor_customizado_e_mensagem()
+    {
+        $this->actingAs($this->userDuda);
+
+        $resAjuda = $this->postJson('/api/caixa-preta/pedir-ajuda', [
+            'titulo' => 'Filamento Impressora 3D',
+            'valor' => 50.00,
+        ]);
+        $cobrancaId = $resAjuda->json('cobranca.id_cobranca');
+
+        // Ian contrapropõe com valor personalizado (ex: R$ 20,00)
+        $this->actingAs($this->userIan);
+        $resContra = $this->postJson('/api/caixa-preta/responder-ajuda', [
+            'id_cobranca' => $cobrancaId,
+            'acao' => 'contrapor',
+            'valor_contraproposta' => 20.00,
+            'mensagem_contraproposta' => 'Consigo ajudar com 20 reais agora',
+        ]);
+
+        $resContra->assertStatus(200)
+                  ->assertJson(['sucesso' => true]);
+
+        $cob = Cobranca::find($cobrancaId);
+        $this->assertEquals(20.00, (float)$cob->valor);
+        $this->assertEquals('pendente', $cob->estado);
+        $this->assertStringContainsString('20,00', $cob->mensagem);
+    }
+
+    public function test_caixa_preta_confirmar_recebimento_e_disputa()
+    {
+        $this->actingAs($this->userDuda);
+        $saldoInicial = (float)$this->contaDuda->saldo;
+
+        // Confirmar recebimento credita saldo e registra transação
+        $resConf = $this->postJson('/api/caixa-preta/confirmar-recebimento', [
+            'valor' => 156.40,
+            'conta_id' => $this->contaDuda->id_conta,
+        ]);
+
+        $resConf->assertStatus(200)
+                ->assertJson(['sucesso' => true]);
+
+        $this->contaDuda->refresh();
+        $this->assertEquals($saldoInicial + 156.40, (float)$this->contaDuda->saldo);
+
+        // Disputar recebimento gera notificação de alerta para o parceiro
+        $resDisp = $this->postJson('/api/caixa-preta/disputar-recebimento', [
+            'valor' => 156.40,
+            'motivo' => 'PIX não localizado na conta',
+        ]);
+
+        $resDisp->assertStatus(200)
+                ->assertJson(['sucesso' => true]);
+
+        $this->assertDatabaseHas('notificacoes', [
+            'usuario_id' => $this->userIan->id_usuario,
+            'tipo' => 'atencao',
+        ]);
+    }
+
+    public function test_caixa_preta_crud_produtos_watchlist()
+    {
+        $this->actingAs($this->userDuda);
+
+        // Adicionar produto
+        $resAdd = $this->postJson('/api/caixa-preta/produtos-watchlist', [
+            'nome' => 'Fone Sony WH-1000XM5',
+            'preco' => 1899.90,
+            'loja' => 'Amazon',
+            'link' => 'https://amazon.com.br/sony',
+        ]);
+
+        $resAdd->assertStatus(201)
+               ->assertJson(['sucesso' => true]);
+
+        $idProd = $resAdd->json('produto.id_produto');
+
+        $this->assertDatabaseHas('produtos_watchlist', [
+            'id_produto' => $idProd,
+            'usuario_id' => $this->userDuda->id_usuario,
+            'nome' => 'Fone Sony WH-1000XM5',
+        ]);
+
+        // Remover produto
+        $resDel = $this->deleteJson("/api/caixa-preta/produtos-watchlist/{$idProd}");
+        $resDel->assertStatus(200)
+               ->assertJson(['sucesso' => true]);
+
+        $this->assertDatabaseMissing('produtos_watchlist', [
+            'id_produto' => $idProd,
+        ]);
+    }
 }

@@ -222,6 +222,9 @@
     @include('componentes.modais.modal-novo-acordo-passos')
     @include('componentes.modais.modal-notificacoes-popup')
     @include('componentes.modais.modal-editar-meta')
+    @include('componentes.modais.modal-personalizar-icone-transacao')
+    @include('componentes.modais.modal-disputar-recebimento')
+    @include('componentes.modais.modal-confirmacao-seiva')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -315,6 +318,102 @@
             setTimeout(() => {
                 if (toast && toast.parentNode) toast.remove();
             }, 300);
+        }
+
+        // ==========================================
+        // SISTEMA GLOBAL DE DIÁLOGO E CONFIRMAÇÃO (SEIVA)
+        // Substitui 100% de window.confirm() e window.prompt() por modais nativos da UI
+        // ==========================================
+        let seivaDialogResolver = null;
+
+        function seivaConfirm(opcoes) {
+            return new Promise((resolve) => {
+                seivaDialogResolver = resolve;
+                const modal = document.getElementById('modalConfirmacaoSeiva');
+                if (!modal) return resolve(false);
+
+                const titEl = document.getElementById('seivaDialogTitulo');
+                const msgEl = document.getElementById('seivaDialogMensagem');
+                const inputWrap = document.getElementById('seivaDialogInputWrapper');
+                const btnConf = document.getElementById('seivaDialogBtnConfirmar');
+                const iconBox = document.getElementById('seivaDialogIconBox');
+                const iconEl = document.getElementById('seivaDialogIcon');
+
+                if (titEl) titEl.innerText = opcoes.titulo || 'Confirmação';
+                if (msgEl) msgEl.innerText = opcoes.mensagem || 'Deseja prosseguir com esta ação?';
+                if (inputWrap) inputWrap.classList.add('hidden');
+
+                if (btnConf) {
+                    btnConf.innerText = opcoes.confirmText || 'Confirmar';
+                    btnConf.className = opcoes.tipo === 'perigo' 
+                        ? 'flex-1 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs transition shadow-soft flex items-center justify-center gap-1.5'
+                        : 'flex-1 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs transition shadow-soft flex items-center justify-center gap-1.5';
+                }
+
+                if (iconBox && iconEl) {
+                    if (opcoes.tipo === 'perigo') {
+                        iconBox.className = 'size-14 mx-auto rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200/50 flex items-center justify-center';
+                        iconEl.setAttribute('data-lucide', opcoes.icone || 'alert-triangle');
+                    } else {
+                        iconBox.className = 'size-14 mx-auto rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 flex items-center justify-center';
+                        iconEl.setAttribute('data-lucide', opcoes.icone || 'help-circle');
+                    }
+                }
+
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            });
+        }
+
+        function seivaPrompt(opcoes) {
+            return new Promise((resolve) => {
+                seivaDialogResolver = resolve;
+                const modal = document.getElementById('modalConfirmacaoSeiva');
+                if (!modal) return resolve(null);
+
+                const titEl = document.getElementById('seivaDialogTitulo');
+                const msgEl = document.getElementById('seivaDialogMensagem');
+                const inputWrap = document.getElementById('seivaDialogInputWrapper');
+                const input = document.getElementById('seivaDialogInput');
+                const inputLabel = document.getElementById('seivaDialogInputLabel');
+                const btnConf = document.getElementById('seivaDialogBtnConfirmar');
+
+                if (titEl) titEl.innerText = opcoes.titulo || 'Informe o valor';
+                if (msgEl) msgEl.innerText = opcoes.mensagem || '';
+                if (inputWrap) inputWrap.classList.remove('hidden');
+                if (inputLabel) inputLabel.innerText = opcoes.label || 'Valor';
+                if (input) {
+                    input.value = opcoes.defaultValue || '';
+                    input.placeholder = opcoes.placeholder || '';
+                    setTimeout(() => input.focus(), 150);
+                }
+
+                if (btnConf) {
+                    btnConf.innerText = opcoes.confirmText || 'Salvar';
+                    btnConf.className = 'flex-1 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs transition shadow-soft flex items-center justify-center gap-1.5';
+                }
+
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            });
+        }
+
+        function fecharSeivaDialog(resultado) {
+            document.getElementById('modalConfirmacaoSeiva')?.classList.add('hidden');
+            if (seivaDialogResolver) {
+                seivaDialogResolver(resultado);
+                seivaDialogResolver = null;
+            }
+        }
+
+        function confirmarSeivaDialog() {
+            const inputWrap = document.getElementById('seivaDialogInputWrapper');
+            if (inputWrap && !inputWrap.classList.contains('hidden')) {
+                const val = document.getElementById('seivaDialogInput')?.value;
+                fecharSeivaDialog(val);
+            } else {
+                fecharSeivaDialog(true);
+            }
         }
 
         // Override definitivo de window.alert para impedir popups nativos estilo spam
@@ -1319,16 +1418,63 @@
             carregarDashboardDados();
         }
 
-        function recusarPedidoAjuda() {
-            const b = document.getElementById('bannerPedidoAjuda');
-            if (b) b.classList.add('hidden');
-            seivaNotificar('Pedido de ajuda arquivado.', 'info', 'Pedido de Ajuda');
+        let pedidoAjudaAtualId = null;
+
+        async function recusarPedidoAjuda() {
+            if (!pedidoAjudaAtualId) {
+                document.getElementById('bannerPedidoAjuda')?.classList.add('hidden');
+                return;
+            }
+            try {
+                await fetch('/api/caixa-preta/responder-ajuda', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({
+                        id_cobranca: pedidoAjudaAtualId,
+                        acao: 'recusar'
+                    })
+                });
+                document.getElementById('bannerPedidoAjuda')?.classList.add('hidden');
+                seivaNotificar('Pedido de ajuda arquivado.', 'info', 'Pedido de Ajuda');
+                carregarDashboardDados();
+                carregarNotificacoesPopup();
+            } catch (e) {
+                document.getElementById('bannerPedidoAjuda')?.classList.add('hidden');
+            }
         }
 
-        function aceitarPedidoAjuda() {
-            const b = document.getElementById('bannerPedidoAjuda');
-            if (b) b.classList.add('hidden');
-            seivaNotificar('Você ajudou Ian com R$ 50,00!', 'sucesso', 'Ajuda Confirmada');
+        async function aceitarPedidoAjuda() {
+            if (!pedidoAjudaAtualId) return;
+            try {
+                const res = await fetch('/api/caixa-preta/responder-ajuda', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({
+                        id_cobranca: pedidoAjudaAtualId,
+                        acao: 'aceitar'
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('bannerPedidoAjuda')?.classList.add('hidden');
+                    seivaNotificar(data.mensagem || 'Você acolheu o pedido de ajuda com sucesso!', 'sucesso', 'Ajuda Confirmada');
+                    carregarDashboardDados();
+                    carregarNotificacoesPopup();
+                } else {
+                    seivaNotificar(data.error || 'Não foi possível aceitar o pedido.', 'erro');
+                }
+            } catch (e) {
+                console.error('Erro ao aceitar pedido:', e);
+                seivaNotificar('Erro de conexão ao aceitar pedido de ajuda.', 'erro');
+            }
         }
 
         function confirmarRegistroRapido(titulo, valor) {
@@ -1373,21 +1519,52 @@
                     dateEl.innerText = data.hero_mes?.data_extenso || 'Hoje';
                 }
 
-                // 2. Banner de Pedido de Ajuda
+                // 2. Banner de Pedido de Ajuda (Totalmente Integrado ao Banco)
                 const bannerAjuda = document.getElementById('bannerPedidoAjuda');
                 if (bannerAjuda) {
                     if (data.pedido_ajuda && data.pedido_ajuda.tem_pedido) {
                         bannerAjuda.classList.remove('hidden');
+                        pedidoAjudaAtualId = data.pedido_ajuda.id_cobranca || null;
+
                         const tituloAjuda = document.getElementById('pedidoAjudaTitulo');
-                        if (tituloAjuda) {
-                            tituloAjuda.innerHTML = `${data.pedido_ajuda.solicitante} pediu uma ajuda de <span class="text-emerald-800 dark:text-emerald-400 font-black">${BRL(data.pedido_ajuda.valor)}</span>`;
-                        }
                         const descAjuda = document.getElementById('pedidoAjudaDesc');
-                        if (descAjuda) descAjuda.innerText = data.pedido_ajuda.motivo;
-                        const tagAjuda = document.getElementById('pedidoAjudaTag');
-                        if (tagAjuda) tagAjuda.innerHTML = `<span class="font-bold">${data.pedido_ajuda.solicitante_iniciais}</span> ${data.pedido_ajuda.motivo.substring(0, 32)} · há 20 min`;
+                        const tempoAjuda = document.getElementById('pedidoAjudaTagTempo');
+                        const badgeTexto = document.getElementById('pedidoAjudaBadgeTexto');
+                        const acoesContainer = document.getElementById('pedidoAjudaAcoesContainer');
+
+                        if (tempoAjuda) tempoAjuda.innerText = data.pedido_ajuda.tempo || 'recente';
+
+                        if (data.pedido_ajuda.sou_autor) {
+                            if (badgeTexto) badgeTexto.innerText = 'Pedido enviado por você';
+                            if (tituloAjuda) {
+                                tituloAjuda.innerHTML = `Você pediu uma ajuda de <span class="text-emerald-800 dark:text-emerald-400 font-black text-lg">${BRL(data.pedido_ajuda.valor)}</span> para ${data.pedido_ajuda.destinatario}`;
+                            }
+                            if (descAjuda) descAjuda.innerText = `${data.pedido_ajuda.motivo} (Aguardando resposta do seu parceiro)`;
+                            if (acoesContainer) acoesContainer.innerHTML = `
+                                <span class="px-3.5 py-2 rounded-xl bg-muted/60 text-muted-foreground text-xs font-bold border border-border flex items-center gap-1.5">
+                                    <i data-lucide="clock" class="size-3.5"></i>
+                                    <span>Aguardando resposta</span>
+                                </span>
+                            `;
+                        } else {
+                            if (badgeTexto) badgeTexto.innerText = 'Pedido de ajuda do parceiro';
+                            if (tituloAjuda) {
+                                tituloAjuda.innerHTML = `${data.pedido_ajuda.solicitante} precisa de uma ajuda de <span class="text-emerald-800 dark:text-emerald-400 font-black text-lg">${BRL(data.pedido_ajuda.valor)}</span>`;
+                            }
+                            if (descAjuda) descAjuda.innerText = data.pedido_ajuda.motivo;
+                            if (acoesContainer) acoesContainer.innerHTML = `
+                                <button type="button" onclick="recusarPedidoAjuda()" class="px-4 py-2 rounded-xl border border-border bg-card hover:bg-muted font-bold text-xs text-foreground transition shadow-2xs">
+                                    ✕ Agora não
+                                </button>
+                                <button type="button" onclick="aceitarPedidoAjuda()" id="btnAjudarParceiro" class="px-5 py-2.5 rounded-xl bg-[#1b4d37] hover:bg-[#153f2c] text-white font-black text-xs transition shadow-soft flex items-center gap-2">
+                                    <i data-lucide="check" class="size-4"></i>
+                                    <span>Ajudar com ${BRL(data.pedido_ajuda.valor)}</span>
+                                </button>
+                            `;
+                        }
                     } else {
                         bannerAjuda.classList.add('hidden');
+                        pedidoAjudaAtualId = null;
                     }
                 }
 
@@ -1526,35 +1703,53 @@
                 const indPoupanca = document.getElementById('indicadorPoupanca');
                 if (indPoupanca) indPoupanca.innerText = saldosVisiveis ? BRL(data.indicadores?.reserva_poupanca || 0) : '••••';
 
-                // 12. Atividade Recente (Image 7)
+                // 12. Atividade Recente (Sem emojis, ícones Lucide mapeados e personalização)
                 const atividadeList = document.getElementById('dashAtividadeRecenteList');
                 if (atividadeList) {
                     const itens = data.atividades || [
-                        { titulo: 'Salário Florais Design', sub: '05/06 · Nubank', categoria: 'Trabalho', valor: 1500, tipo: 'entrada', icone: 'briefcase' },
-                        { titulo: 'Sephora', sub: 'Hoje · Nubank', categoria: 'Beleza', valor: -187, tipo: 'saida', icone: 'sparkles' },
-                        { titulo: 'Rappi', sub: 'Ontem · Nubank', categoria: 'Alimentação', valor: -67.4, tipo: 'saida', icone: 'utensils' },
-                        { titulo: 'Academia Bio Ritmo', sub: 'Ontem · Nubank', categoria: 'Saúde', valor: -119.9, tipo: 'saida', icone: 'dumbbell' }
+                        { id_transacao: null, titulo: 'Salário Florais Design', sub: '05/06 · Nubank', categoria: 'Trabalho', valor: 1500, tipo: 'entrada', icone: 'briefcase', categoria_cor: '#10b981' },
+                        { id_transacao: null, titulo: 'Sephora', sub: 'Hoje · Nubank', categoria: 'Beleza', valor: -187, tipo: 'saida', icone: 'sparkles', categoria_cor: '#ec4899' },
+                        { id_transacao: null, titulo: 'Rappi', sub: 'Ontem · Nubank', categoria: 'Alimentação', valor: -67.4, tipo: 'saida', icone: 'utensils', categoria_cor: '#f97316' },
+                        { id_transacao: null, titulo: 'Academia Bio Ritmo', sub: 'Ontem · Nubank', categoria: 'Saúde', valor: -119.9, tipo: 'saida', icone: 'activity', categoria_cor: '#ef4444' }
                     ];
 
-                    atividadeList.innerHTML = itens.map(item => `
-                        <div class="flex items-center justify-between p-3 sm:p-4 hover:bg-muted/30 transition rounded-2xl">
-                            <div class="flex items-center gap-3">
-                                <span class="size-10 rounded-2xl bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                                    <i data-lucide="${item.icone || 'credit-card'}" class="size-4"></i>
+                    atividadeList.innerHTML = itens.map(item => {
+                        const iconeFinal = item.icone || 'credit-card';
+                        const corFinal = item.categoria_cor || '#10b981';
+                        const safeTitulo = (item.titulo || 'Despesa').replace(/'/g, "\\'");
+                        const txId = item.id_transacao || '';
+                        const catId = item.categoria_id || '';
+
+                        return `
+                        <div class="flex items-center justify-between p-3 sm:p-4 hover:bg-muted/30 transition rounded-2xl group">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="size-10 rounded-2xl flex items-center justify-center shrink-0 border border-border/40 shadow-2xs" style="background-color: ${corFinal}18; color: ${corFinal}">
+                                    <i data-lucide="${iconeFinal}" class="size-4"></i>
                                 </span>
-                                <div>
-                                    <h4 class="text-xs font-bold text-foreground">${item.titulo}</h4>
-                                    <div class="flex items-center gap-1.5 flex-wrap">
-                                        <p class="text-[11px] text-muted-foreground">${item.sub}</p>
-                                        ${item.categoria ? `<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold border border-emerald-200/50">${item.categoria}</span>` : ''}
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h4 class="text-xs font-bold text-foreground truncate max-w-[140px] sm:max-w-xs">${item.titulo}</h4>
+                                        ${txId ? `
+                                        <button type="button" onclick="abrirModalPersonalizarIcone('${txId}', '${safeTitulo}', '${catId}', '${iconeFinal}')" 
+                                                class="opacity-0 group-hover:opacity-100 transition size-5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center shrink-0" 
+                                                title="Alterar ícone ou categoria">
+                                            <i data-lucide="edit-3" class="size-3"></i>
+                                        </button>
+                                        ` : ''}
+                                    </div>
+                                    <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+                                        <p class="text-[11px] text-muted-foreground truncate max-w-[160px]">${item.sub}</p>
+                                        ${item.categoria ? `<span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold border border-border/60" style="background-color: ${corFinal}12; color: ${corFinal}">${item.categoria}</span>` : ''}
                                     </div>
                                 </div>
                             </div>
-                            <span class="text-xs sm:text-sm font-black ${item.valor > 0 ? 'text-emerald-600' : 'text-foreground'}">
-                                ${item.valor > 0 ? '+ ' : ''}${saldosVisiveis ? BRL(Math.abs(item.valor)) : '••••'}
-                            </span>
-                        </div>
-                    `).join('');
+                            <div class="flex items-center gap-2 pl-2 shrink-0">
+                                <span class="text-xs sm:text-sm font-black ${item.valor > 0 ? 'text-emerald-600' : 'text-foreground'}">
+                                    ${item.valor > 0 ? '+ ' : ''}${saldosVisiveis ? BRL(Math.abs(item.valor)) : '••••'}
+                                </span>
+                            </div>
+                        </div>`;
+                    }).join('');
                 }
 
                 lucide.createIcons();
@@ -2732,6 +2927,7 @@
         // Responsável Acadêmico: Victor Hugo
         // ==========================================
         let caixaPretaDadosCache = null;
+        let caixaValoresOcultados = false;
         let despesaAjudaAtual = { id: null, titulo: 'Mercado Dia a Dia', valor: 312.80 };
         let metaAporteAtual = { id: null, titulo: '', atual: 0, alvo: 0, tipo: 'individual' };
 
@@ -2748,7 +2944,7 @@
             try {
                 const res = await fetch('/api/caixa-preta/verificar-pin', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
                     body: JSON.stringify({ pin })
                 });
 
@@ -2766,12 +2962,55 @@
             }
         }
 
-        function trancarCaixa() {
+        async function trancarCaixa() {
             const pinField = document.getElementById('caixaPinField');
             if (pinField) pinField.value = '';
             document.getElementById('caixaPinLockBox')?.classList.remove('hidden');
             document.getElementById('caixaUnsealedBox')?.classList.add('hidden');
+            
+            try {
+                await fetch('/api/caixa-preta/trancar', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+                });
+            } catch(e) {}
+
             seivaNotificar('Caixa Preta trancada com segurança.', 'info', 'Área Bloqueada');
+        }
+
+        function toggleOcultarValoresCaixa() {
+            caixaValoresOcultados = !caixaValoresOcultados;
+            const btnTxt = document.getElementById('btnOcultarValoresCaixaTxt');
+            const btn = document.getElementById('btnOcultarValoresCaixa');
+
+            if (btnTxt) {
+                btnTxt.innerText = caixaValoresOcultados ? 'Mostrar valores' : 'Ocultar valores';
+            }
+            if (btn) {
+                btn.innerHTML = caixaValoresOcultados 
+                    ? `<i data-lucide="eye" class="size-3.5 text-emerald-400"></i><span id="btnOcultarValoresCaixaTxt">Mostrar valores</span>`
+                    : `<i data-lucide="eye-off" class="size-3.5 text-emerald-400"></i><span id="btnOcultarValoresCaixaTxt">Ocultar valores</span>`;
+            }
+
+            document.querySelectorAll('#caixaUnsealedBox .valor-sensivel').forEach(el => {
+                if (caixaValoresOcultados) {
+                    if (!el.dataset.valorReal) el.dataset.valorReal = el.innerText;
+                    el.innerText = '••••••';
+                } else {
+                    if (el.dataset.valorReal) el.innerText = el.dataset.valorReal;
+                }
+            });
+
+            lucide.createIcons();
+            seivaNotificar(caixaValoresOcultados ? 'Valores ocultados na tela.' : 'Valores visíveis.', 'info', 'Privacidade');
+        }
+
+        function mostrarInstrucaoEsqueciPin() {
+            seivaNotificar('Por segurança da sua Caixa Preta, seu PIN de 4 dígitos pode ser redefinido na aba "Perfil & LGPD" > "Segurança Privada".', 'info', 'Redefinição de PIN');
+        }
+
+        function explicarPatrimonio() {
+            seivaNotificar('Patrimônio Líquido: Soma de todas as contas, dinheiro em espécie, poupanças e investimentos sob sua titularidade individual. Não inclui valores do parceiro nem faturas devidas.', 'info', 'O que é seu Patrimônio');
         }
 
         async function carregarCaixaPretaDados() {
@@ -2830,7 +3069,7 @@
                 const gridContas = document.getElementById('caixaGridContas');
                 if (gridContas) {
                     gridContas.innerHTML = (cec.contas || []).map(c => `
-                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-4 text-white space-y-3 shadow-2xs">
+                        <div class="rounded-2xl border border-emerald-900/40 bg-[#0d2016] p-4 text-white space-y-3 shadow-2xs hover:border-emerald-700/50 transition">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <span class="size-8 rounded-xl bg-white/10 flex items-center justify-center text-sm" style="color: ${c.cor || '#10b981'}">
@@ -2841,16 +3080,16 @@
                                         <span class="text-[10px] text-gray-400">${c.tipo}</span>
                                     </div>
                                 </div>
-                                ${c.badge ? `<span class="px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-700/40 text-[9px] font-bold">${c.badge}</span>` : ''}
+                                ${c.badge ? `<span class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700/50 text-[9px] font-bold">${c.badge}</span>` : ''}
                             </div>
                             <div>
-                                <strong class="text-base font-black text-white block">${BRL(c.saldo)}</strong>
+                                <strong class="text-base font-black text-white block valor-sensivel">${BRL(c.saldo)}</strong>
                                 <div class="flex items-center justify-between text-[10px] text-gray-400 mt-0.5">
-                                    <span>Livre: <strong class="text-emerald-400">${BRL(c.livre)}</strong></span>
-                                    ${c.comprometido > 0 ? `<span>Comprometido: <strong class="text-rose-400">${BRL(c.comprometido)}</strong></span>` : ''}
+                                    <span>Livre: <strong class="text-emerald-400 valor-sensivel">${BRL(c.livre)}</strong></span>
+                                    ${c.comprometido > 0 ? `<span>Comprometido: <strong class="text-rose-400 valor-sensivel">${BRL(c.comprometido)}</strong></span>` : ''}
                                 </div>
                             </div>
-                            <div class="flex items-center justify-between pt-1 border-t border-white/5 text-[10px] text-gray-400">
+                            <div class="flex items-center justify-between pt-1 border-t border-emerald-900/30 text-[10px] text-gray-400">
                                 <span>${c.atualizado || 'Atualizado'}</span>
                                 <button type="button" onclick="abrirModalAtualizarSaldo('${c.id_conta}')" class="text-emerald-400 font-bold hover:underline flex items-center gap-1">
                                     <i data-lucide="refresh-cw" class="size-3"></i> Atualizar
@@ -2864,7 +3103,7 @@
                 const contCartoes = document.getElementById('caixaContainerCartoes');
                 if (contCartoes) {
                     contCartoes.innerHTML = (cec.cartoes || []).map(cart => `
-                        <div class="rounded-2xl border border-rose-500/30 bg-[#1a1215] p-4 text-white space-y-3 shadow-2xs">
+                        <div class="rounded-2xl border border-rose-500/30 bg-[#160d11] p-4 text-white space-y-3 shadow-2xs">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2.5">
                                     <span class="size-8 rounded-xl bg-purple-950/80 text-purple-300 border border-purple-500/30 flex items-center justify-center">
@@ -2880,11 +3119,11 @@
                             <div class="grid grid-cols-2 gap-3 pt-1">
                                 <div>
                                     <span class="text-[10px] text-gray-400 block font-medium">Fatura atual</span>
-                                    <strong class="text-sm font-black text-rose-400">${BRL(cart.fatura_atual)}</strong>
+                                    <strong class="text-sm font-black text-rose-400 valor-sensivel">${BRL(cart.fatura_atual)}</strong>
                                 </div>
                                 <div>
                                     <span class="text-[10px] text-gray-400 block font-medium">Limite disponível</span>
-                                    <strong class="text-sm font-black text-white">${BRL(cart.limite_disponivel)}</strong>
+                                    <strong class="text-sm font-black text-white valor-sensivel">${BRL(cart.limite_disponivel)}</strong>
                                 </div>
                             </div>
                             <div class="space-y-1">
@@ -2902,7 +3141,7 @@
                 const listaDeve = document.getElementById('caixaListaOQueVoceDeve');
                 if (listaDeve) {
                     listaDeve.innerHTML = (dev.itens || []).map(it => `
-                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-4 text-white space-y-3 shadow-2xs">
+                        <div class="rounded-2xl border border-emerald-900/40 bg-[#0d2016] p-4 text-white space-y-3 shadow-2xs">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2.5">
                                     <span class="size-8 rounded-xl bg-white/10 text-emerald-300 flex items-center justify-center">
@@ -2914,7 +3153,7 @@
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <strong class="text-sm font-black text-white">${BRL(it.valor)}</strong>
+                                    <strong class="text-sm font-black text-white valor-sensivel">${BRL(it.valor)}</strong>
                                     ${it.status_label ? `<span class="text-[9px] block ${it.vence_hoje ? 'text-rose-400 font-bold' : 'text-gray-400'}">${it.status_label}</span>` : ''}
                                 </div>
                             </div>
@@ -2939,14 +3178,14 @@
                 if (totCompEl) totCompEl.innerText = BRL(dev.total_comprometido_mes || 0);
                 if (barCompEl) barCompEl.style.width = `${dev.percentual_renda || 0}%`;
                 if (pctCompEl) {
-                    pctCompEl.innerHTML = `Você compromete <strong class="text-rose-500 font-extrabold">${dev.percentual_renda || 0}%</strong> da sua renda com despesas fixas e acordos.`;
+                    pctCompEl.innerHTML = `Você compromete <strong class="text-rose-400 font-extrabold">${dev.percentual_renda || 0}%</strong> da sua renda com despesas fixas e acordos.`;
                 }
 
                 // 5. Despesas só suas
                 const listaSoSuas = document.getElementById('caixaListaDespesasSoSuas');
                 if (listaSoSuas) {
                     listaSoSuas.innerHTML = (data.despesas_so_suas || []).map(ds => `
-                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3.5 text-white flex items-center justify-between gap-3 shadow-2xs">
+                        <div class="rounded-2xl border border-emerald-900/40 bg-[#0d2016] p-3.5 text-white flex items-center justify-between gap-3 shadow-2xs">
                             <div class="flex items-center gap-2.5 min-w-0">
                                 <span class="size-8 rounded-xl bg-white/10 text-emerald-300 flex items-center justify-center shrink-0">
                                     <i data-lucide="${ds.icone || 'lock'}" class="size-4"></i>
@@ -2957,7 +3196,7 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
-                                <span class="text-xs font-black text-white">${BRL(ds.valor)}</span>
+                                <span class="text-xs font-black text-white valor-sensivel">${BRL(ds.valor)}</span>
                                 ${data.is_casal ? `
                                     <button type="button" onclick="dividirDespesaComParceiro('${ds.id}', '${ds.titulo}', ${ds.valor})" 
                                             class="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-[10px] font-bold text-emerald-300 hover:text-white transition flex items-center gap-1">
@@ -2965,7 +3204,7 @@
                                     </button>
                                 ` : ''}
                                 <button type="button" onclick="abrirModalRegistrarPagamento('${ds.id}', '${ds.titulo}', ${ds.valor})" 
-                                        class="size-7 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition">
+                                        class="size-7 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition">
                                     <i data-lucide="check" class="size-3.5"></i>
                                 </button>
                             </div>
@@ -2979,7 +3218,7 @@
                     gridMetas.innerHTML = (data.metas || []).map(m => {
                         const p = m.percentual || Math.min(100, Math.round(((m.atual||0) / (m.alvo||1)) * 100));
                         return `
-                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3.5 text-white space-y-2 shadow-2xs">
+                        <div class="rounded-2xl border border-emerald-900/40 bg-[#0d2016] p-3.5 text-white space-y-2 shadow-2xs">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <span class="size-7 rounded-lg bg-white/10 text-emerald-300 flex items-center justify-center text-xs">
@@ -2993,7 +3232,7 @@
                                 <div class="h-full bg-emerald-500 rounded-full" style="width: ${p}%"></div>
                             </div>
                             <div class="flex items-center justify-between text-[10px] text-gray-400">
-                                <span>${BRL(m.atual)} de ${BRL(m.alvo)}</span>
+                                <span><strong class="valor-sensivel">${BRL(m.atual)}</strong> de ${BRL(m.alvo)}</span>
                                 <button type="button" onclick="abrirModalGuardarMeta(${m.id_meta || 1}, '${m.titulo}', ${m.atual}, ${m.alvo}, 'individual')" class="text-emerald-400 font-bold hover:underline">
                                     + Guardar
                                 </button>
@@ -3006,25 +3245,32 @@
                 const listaOlho = document.getElementById('caixaListaProdutosOlho');
                 if (listaOlho) {
                     listaOlho.innerHTML = (data.produtos_de_olho || []).map(prod => `
-                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3 text-white flex items-center justify-between gap-3 shadow-2xs">
+                        <div class="rounded-2xl border border-emerald-900/40 bg-[#0d2016] p-3 text-white flex items-center justify-between gap-3 shadow-2xs hover:border-emerald-700/50 transition">
                             <div class="flex items-center gap-2.5 min-w-0">
-                                <img src="${prod.imagem}" alt="${prod.nome}" class="size-10 rounded-xl object-cover border border-white/10 shrink-0" onerror="this.src='/icon.svg'">
+                                <img src="${prod.imagem}" alt="${prod.nome}" class="size-10 rounded-xl object-cover border border-emerald-900/50 shrink-0 bg-black/40" onerror="this.src='/icon.svg'">
                                 <div class="min-w-0">
                                     <h5 class="text-xs font-bold text-white truncate">${prod.nome}</h5>
-                                    <span class="text-[10px] text-gray-400">${prod.loja}</span>
+                                    <span class="text-[10px] text-gray-400 block truncate">${prod.loja || 'Loja online'}${prod.link ? ` · <a href="${prod.link}" target="_blank" class="text-emerald-400 hover:underline">Ver link ↗</a>` : ''}</span>
                                 </div>
                             </div>
-                            <div class="text-right shrink-0">
-                                <strong class="text-xs font-black text-white block">${BRL(prod.preco)}</strong>
-                                <button type="button" onclick="abrirModalCriarMetaComDados('${prod.nome}', ${prod.preco})" class="text-[10px] text-emerald-400 font-bold hover:underline inline-flex items-center gap-1">
-                                    <i data-lucide="target" class="size-3"></i> Criar meta
-                                </button>
+                            <div class="text-right shrink-0 space-y-1">
+                                <strong class="text-xs font-black text-white block valor-sensivel">${BRL(prod.preco)}</strong>
+                                <div class="flex items-center justify-end gap-2">
+                                    <button type="button" onclick="abrirModalCriarMetaComDados('${prod.nome}', ${prod.preco})" class="text-[10px] text-emerald-400 font-bold hover:underline inline-flex items-center gap-1">
+                                        <i data-lucide="target" class="size-3"></i> Criar meta
+                                    </button>
+                                    ${prod.id_produto ? `
+                                        <button type="button" onclick="removerProdutoOlho(${prod.id_produto})" title="Remover" class="text-gray-400 hover:text-rose-400 transition">
+                                            <i data-lucide="trash-2" class="size-3"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
                             </div>
                         </div>
                     `).join('');
                 }
 
-                // 7. A Receber
+                // 7. A Receber com confirmação e disputa
                 const secAReceber = document.getElementById('caixaSecaoAReceber');
                 if (secAReceber) {
                     if (data.is_casal && data.a_receber?.tem_a_receber) {
@@ -3032,20 +3278,28 @@
                         const listaAReceber = document.getElementById('caixaListaAReceber');
                         if (listaAReceber) {
                             listaAReceber.innerHTML = (data.a_receber.itens || []).map(r => `
-                                <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3.5 text-white flex items-center justify-between gap-3 shadow-2xs">
+                                <div class="rounded-2xl border border-emerald-800/40 bg-[#0d2217] p-3.5 text-white flex flex-wrap items-center justify-between gap-3 shadow-2xs">
                                     <div class="flex items-center gap-2.5 min-w-0">
-                                        <span class="size-8 rounded-xl bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                                        <span class="size-9 rounded-xl bg-emerald-950 text-emerald-300 border border-emerald-600/40 flex items-center justify-center shrink-0">
                                             <i data-lucide="${r.icone || 'hand-coins'}" class="size-4"></i>
                                         </span>
                                         <div class="min-w-0">
                                             <h4 class="text-xs font-bold text-white truncate">${r.titulo}</h4>
-                                            <span class="text-[10px] text-gray-400 block truncate">${r.descricao}</span>
+                                            <span class="text-[10px] text-gray-300 block truncate">${r.descricao}</span>
                                         </div>
                                     </div>
-                                    <div class="text-right shrink-0">
-                                        <strong class="text-xs font-black text-emerald-400 block">${BRL(r.valor)}</strong>
-                                        <button type="button" onclick="confirmarRecebimentoAjuda('${r.id}')" class="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-[10px] font-bold text-white transition mt-0.5">
-                                            Confirmar que recebi
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <strong class="text-xs font-black text-emerald-400 valor-sensivel pr-1">${BRL(r.valor)}</strong>
+                                        <button type="button" onclick="confirmarRecebimentoAjuda('${r.id}', ${r.valor})" 
+                                                class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-[10px] font-bold text-white transition flex items-center gap-1 shadow-2xs">
+                                            <i data-lucide="check" class="size-3"></i>
+                                            <span>Confirmar que recebi</span>
+                                        </button>
+                                        <button type="button" onclick="disputarRecebimentoAjuda('${r.id}', ${r.valor}, '${r.titulo}')" 
+                                                class="px-2 py-1.5 rounded-xl border border-rose-800/40 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 hover:text-white text-[10px] font-bold transition flex items-center gap-1"
+                                                title="Solicitar comprovante ou informar que não caiu">
+                                            <i data-lucide="alert-circle" class="size-3"></i>
+                                            <span>Não recebi</span>
                                         </button>
                                     </div>
                                 </div>
@@ -3060,7 +3314,7 @@
                 const listaGastos = document.getElementById('caixaListaGastosRecentes');
                 if (listaGastos) {
                     listaGastos.innerHTML = (data.gastos_recentes || []).map(g => `
-                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3 text-white flex items-center justify-between gap-3 shadow-2xs">
+                        <div class="rounded-2xl border border-emerald-900/40 bg-[#0d2016] p-3 text-white flex items-center justify-between gap-3 shadow-2xs">
                             <div class="flex items-center gap-2.5 min-w-0">
                                 <span class="size-8 rounded-xl bg-white/10 text-emerald-300 flex items-center justify-center shrink-0">
                                     <i data-lucide="${g.icone || 'sparkles'}" class="size-4"></i>
@@ -3070,7 +3324,7 @@
                                     <span class="text-[10px] text-gray-400">${g.subtitulo}</span>
                                 </div>
                             </div>
-                            <strong class="text-xs font-black text-rose-400 shrink-0">-${BRL(g.valor)}</strong>
+                            <strong class="text-xs font-black text-rose-400 shrink-0 valor-sensivel">-${BRL(g.valor)}</strong>
                         </div>
                     `).join('');
                 }
@@ -3080,9 +3334,9 @@
                 const totRecebido = document.getElementById('caixaTotalRecebidoTxt');
                 if (listaEntrou) {
                     listaEntrou.innerHTML = (data.o_que_entrou || []).map(ent => `
-                        <div class="rounded-2xl border border-white/10 bg-[#12241b] p-3 text-white flex items-center justify-between gap-3 shadow-2xs">
+                        <div class="rounded-2xl border border-emerald-900/40 bg-[#0d2016] p-3 text-white flex items-center justify-between gap-3 shadow-2xs">
                             <div class="flex items-center gap-2.5 min-w-0">
-                                <span class="size-8 rounded-xl bg-emerald-950/80 text-emerald-300 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                                <span class="size-8 rounded-xl bg-emerald-950 text-emerald-300 border border-emerald-500/20 flex items-center justify-center shrink-0">
                                     <i data-lucide="trending-up" class="size-4"></i>
                                 </span>
                                 <div class="min-w-0">
@@ -3090,7 +3344,7 @@
                                     <span class="text-[10px] text-gray-400">${ent.data}</span>
                                 </div>
                             </div>
-                            <strong class="text-xs font-black text-emerald-400 shrink-0">+${BRL(ent.valor)}</strong>
+                            <strong class="text-xs font-black text-emerald-400 shrink-0 valor-sensivel">+${BRL(ent.valor)}</strong>
                         </div>
                     `).join('');
                 }
@@ -3108,6 +3362,14 @@
                     }
                 }
 
+                // Se valores estavam ocultos, reaplica máscara
+                if (caixaValoresOcultados) {
+                    document.querySelectorAll('#caixaUnsealedBox .valor-sensivel').forEach(el => {
+                        el.dataset.valorReal = el.innerText;
+                        el.innerText = '••••••';
+                    });
+                }
+
                 lucide.createIcons();
 
             } catch (e) {
@@ -3123,7 +3385,7 @@
             try {
                 const res = await fetch('/api/caixa-preta/responder-ajuda', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
                     body: JSON.stringify({
                         id_cobranca: pedido.id_cobranca,
                         acao: acao,
@@ -3134,6 +3396,7 @@
                 if (res.ok) {
                     seivaNotificar(data.mensagem || 'Ação registrada com sucesso!', 'sucesso', 'Ajuda Mútua');
                     carregarCaixaPretaDados();
+                    carregarDashboardDados();
                 } else {
                     seivaNotificar(data.error || 'Não foi possível processar a ação.', 'erro');
                 }
@@ -3142,13 +3405,214 @@
             }
         }
 
+        function abrirContrapropostaCaixa() {
+            const box = document.getElementById('caixaContrapropostaBox');
+            if (box) {
+                box.classList.remove('hidden');
+                const pAj = caixaPretaDadosCache?.pedido_ajuda;
+                const valInput = document.getElementById('caixaContrapropostaValor');
+                if (valInput && pAj && !valInput.value) {
+                    valInput.value = (pAj.valor / 2).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                }
+                valInput?.focus();
+                lucide.createIcons();
+            }
+        }
+
+        function fecharContrapropostaCaixa() {
+            document.getElementById('caixaContrapropostaBox')?.classList.add('hidden');
+        }
+
+        async function enviarContrapropostaCaixa() {
+            const pedido = caixaPretaDadosCache?.pedido_ajuda;
+            if (!pedido) return;
+
+            const valStr = document.getElementById('caixaContrapropostaValor')?.value || '';
+            const msgStr = document.getElementById('caixaContrapropostaMensagem')?.value?.trim() || '';
+            const valor = parseFloat(valStr.replace(/\./g, '').replace(',', '.')) || 0;
+
+            if (valor <= 0) {
+                return seivaNotificar('Digite um valor válido para contraproposta.', 'aviso', 'Valor inválido');
+            }
+
+            try {
+                const res = await fetch('/api/caixa-preta/responder-ajuda', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({
+                        id_cobranca: pedido.id_cobranca,
+                        acao: 'contrapor',
+                        valor_contraproposta: valor,
+                        mensagem_contraproposta: msgStr,
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    seivaNotificar(data.mensagem || 'Contraproposta enviada ao parceiro!', 'sucesso', 'Contraproposta');
+                    fecharContrapropostaCaixa();
+                    carregarCaixaPretaDados();
+                } else {
+                    seivaNotificar(data.error || 'Erro ao enviar contraproposta.', 'erro');
+                }
+            } catch(e) {
+                seivaNotificar('Erro de conexão.', 'erro');
+            }
+        }
+
         function dividirDespesaComParceiro(id, titulo, valor) {
             abrirModalPedirAjudaCusto({ id, titulo, valor });
         }
 
-        function confirmarRecebimentoAjuda(id) {
-            seivaNotificar('Recebimento confirmado! O valor foi adicionado ao seu saldo livre.', 'sucesso', 'Confirmado');
-            carregarCaixaPretaDados();
+        async function confirmarRecebimentoAjuda(id, valor) {
+            try {
+                const res = await fetch('/api/caixa-preta/confirmar-recebimento', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ id, valor })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    seivaNotificar(data.mensagem || 'Recebimento confirmado! Valor creditado no seu saldo.', 'sucesso', 'Recebimento Confirmado');
+                    carregarCaixaPretaDados();
+                    carregarDashboardDados();
+                } else {
+                    seivaNotificar(data.error || 'Erro ao confirmar recebimento.', 'erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão.', 'erro');
+            }
+        }
+
+        function disputarRecebimentoAjuda(id, valor, titulo) {
+            const modal = document.getElementById('modalDisputarRecebimento');
+            if (!modal) return;
+
+            const idInput = document.getElementById('disputaItemRecebimentoId');
+            const valInput = document.getElementById('disputaItemRecebimentoValor');
+            const valTxt = document.getElementById('disputaItemRecebimentoValorTxt');
+            const titEl = document.getElementById('disputaItemRecebimentoTitulo');
+            const msgEl = document.getElementById('disputaMensagemAdicional');
+
+            if (idInput) idInput.value = id;
+            if (valInput) valInput.value = valor;
+            if (valTxt) valTxt.innerText = BRL(valor);
+            if (titEl) titEl.innerText = titulo || 'Valor contestado';
+            if (msgEl) msgEl.value = '';
+
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function selecionarMotivoDisputa(btn, motivo) {
+            document.querySelectorAll('.chip-motivo-disputa').forEach(b => {
+                b.className = 'chip-motivo-disputa w-full p-2.5 text-left rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground text-xs font-bold transition flex items-center justify-between';
+                const ic = b.querySelector('i');
+                if (ic) ic.classList.add('opacity-0');
+            });
+            btn.className = 'chip-motivo-disputa active w-full p-2.5 text-left rounded-xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 text-foreground text-xs font-bold transition flex items-center justify-between';
+            const ic = btn.querySelector('i');
+            if (ic) ic.classList.remove('opacity-0');
+            document.getElementById('disputaMotivoSelecionado').value = motivo;
+        }
+
+        async function executarEnvioDisputaRecebimento(event) {
+            event.preventDefault();
+            const id = document.getElementById('disputaItemRecebimentoId')?.value;
+            const valor = parseFloat(document.getElementById('disputaItemRecebimentoValor')?.value) || 0;
+            const motivoSelect = document.getElementById('disputaMotivoSelecionado')?.value || 'Não localizado no extrato';
+            const detalhe = document.getElementById('disputaMensagemAdicional')?.value?.trim();
+            const motivo = detalhe ? `${motivoSelect} — ${detalhe}` : motivoSelect;
+
+            try {
+                const res = await fetch('/api/caixa-preta/disputar-recebimento', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ id, valor, motivo })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    fecharModalId('modalDisputarRecebimento');
+                    seivaNotificar(data.mensagem || 'Alerta enviado ao parceiro para verificação do comprovante.', 'aviso', 'Aviso Enviado');
+                    carregarCaixaPretaDados();
+                } else {
+                    seivaNotificar(data.error || 'Erro ao enviar aviso.', 'erro');
+                }
+            } catch(e) {
+                seivaNotificar('Erro de conexão.', 'erro');
+            }
+        }
+
+        function toggleFormProdutoOlho() {
+            const f = document.getElementById('formAdicionarProdutoOlho');
+            if (f) {
+                f.classList.toggle('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        async function salvarNovoProdutoOlho() {
+            const nome = document.getElementById('prodOlhoNome')?.value?.trim();
+            const precoStr = document.getElementById('prodOlhoPreco')?.value || '';
+            const loja = document.getElementById('prodOlhoLoja')?.value?.trim() || 'Loja online';
+            const link = document.getElementById('prodOlhoLink')?.value?.trim() || '';
+            const preco = parseFloat(precoStr.replace(/\./g, '').replace(',', '.')) || 0;
+
+            if (!nome || preco <= 0) {
+                return seivaNotificar('Preencha o nome e um preço válido para o produto.', 'aviso', 'Dados incompletos');
+            }
+
+            try {
+                const res = await fetch('/api/caixa-preta/produtos-watchlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ nome, preco, loja, link })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    seivaNotificar(data.mensagem || 'Produto adicionado aos seus Produtos de Olho!', 'sucesso', 'Wishlist');
+                    // Limpar campos
+                    ['prodOlhoNome', 'prodOlhoPreco', 'prodOlhoLoja', 'prodOlhoLink'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.value = '';
+                    });
+                    toggleFormProdutoOlho();
+                    carregarCaixaPretaDados();
+                } else {
+                    seivaNotificar(data.error || 'Erro ao salvar produto.', 'erro');
+                }
+            } catch(e) {
+                seivaNotificar('Erro de conexão ao salvar produto.', 'erro');
+            }
+        }
+
+        async function removerProdutoOlho(id) {
+            const aceitou = await seivaConfirm({
+                titulo: 'Remover produto monitorado',
+                mensagem: 'Deseja remover este produto dos seus produtos de olho?',
+                confirmText: 'Remover',
+                tipo: 'perigo',
+                icone: 'trash-2'
+            });
+            if (!aceitou) return;
+
+            try {
+                const res = await fetch(`/api/caixa-preta/produtos-watchlist/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    seivaNotificar(data.mensagem || 'Produto removido com sucesso.', 'sucesso');
+                    carregarCaixaPretaDados();
+                }
+            } catch(e) {
+                seivaNotificar('Erro ao remover produto.', 'erro');
+            }
         }
 
         // --- MODAL: ADICIONAR CONTA OU CARTÃO ---
@@ -4262,14 +4726,29 @@
         }
 
         async function depositarMeta(id) {
-            const v = prompt('Valor do depósito (R$):');
-            if (!v) return;
-            await fetch(`/api/metas/${id}/contribuir`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ valor: parseFloat(v) })
+            const v = await seivaPrompt({
+                titulo: 'Guardar dinheiro na meta',
+                mensagem: 'Informe o valor que deseja depositar nesta meta:',
+                placeholder: '0,00',
+                label: 'Valor do depósito (R$)',
+                confirmText: 'Depositar'
             });
-            carregarMetasDados();
+            if (!v) return;
+            const valorNum = parseFloat(String(v).replace(/\./g, '').replace(',', '.')) || 0;
+            if (valorNum <= 0) return seivaNotificar('Digite um valor válido.', 'aviso');
+
+            try {
+                await fetch(`/api/metas/${id}/contribuir`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ valor: valorNum })
+                });
+                seivaNotificar(`R$ ${valorNum.toFixed(2)} depositado com sucesso!`, 'sucesso', 'Meta');
+                carregarMetasDados();
+                carregarDashboardDados();
+            } catch(e) {
+                seivaNotificar('Erro ao realizar depósito na meta.', 'erro');
+            }
         }
 
         async function adicionarMetaPrompt() {
@@ -4719,21 +5198,33 @@
         }
 
         async function adicionarContaPrompt() {
-            const nome = prompt('Nome do Banco ou Carteira (ex: Inter, NuBank, Carteira):');
-            if (!nome) return;
-            const saldo = prompt('Saldo atual (R$):') || '0';
-            await fetch('/api/contas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nome, tipo: 'corrente', saldo: parseFloat(saldo) })
-            });
-            carregarDashboardDados();
+            abrirModalAdicionarContaCartao();
         }
 
         async function excluirMinhaConta() {
-            if (!confirm('Deseja excluir definitivamente sua conta e dados de acordo com a LGPD?')) return;
-            await fetch('/api/perfil/excluir', { method: 'DELETE' });
-            location.reload();
+            const confirmou = await seivaConfirm({
+                titulo: 'Excluir definitivamente sua conta?',
+                mensagem: 'De acordo com a LGPD, todos os seus dados confidenciais, contas e registros serão permanentemente eliminados. Esta ação não pode ser desfeita.',
+                confirmText: 'Sim, excluir minha conta',
+                tipo: 'perigo',
+                icone: 'alert-triangle'
+            });
+            if (!confirmou) return;
+
+            try {
+                const res = await fetch('/api/perfil/excluir', { 
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+                });
+                if (res.ok) {
+                    seivaNotificar('Conta excluída com sucesso. Até logo!', 'info');
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    seivaNotificar('Erro ao processar exclusão da conta.', 'erro');
+                }
+            } catch(e) {
+                seivaNotificar('Erro de conexão ao excluir conta.', 'erro');
+            }
         }
 
         // ==========================================
@@ -4896,16 +5387,17 @@
                 }
 
                 const iconesPorTipo = {
-                    sucesso:  { icon: 'check-circle', bg: 'bg-emerald-50', cor: 'text-emerald-600', borda: 'border-emerald-200/60' },
-                    alerta:   { icon: 'alert-triangle', bg: 'bg-amber-50', cor: 'text-amber-500',   borda: 'border-amber-200/60' },
-                    cobranca: { icon: 'hand-coins',  bg: 'bg-purple-50',  cor: 'text-purple-600',  borda: 'border-purple-200/60' },
-                    info:     { icon: 'info',         bg: 'bg-blue-50',    cor: 'text-blue-600',    borda: 'border-blue-200/60'   },
-                    erro:     { icon: 'x-circle',     bg: 'bg-rose-50',    cor: 'text-rose-500',    borda: 'border-rose-200/60'   },
+                    sucesso:  { icon: 'check-circle',   cor: 'text-emerald-600', borda: 'border-l-emerald-500' },
+                    alerta:   { icon: 'alert-triangle', cor: 'text-amber-500',   borda: 'border-l-amber-400' },
+                    cobranca: { icon: 'hand-coins',     cor: 'text-violet-600',  borda: 'border-l-violet-500' },
+                    info:     { icon: 'info',           cor: 'text-sky-600',     borda: 'border-l-sky-400' },
+                    erro:     { icon: 'x-circle',       cor: 'text-rose-500',    borda: 'border-l-rose-400' },
+                    lar:      { icon: 'home',           cor: 'text-emerald-600', borda: 'border-l-emerald-500' },
                 };
 
                 lista.innerHTML = notifs.map(n => {
                     const cfg = iconesPorTipo[n.tipo] || iconesPorTipo.info;
-                    const opacidade = n.lida ? 'opacity-60' : '';
+                    const opacidade = n.lida ? 'opacity-50' : '';
                     const acaoBotao = n.acao
                         ? `<button type="button" onclick="${n.acao.fn}; fecharBoasVindas();"
                                class="mt-1.5 text-[10px] font-bold text-primary hover:underline">
@@ -4913,8 +5405,8 @@
                            </button>`
                         : '';
                     return `
-                        <div class="flex items-start gap-3 p-3 rounded-2xl border ${cfg.borda} ${cfg.bg} ${opacidade} transition">
-                            <span class="size-9 rounded-xl ${cfg.bg} ${cfg.cor} flex items-center justify-center shrink-0 border ${cfg.borda}">
+                        <div class="flex items-start gap-3 p-3 rounded-xl border border-border border-l-4 ${cfg.borda} bg-card ${opacidade} transition hover:bg-muted/30">
+                            <span class="size-8 rounded-lg bg-muted/60 ${cfg.cor} flex items-center justify-center shrink-0">
                                 <i data-lucide="${cfg.icon}" class="size-4"></i>
                             </span>
                             <div class="flex-1 min-w-0">
@@ -5070,6 +5562,24 @@
             lucide.createIcons();
         }
 
+        let notificacoesCache = [];
+        let abaNotificacoesAtual = 'nao_lidas';
+
+        function alternarAbaNotificacoes(aba) {
+            abaNotificacoesAtual = aba;
+            const btnNaoLidas = document.getElementById('tabNotifNaoLidas');
+            const btnHistorico = document.getElementById('tabNotifHistorico');
+
+            if (aba === 'nao_lidas') {
+                if (btnNaoLidas) btnNaoLidas.className = 'flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition bg-card text-foreground shadow-2xs border border-border/60';
+                if (btnHistorico) btnHistorico.className = 'flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition text-muted-foreground hover:text-foreground';
+            } else {
+                if (btnHistorico) btnHistorico.className = 'flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition bg-card text-foreground shadow-2xs border border-border/60';
+                if (btnNaoLidas) btnNaoLidas.className = 'flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition text-muted-foreground hover:text-foreground';
+            }
+            renderizarListaNotificacoes();
+        }
+
         async function carregarNotificacoesPopup() {
             try {
                 const res = await fetch('/api/notificacoes', {
@@ -5077,12 +5587,18 @@
                 });
                 if (!res.ok) return;
                 const data = await res.json();
-                const notifs = data.notificacoes || [];
-                const totalNaoLidas = data.total_nao_lidas || 0;
+                notificacoesCache = data.notificacoes || [];
+                const totalNaoLidas = notificacoesCache.filter(n => !n.lida).length;
+                const totalHistorico = notificacoesCache.filter(n => n.lida).length;
 
                 // Atualizar badges
                 const badgePopup = document.getElementById('popupNotifBadgeContador');
                 const badgeTop = document.getElementById('topbarBadgeNotif');
+                const countNaoLidasEl = document.getElementById('notifNaoLidasCount');
+                const countHistoricoEl = document.getElementById('notifHistoricoCount');
+
+                if (countNaoLidasEl) countNaoLidasEl.innerText = totalNaoLidas;
+                if (countHistoricoEl) countHistoricoEl.innerText = totalHistorico;
 
                 [badgePopup, badgeTop].forEach(b => {
                     if (b) {
@@ -5097,63 +5613,133 @@
                     }
                 });
 
-                const lista = document.getElementById('popupNotificacoesLista');
-                if (!lista) return;
+                renderizarListaNotificacoes();
+            } catch (e) {
+                console.error('Erro ao carregar pop-up de notificações:', e);
+            }
+        }
 
-                if (!notifs.length) {
+        function renderizarListaNotificacoes() {
+            const lista = document.getElementById('popupNotificacoesLista');
+            if (!lista) return;
+
+            const itensExibir = abaNotificacoesAtual === 'nao_lidas' 
+                ? notificacoesCache.filter(n => !n.lida)
+                : notificacoesCache.filter(n => n.lida);
+
+            if (!itensExibir.length) {
+                if (abaNotificacoesAtual === 'nao_lidas') {
                     lista.innerHTML = `
                         <div class="flex flex-col items-center justify-center py-8 text-center gap-2">
-                            <span class="size-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <span class="size-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center">
                                 <i data-lucide="check-circle-2" class="size-5"></i>
                             </span>
                             <p class="text-xs font-bold text-foreground">Tudo em dia!</p>
                             <p class="text-[11px] text-muted-foreground">Nenhuma notificação pendente no momento.</p>
                         </div>
                     `;
-                    lucide.createIcons();
-                    return;
-                }
-
-                const iconesPorTipo = {
-                    sucesso:  { icon: 'check-circle', bg: 'bg-emerald-50 dark:bg-emerald-950/60', cor: 'text-emerald-700 dark:text-emerald-300', borda: 'border-emerald-200/60 dark:border-emerald-800/40' },
-                    alerta:   { icon: 'alert-triangle', bg: 'bg-amber-50 dark:bg-amber-950/60',   cor: 'text-amber-700 dark:text-amber-300',   borda: 'border-amber-200/60 dark:border-amber-800/40' },
-                    cobranca: { icon: 'hand-coins',    bg: 'bg-purple-50 dark:bg-purple-950/60', cor: 'text-purple-700 dark:text-purple-300', borda: 'border-purple-200/60 dark:border-purple-800/40' },
-                    info:     { icon: 'info',          bg: 'bg-blue-50 dark:bg-blue-950/60',     cor: 'text-blue-700 dark:text-blue-300',       borda: 'border-blue-200/60 dark:border-blue-800/40' },
-                    erro:     { icon: 'x-circle',      bg: 'bg-rose-50 dark:bg-rose-950/60',     cor: 'text-rose-700 dark:text-rose-300',       borda: 'border-rose-200/60 dark:border-rose-800/40' },
-                };
-
-                lista.innerHTML = notifs.map(n => {
-                    const cfg = iconesPorTipo[n.tipo] || iconesPorTipo.info;
-                    const opacidade = n.lida ? 'opacity-50' : '';
-                    const acaoBotao = n.acao
-                        ? `<button type="button" onclick="${n.acao.fn}; fecharModalNotificacoesPopup();"
-                               class="mt-2 px-3 py-1.5 rounded-xl bg-card border border-border hover:bg-muted text-[11px] font-bold text-foreground transition flex items-center gap-1.5 shadow-2xs">
-                               <span>${n.acao.label}</span>
-                               <i data-lucide="arrow-right" class="size-3 text-primary"></i>
-                           </button>`
-                        : '';
-
-                    return `
-                        <div class="flex items-start gap-3 p-3.5 rounded-2xl border ${cfg.borda} ${cfg.bg} ${opacidade} transition hover:brightness-95">
-                            <span class="size-9 rounded-xl ${cfg.bg} ${cfg.cor} flex items-center justify-center shrink-0 border ${cfg.borda}">
-                                <i data-lucide="${cfg.icon}" class="size-4"></i>
+                } else {
+                    lista.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-8 text-center gap-2">
+                            <span class="size-10 rounded-2xl bg-muted text-muted-foreground flex items-center justify-center">
+                                <i data-lucide="archive" class="size-5"></i>
                             </span>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between gap-1">
-                                    <p class="text-xs font-black text-foreground leading-snug">${n.titulo}</p>
-                                    <span class="text-[10px] text-muted-foreground shrink-0">${n.tempo || ''}</span>
-                                </div>
-                                <p class="text-[11px] text-muted-foreground leading-relaxed mt-0.5">${n.texto}</p>
-                                ${acaoBotao}
-                            </div>
+                            <p class="text-xs font-bold text-foreground">Histórico vazio</p>
+                            <p class="text-[11px] text-muted-foreground">Nenhuma notificação arquivada no histórico.</p>
                         </div>
                     `;
-                }).join('');
-
+                }
                 lucide.createIcons();
-            } catch (e) {
-                console.error('Erro ao carregar pop-up de notificações:', e);
+                return;
             }
+
+            const iconesPorTipo = {
+                sucesso:  { icon: 'check-circle',   cor: 'text-emerald-600 dark:text-emerald-400', borda: 'border-l-emerald-500 dark:border-l-emerald-400' },
+                alerta:   { icon: 'alert-triangle', cor: 'text-amber-500 dark:text-amber-400',     borda: 'border-l-amber-400 dark:border-l-amber-400' },
+                cobranca: { icon: 'hand-coins',     cor: 'text-violet-600 dark:text-violet-400',   borda: 'border-l-violet-500 dark:border-l-violet-400' },
+                info:     { icon: 'info',           cor: 'text-sky-600 dark:text-sky-400',         borda: 'border-l-sky-400 dark:border-l-sky-400' },
+                erro:     { icon: 'x-circle',       cor: 'text-rose-500 dark:text-rose-400',       borda: 'border-l-rose-400 dark:border-l-rose-400' },
+                lar:      { icon: 'home',           cor: 'text-emerald-600 dark:text-emerald-400', borda: 'border-l-emerald-500 dark:border-l-emerald-400' },
+            };
+
+            lista.innerHTML = itensExibir.map(n => {
+                const cfg = iconesPorTipo[n.tipo] || iconesPorTipo.info;
+                const acaoBotao = n.acao
+                    ? `<button type="button" onclick="${n.acao.fn}; fecharModalNotificacoesPopup();"
+                           class="mt-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 hover:bg-primary/20 text-[11px] font-bold text-primary transition flex items-center gap-1.5">
+                           <span>${n.acao.label}</span>
+                           <i data-lucide="arrow-right" class="size-3"></i>
+                       </button>`
+                    : '';
+
+                const botaoMarcarLida = !n.lida ? `
+                    <button type="button" onclick="marcarNotificacaoIndividualLida('${n.id}')" title="Marcar como lida" 
+                            class="size-6 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center transition shrink-0" aria-label="Marcar como lida">
+                        <i data-lucide="check" class="size-3.5"></i>
+                    </button>
+                ` : '';
+
+                return `
+                    <div class="flex items-start gap-3 p-3.5 rounded-xl border border-border border-l-4 ${cfg.borda} bg-card dark:bg-card transition hover:bg-muted/30 dark:hover:bg-muted/20">
+                        <span class="size-9 rounded-lg bg-muted/60 dark:bg-muted/30 ${cfg.cor} flex items-center justify-center shrink-0">
+                            <i data-lucide="${cfg.icon}" class="size-4"></i>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-1">
+                                <p class="text-xs font-black text-foreground leading-snug">${n.titulo}</p>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[10px] text-muted-foreground shrink-0">${n.tempo || ''}</span>
+                                    ${botaoMarcarLida}
+                                </div>
+                            </div>
+                            <p class="text-[11px] text-muted-foreground leading-relaxed mt-0.5">${n.texto}</p>
+                            ${acaoBotao}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        async function marcarNotificacaoIndividualLida(id) {
+            const notif = notificacoesCache.find(n => n.id === id);
+            if (notif) notif.lida = true;
+
+            const totalNaoLidas = notificacoesCache.filter(n => !n.lida).length;
+            const totalHistorico = notificacoesCache.filter(n => n.lida).length;
+
+            const badgePopup = document.getElementById('popupNotifBadgeContador');
+            const badgeTop = document.getElementById('topbarBadgeNotif');
+            const countNaoLidasEl = document.getElementById('notifNaoLidasCount');
+            const countHistoricoEl = document.getElementById('notifHistoricoCount');
+
+            if (countNaoLidasEl) countNaoLidasEl.innerText = totalNaoLidas;
+            if (countHistoricoEl) countHistoricoEl.innerText = totalHistorico;
+
+            [badgePopup, badgeTop].forEach(b => {
+                if (b) {
+                    if (totalNaoLidas > 0) {
+                        b.innerText = totalNaoLidas > 9 ? '9+' : totalNaoLidas;
+                        b.classList.remove('hidden');
+                        b.classList.add('flex');
+                    } else {
+                        b.classList.add('hidden');
+                        b.classList.remove('flex');
+                    }
+                }
+            });
+
+            // Re-renderiza: a notificação lida desaparece imediatamente da aba "Não lidas"
+            renderizarListaNotificacoes();
+
+            try {
+                await fetch('/api/notificacoes/ler', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ id: id })
+                });
+            } catch(e) {}
         }
 
         async function marcarTodasLidasPopup() {
@@ -5162,7 +5748,28 @@
                     method: 'POST',
                     headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }
                 });
-                await carregarNotificacoesPopup();
+
+                // Marca todas como lidas no cache local
+                notificacoesCache.forEach(n => n.lida = true);
+
+                // Zera badges e contadores
+                const badgePopup = document.getElementById('popupNotifBadgeContador');
+                const badgeTop = document.getElementById('topbarBadgeNotif');
+                const countNaoLidasEl = document.getElementById('notifNaoLidasCount');
+                const countHistoricoEl = document.getElementById('notifHistoricoCount');
+
+                if (countNaoLidasEl) countNaoLidasEl.innerText = '0';
+                if (countHistoricoEl) countHistoricoEl.innerText = notificacoesCache.length;
+
+                [badgePopup, badgeTop].forEach(b => {
+                    if (b) {
+                        b.classList.add('hidden');
+                        b.classList.remove('flex');
+                    }
+                });
+
+                // Re-renderiza imediatamente: as notificações somem da aba Não lidas
+                renderizarListaNotificacoes();
                 await carregarNotificacoesBV();
                 seivaNotificar('Todas as notificações foram marcadas como lidas.', 'sucesso', 'Notificações');
             } catch(e) {}
@@ -5422,14 +6029,16 @@
                     textoStatus.className = `text-[11px] font-bold ${sf.score >= 80 ? 'text-emerald-600' : (sf.score >= 60 ? 'text-amber-600' : 'text-red-500')}`;
                 }
 
-                // Atualiza insights
+                // Atualiza insights (Sem emojis, usando ícones Lucide vetoriais)
                 const insightsCont = document.querySelector('#pane-dashboard .space-y-2\\.5.flex-1');
                 if (insightsCont && sf.insights?.length) {
                     const verAnaliseBtn = insightsCont.querySelector('.pt-2');
                     insightsCont.innerHTML = sf.insights.map(ins => {
-                        const icon = ins.tipo === 'sucesso' ? '✅' : '⚠️';
+                        const isSucesso = ins.tipo === 'sucesso';
                         return `<div class="flex items-start gap-2.5 text-xs text-foreground">
-                            <span class="${ins.tipo === 'sucesso' ? 'text-emerald-600' : 'text-amber-500'} font-bold shrink-0">${icon}</span>
+                            <span class="mt-0.5 shrink-0 ${isSucesso ? 'text-emerald-600' : 'text-amber-500'}">
+                                <i data-lucide="${isSucesso ? 'check-circle-2' : 'alert-triangle'}" class="size-4"></i>
+                            </span>
                             <p>${ins.texto}</p>
                         </div>`;
                     }).join('');
@@ -5437,34 +6046,35 @@
                 }
             }
 
-            // — Pra registrar hoje —
+            // — Pra registrar hoje (Alerta harmonioso e botões integrados) —
             const secaoPraReg = document.getElementById('dashPraRegistrarHojeList');
             if (secaoPraReg) {
                 const itens = data.pra_registrar_hoje || [];
                 if (!itens.length) {
                     secaoPraReg.innerHTML = `
-                        <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/60 text-xs text-emerald-800 font-medium">
-                            <i data-lucide="check-circle" class="size-4 text-emerald-600 shrink-0"></i>
-                            Tudo em dia! Nenhuma conta pendente por aqui.
+                        <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 text-xs text-amber-900 dark:text-amber-200 font-medium">
+                            <i data-lucide="check-circle-2" class="size-4 text-emerald-600 shrink-0"></i>
+                            <span>Tudo em dia! Nenhuma conta pendente por aqui.</span>
                         </div>`;
                 } else {
                     secaoPraReg.innerHTML = itens.map(item => {
                         const isFatura = item.tipo === 'fatura';
-                        const iconeCor = isFatura ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
+                        const iconeCor = isFatura ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300' : 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300';
                         return `
-                        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-rose-200/60 shadow-2xs">
-                            <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-amber-200/90 dark:border-amber-800/50 shadow-2xs hover:border-amber-300 transition">
+                            <div class="flex items-center gap-3 min-w-0">
                                 <span class="size-9 rounded-xl ${iconeCor} flex items-center justify-center shrink-0">
                                     <i data-lucide="${item.icone || 'credit-card'}" class="size-4"></i>
                                 </span>
-                                <div>
-                                    <h4 class="text-xs font-extrabold text-foreground">${item.titulo} · ${BRL(item.valor)}</h4>
-                                    <p class="text-[11px] text-muted-foreground">${item.descricao}</p>
+                                <div class="min-w-0">
+                                    <h4 class="text-xs font-extrabold text-foreground truncate max-w-[150px] sm:max-w-xs">${item.titulo} · ${BRL(item.valor)}</h4>
+                                    <p class="text-[11px] text-muted-foreground truncate max-w-[170px] sm:max-w-sm">${item.descricao}</p>
                                 </div>
                             </div>
                             <button type="button" onclick="abrirModalRegistrarPagamento('${item.id}')"
-                                    class="px-4 py-1.5 rounded-xl bg-[#c84b31] hover:bg-[#b03d25] text-white font-bold text-xs transition shadow-2xs">
-                                Registrar
+                                    class="px-4 py-2 rounded-xl bg-[#1b4d37] hover:bg-[#153f2c] text-white font-bold text-xs transition shadow-soft flex items-center gap-1.5 shrink-0">
+                                <i data-lucide="check" class="size-3.5"></i>
+                                <span>Registrar</span>
                             </button>
                         </div>`;
                     }).join('');
@@ -5511,36 +6121,40 @@
                 }
             }
 
-            // — Despesas Fixas —
+            // — Despesas Fixas (Carrossel Horizontal com Drag & Sem Emojis) —
             const despFixasGrid = document.getElementById('dashDespesasFixasGrid');
             if (despFixasGrid) {
                 const fixas = data.despesas_fixas || [];
                 if (!fixas.length) {
-                    despFixasGrid.innerHTML = `<p class="text-xs text-muted-foreground col-span-4 py-4 text-center">Nenhuma despesa fixa registrada.</p>`;
+                    despFixasGrid.innerHTML = `<p class="text-xs text-muted-foreground py-4 text-center w-full">Nenhuma despesa fixa registrada.</p>`;
                 } else {
                     despFixasGrid.innerHTML = fixas.map(df => {
-                        const badgeCfg = df.tipo === 'aviso'
-                            ? { cls: 'bg-amber-500/10 text-amber-700', label: '⚠️ ' + df.status }
-                            : df.tipo === 'pendente'
-                                ? { cls: 'bg-muted text-muted-foreground', label: df.status }
-                                : { cls: 'bg-emerald-500/10 text-emerald-700', label: '✅ ' + df.status };
+                        const isAviso = df.tipo === 'aviso';
+                        const isPago = df.tipo === 'pago';
+                        const badgeCls = isAviso 
+                            ? 'bg-amber-500/10 text-amber-700 border-amber-300/40' 
+                            : (isPago ? 'bg-emerald-500/10 text-emerald-700 border-emerald-300/40' : 'bg-muted text-muted-foreground border-border');
+                        const badgeIcone = isAviso ? 'alert-triangle' : (isPago ? 'check' : 'clock');
+
                         return `
-                        <div class="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2">
+                        <div class="w-[240px] sm:w-[260px] shrink-0 snap-start rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2 hover:border-emerald-500/30 transition">
                             <div class="flex items-center justify-between">
                                 <span class="size-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
                                     <i data-lucide="${df.icone || 'receipt'}" class="size-3.5"></i>
                                 </span>
-                                <span class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${badgeCfg.cls}">
-                                    ${badgeCfg.label}
+                                <span class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold border ${badgeCls}">
+                                    <i data-lucide="${badgeIcone}" class="size-3"></i>
+                                    <span>${df.status}</span>
                                 </span>
                             </div>
                             <div>
-                                <h4 class="text-xs font-bold text-foreground">${df.titulo}</h4>
+                                <h4 class="text-xs font-bold text-foreground truncate">${df.titulo}</h4>
                                 <strong class="text-base font-extrabold text-foreground">${BRL(df.valor)}</strong>
                                 <span class="text-[10px] text-muted-foreground block mt-0.5">${df.vencimento}</span>
                             </div>
                         </div>`;
                     }).join('');
+                    habilitarArrastarScroll('dashDespesasFixasGrid');
                 }
             }
 
@@ -5860,6 +6474,158 @@
                         </div>
                     </div>
                 `).join('');
+            }
+        }
+
+        // 3.1 Ação Rápida: Abrir Relatórios com Scroll Suave e Foco
+        function abrirRelatoriosRapido() {
+            alternarModoGrafico('donut');
+            const el = document.getElementById('secaoRelatoriosFluxo');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('ring-2', 'ring-emerald-500', 'ring-offset-4');
+                setTimeout(() => {
+                    el.classList.remove('ring-2', 'ring-emerald-500', 'ring-offset-4');
+                }, 2000);
+            }
+        }
+
+        // 3.2 Navegação e Scroll Arrastável (Drag & Swipe) para Carrosséis
+        function scrollCarrossel(id, offset) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollBy({ left: offset, behavior: 'smooth' });
+            }
+        }
+
+        function habilitarArrastarScroll(elementId) {
+            const slider = document.getElementById(elementId);
+            if (!slider || slider.dataset.dragAtivo === "true") return;
+            slider.dataset.dragAtivo = "true";
+
+            let isDown = false;
+            let startX = 0;
+            let scrollLeft = 0;
+
+            slider.addEventListener('mousedown', (e) => {
+                isDown = true;
+                slider.classList.add('cursor-grabbing');
+                slider.classList.remove('cursor-grab');
+                startX = e.pageX - slider.offsetLeft;
+                scrollLeft = slider.scrollLeft;
+            });
+
+            slider.addEventListener('mouseleave', () => {
+                isDown = false;
+                slider.classList.remove('cursor-grabbing');
+                slider.classList.add('cursor-grab');
+            });
+
+            slider.addEventListener('mouseup', () => {
+                isDown = false;
+                slider.classList.remove('cursor-grabbing');
+                slider.classList.add('cursor-grab');
+            });
+
+            slider.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - slider.offsetLeft;
+                const walk = (x - startX) * 1.5;
+                slider.scrollLeft = scrollLeft - walk;
+            });
+        }
+
+        // 3.3 Personalização de Ícone e Categoria de Transação (Modal Dinâmico)
+        let modalIconeTxId = null;
+        let modalIconeCategoriaId = null;
+        let modalIconeSelecionado = 'credit-card';
+
+        function abrirModalPersonalizarIcone(txId, titulo, categoriaId, iconeAtual) {
+            modalIconeTxId = txId;
+            modalIconeCategoriaId = categoriaId;
+            modalIconeSelecionado = iconeAtual || 'credit-card';
+
+            const txNomeEl = document.getElementById('modalIconeTxNome');
+            if (txNomeEl) txNomeEl.innerText = titulo || 'Transação';
+
+            const previewIcone = document.getElementById('modalIconePreviewIcon');
+            if (previewIcone) {
+                previewIcone.innerHTML = `<i data-lucide="${modalIconeSelecionado}" class="size-6 text-emerald-700"></i>`;
+            }
+
+            selecionarCategoriaModalTx(categoriaId, false);
+            selecionarIconeModalTx(modalIconeSelecionado, false);
+
+            document.getElementById('modalPersonalizarIconeTransacao')?.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function fecharModalPersonalizarIcone() {
+            document.getElementById('modalPersonalizarIconeTransacao')?.classList.add('hidden');
+        }
+
+        function selecionarCategoriaModalTx(catId, atualizarIconeAuto = true) {
+            modalIconeCategoriaId = catId;
+            document.querySelectorAll('.btn-cat-opcao-tx').forEach(btn => {
+                if (btn.dataset.catId == catId) {
+                    btn.className = 'btn-cat-opcao-tx flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-black shadow-2xs transition';
+                    if (atualizarIconeAuto && btn.dataset.catIcone) {
+                        selecionarIconeModalTx(btn.dataset.catIcone, false);
+                    }
+                } else {
+                    btn.className = 'btn-cat-opcao-tx flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground text-xs font-medium transition';
+                }
+            });
+        }
+
+        function selecionarIconeModalTx(iconeNome, feedback = true) {
+            modalIconeSelecionado = iconeNome;
+            document.querySelectorAll('.btn-icone-opcao-tx').forEach(btn => {
+                if (btn.dataset.icone === iconeNome) {
+                    btn.className = 'btn-icone-opcao-tx size-11 rounded-2xl border-2 border-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center transition shadow-2xs scale-105';
+                } else {
+                    btn.className = 'btn-icone-opcao-tx size-11 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground hover:border-emerald-500/30 flex items-center justify-center transition';
+                }
+            });
+
+            const previewIcone = document.getElementById('modalIconePreviewIcon');
+            if (previewIcone) {
+                previewIcone.innerHTML = `<i data-lucide="${iconeNome}" class="size-6 text-emerald-700"></i>`;
+                lucide.createIcons();
+            }
+        }
+
+        async function executarSalvarIconeTransacao(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            if (!modalIconeTxId) return;
+
+            try {
+                const res = await fetch(`/api/transacoes/${modalIconeTxId}/icone`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({
+                        icone: modalIconeSelecionado,
+                        categoria_id: modalIconeCategoriaId
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    seivaNotificar('Ícone e categoria salvos com sucesso!', 'sucesso', 'Personalização');
+                    fecharModalPersonalizarIcone();
+                    carregarDashboardDados();
+                    if (typeof carregarExtratoDados === 'function') carregarExtratoDados();
+                } else {
+                    seivaNotificar(data.error || 'Não foi possível salvar.', 'erro');
+                }
+            } catch (err) {
+                console.error('Erro ao salvar ícone da transação:', err);
+                seivaNotificar('Erro de conexão ao salvar personalização.', 'erro');
             }
         }
 

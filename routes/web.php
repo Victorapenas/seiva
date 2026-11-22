@@ -57,13 +57,20 @@ Route::prefix('api')->group(function () {
 
         Route::get('/transacoes', [TransacaoController::class, 'index']);
         Route::post('/transacoes', [TransacaoController::class, 'store']);
+        Route::post('/transacoes/{id}/icone', [TransacaoController::class, 'atualizarIcone']);
+        Route::match(['put', 'post'], '/transacoes/{id}', [TransacaoController::class, 'atualizarIcone']);
         Route::delete('/transacoes/{id}', [TransacaoController::class, 'destroy']);
 
         // RF002: Caixa Preta
         Route::post('/caixa-preta/verificar-pin', [CaixaPretaController::class, 'verifyPin']);
+        Route::post('/caixa-preta/trancar', [CaixaPretaController::class, 'trancar']);
         Route::get('/caixa-preta/dados', [CaixaPretaController::class, 'dadosCompletos']);
         Route::post('/caixa-preta/pedir-ajuda', [CaixaPretaController::class, 'pedirAjudaCusto']);
         Route::post('/caixa-preta/responder-ajuda', [CaixaPretaController::class, 'responderAjudaCusto']);
+        Route::post('/caixa-preta/confirmar-recebimento', [CaixaPretaController::class, 'confirmarRecebimento']);
+        Route::post('/caixa-preta/disputar-recebimento', [CaixaPretaController::class, 'disputarRecebimento']);
+        Route::post('/caixa-preta/produtos-watchlist', [CaixaPretaController::class, 'adicionarProdutoWatchlist']);
+        Route::delete('/caixa-preta/produtos-watchlist/{id}', [CaixaPretaController::class, 'removerProdutoWatchlist']);
         Route::get('/caixa-preta/registros', [CaixaPretaController::class, 'index']);
         Route::post('/caixa-preta/registros', [CaixaPretaController::class, 'store']);
         Route::delete('/caixa-preta/registros/{id}', [CaixaPretaController::class, 'destroy']);
@@ -120,4 +127,9 @@ Route::prefix('api')->group(function () {
         Route::get('/notificacoes', [NotificacoesController::class, 'index']);
         Route::post('/notificacoes/ler', [NotificacoesController::class, 'marcarTodasLidas']);
     });
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('/transacoes/{id}/icone', [TransacaoController::class, 'atualizarIcone']);
+    Route::match(['put', 'post'], '/transacoes/{id}', [TransacaoController::class, 'atualizarIcone']);
 });
