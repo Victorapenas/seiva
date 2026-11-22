@@ -6996,11 +6996,11 @@
                     }
 
                     const statusCfg = {
-                        pendente:   { label: 'Pendente',   cls: 'bg-rose-100 text-rose-800 border border-rose-300' },
-                        enviada:    { label: 'Enviada',    cls: 'bg-emerald-100 text-emerald-800 border border-emerald-300' },
-                        agendada:   { label: 'Agendada',   cls: 'bg-slate-100 text-slate-800 border border-slate-300' },
-                        confirmada: { label: 'Recebida',   cls: 'bg-emerald-100 text-emerald-800 border border-emerald-300' },
-                        recebida:   { label: 'Recebida',   cls: 'bg-emerald-100 text-emerald-800 border border-emerald-300' },
+                        pendente:   { label: 'Pendente',   cls: 'bg-rose-700 text-white font-black shadow-2xs' },
+                        enviada:    { label: 'Enviada',    cls: 'bg-blue-700 text-white font-black shadow-2xs' },
+                        agendada:   { label: 'Agendada',   cls: 'bg-slate-700 text-white font-black shadow-2xs' },
+                        confirmada: { label: 'Recebida',   cls: 'bg-emerald-800 text-white font-black shadow-2xs' },
+                        recebida:   { label: 'Recebida',   cls: 'bg-emerald-800 text-white font-black shadow-2xs' },
                     };
                     lista.innerHTML = notificacoes.map(n => {
                         const cfg = statusCfg[n.status] || statusCfg.agendada;
@@ -7014,15 +7014,15 @@
                                 </div>
                                 <div class="flex flex-col items-end gap-1.5 shrink-0">
                                     <span class="text-sm font-black text-foreground">${BRL(n.valor)}</span>
-                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black ${cfg.cls}">${cfg.label}</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] ${cfg.cls}">${cfg.label}</span>
                                 </div>
                             </div>
-                            ${n.mensagem_diplomatica ? `<div class="flex items-start gap-2 px-3 py-2 rounded-xl bg-muted/50 text-[11px] text-muted-foreground"><i data-lucide="message-circle" class="size-3.5 shrink-0 mt-0.5"></i><span>${n.mensagem_diplomatica}</span></div>` : ''}
+                            ${n.mensagem_diplomatica ? `<div class="flex items-start gap-2.5 px-3.5 py-2.5 rounded-2xl bg-muted/90 border border-border text-xs font-semibold text-foreground"><i data-lucide="message-circle" class="size-4 shrink-0 mt-0.5 text-emerald-700"></i><span class="text-foreground leading-relaxed">${n.mensagem_diplomatica}</span></div>` : ''}
                             
                             ${['confirmada', 'recebida'].includes(n.status) ? `
-                            <div class="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
-                                <i data-lucide="check-circle" class="size-4 shrink-0 text-emerald-600"></i>
-                                <span>Recebimento confirmado e liquidado no Lar</span>
+                            <div class="flex items-center gap-2.5 p-3 rounded-2xl bg-emerald-800 text-white text-xs font-extrabold shadow-xs">
+                                <i data-lucide="check-circle-2" class="size-4 shrink-0 text-emerald-200"></i>
+                                <span class="text-white font-extrabold text-xs">Recebimento confirmado e liquidado no Lar</span>
                             </div>` : `
                             <div class="flex gap-2">
                                 <button onclick="notificarParceiroCobrador('${n.titulo.replace(/'/g, "\\'")}', ${n.valor})" class="flex-1 py-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition">
