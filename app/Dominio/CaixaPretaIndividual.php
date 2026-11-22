@@ -166,7 +166,7 @@ class CaixaPretaIndividual
                 'valor' => 500.00,
                 'vence_hoje' => false,
                 'tipo' => 'acordo',
-                'icone' => 'snowflake',
+                'icone' => 'shopping-bag',
                 'progresso_pct' => 31,
                 'status_label' => 'Pendente este mês',
             ];
@@ -258,22 +258,38 @@ class CaixaPretaIndividual
             ];
         }
 
-        $produtosWatchlist = [
-            [
-                'id_produto' => 1,
-                'nome' => 'Câmera Sony ZV-E10',
-                'loja' => 'MercadoLivre',
-                'preco' => 2890.00,
-                'imagem' => 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=120&auto=format&fit=crop&q=60',
-            ],
-            [
-                'id_produto' => 2,
-                'nome' => 'Nike Air Force 1',
-                'loja' => 'Nike.com',
-                'preco' => 489.90,
-                'imagem' => 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=120&auto=format&fit=crop&q=60',
-            ],
-        ];
+        $produtosDb = ProdutoWatchlist::where('usuario_id', $userId)->orderByDesc('created_at')->get();
+        if ($produtosDb->count() > 0) {
+            $produtosWatchlist = $produtosDb->map(function ($p) {
+                return [
+                    'id_produto' => $p->id_produto,
+                    'nome' => $p->nome,
+                    'loja' => $p->loja ?: 'Loja online',
+                    'preco' => (float)$p->preco_alvo,
+                    'link' => $p->link_referencia,
+                    'imagem' => $p->imagem ?: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120&auto=format&fit=crop&q=60',
+                ];
+            })->toArray();
+        } else {
+            $produtosWatchlist = [
+                [
+                    'id_produto' => 1,
+                    'nome' => 'Câmera Sony ZV-E10',
+                    'loja' => 'MercadoLivre',
+                    'preco' => 2890.00,
+                    'link' => 'https://mercadolivre.com.br',
+                    'imagem' => 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=120&auto=format&fit=crop&q=60',
+                ],
+                [
+                    'id_produto' => 2,
+                    'nome' => 'Nike Air Force 1',
+                    'loja' => 'Nike.com',
+                    'preco' => 489.90,
+                    'link' => 'https://nike.com.br',
+                    'imagem' => 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=120&auto=format&fit=crop&q=60',
+                ],
+            ];
+        }
 
         return [
             'metas' => $metasFormatadas,

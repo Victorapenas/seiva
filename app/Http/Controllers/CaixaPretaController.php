@@ -7,6 +7,7 @@ use App\Models\Conta;
 use App\Models\Transacao;
 use App\Models\Cobranca;
 use App\Models\Notificacao;
+use App\Models\ProdutoWatchlist;
 use App\Dominio\CaixaPretaIndividual;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -41,12 +42,29 @@ class CaixaPretaController extends Controller
     }
 
     /**
+     * Tranca a Caixa Preta e invalida o acesso na sessão.
+     */
+    public function trancar(Request $request)
+    {
+        session()->forget('caixa_preta_unlocked');
+        return response()->json([
+            'unlocked' => false,
+            'message' => 'Caixa Preta trancada com segurança.'
+        ]);
+    }
+
+    /**
      * Retorna o pacote de dados completo do protótipo da Caixa Preta.
      */
     public function dadosCompletos(Request $request)
     {
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Não autenticado'], 401);
+
+        // Se a Caixa Preta estiver trancada e não foi autenticada nesta sessão, retorna 403
+        if (!session('caixa_preta_unlocked', false)) {
+            return response()->json(['error' => 'Caixa Preta trancada. Digite seu PIN de 4 dígitos.'], 403);
+        }
 
         $dominio = new CaixaPretaIndividual($user);
         $lar = $user->lares()->first();
@@ -190,17 +208,18 @@ class CaixaPretaController extends Controller
 
         if ($request->acao === 'contrapor') {
             $novoValor = (float)($request->valor_contraproposta ?: ($cobranca->valor / 2));
+            $mensagemContra = $request->mensagem_contraproposta ? "Contraproposta: R$ " . number_format($novoValor, 2, ',', '.') . " (" . $request->mensagem_contraproposta . ")" : "Contraproposta: R$ " . number_format($novoValor, 2, ',', '.');
             $cobranca->update([
                 'valor' => $novoValor,
                 'estado' => 'pendente',
-                'mensagem' => 'Contraproposta: R$ ' . number_format($novoValor, 2, ',', '.'),
+                'mensagem' => $mensagemContra,
             ]);
             if ($solicitante) {
                 Notificacao::create([
                     'usuario_id' => $solicitante->id_usuario,
                     'tipo' => 'info',
                     'titulo' => 'Nova contraproposta de ajuda',
-                    'mensagem' => explode(' ', $user->nome)[0] . ' propôs ajudar com R$ ' . number_format($novoValor, 2, ',', '.'),
+                    'mensagem' => explode(' ', $user->nome)[0] . ' propôs ajudar com R$ ' . number_format($novoValor, 2, ',', '.') . ($request->mensagem_contraproposta ? ": \"{$request->mensagem_contraproposta}\"" : ''),
                     'lida' => false,
                 ]);
             }
@@ -211,8 +230,14 @@ class CaixaPretaController extends Controller
             return DB::transaction(function () use ($request, $user, $cobranca, $solicitante) {
                 $cobranca->update(['estado' => 'confirmada']);
 
-                if ($request->conta_id) {
-                    $conta = Conta::where('usuario_id', $user->id_usuario)->where('id_conta', $request->conta_id)->first();
+                $contaId = $request->conta_id;
+                if (!$contaId) {
+                    $primeiraConta = Conta::where('usuario_id', $user->id_usuario)->first();
+                    $contaId = $primeiraConta ? $primeiraConta->id_conta : null;
+                }
+
+                if ($contaId) {
+                    $conta = Conta::where('usuario_id', $user->id_usuario)->where('id_conta', $contaId)->first();
                     if ($conta) {
                         $conta->decrement('saldo', $cobranca->valor);
                     }
@@ -220,12 +245,12 @@ class CaixaPretaController extends Controller
 
                 Transacao::create([
                     'usuario_id' => $user->id_usuario,
-                    'conta_id' => $request->conta_id,
+                    'conta_id' => $contaId,
                     'titulo' => 'Ajuda para ' . ($solicitante ? explode(' ', $solicitante->nome)[0] : 'Parceiro') . ': ' . $cobranca->titulo,
                     'valor' => $cobranca->valor,
                     'tipo' => 'saida',
                     'data' => now()->format('Y-m-d'),
-                    'emoji' => 'handshake',
+                    'emoji' => 'heart-handshake',
                     'visibilidade' => 'compartilhado',
                 ]);
 
@@ -293,6 +318,150 @@ class CaixaPretaController extends Controller
 
         $registro->delete();
         return response()->json(['message' => 'Registro excluído com segurança.']);
+    }
+
+    /**
+     * Confirma o recebimento de uma ajuda financeira ou valor a receber do parceiro.
+     */
+    public function confirmarRecebimento(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Não autenticado'], 401);
+
+        $lar = $user->lares()->first();
+        $parceiro = $lar ? $lar->membros()->where('usuarios.id_usuario', '!=', $user->id_usuario)->first() : null;
+        $nomeParceiro = $parceiro ? explode(' ', $parceiro->nome)[0] : 'Parceiro';
+
+        $idItem = $request->input('id');
+        $valor = (float)($request->input('valor') ?: 156.40);
+        $contaId = $request->input('conta_id');
+
+        // Busca primeira conta do usuário caso não especificada
+        if (!$contaId) {
+            $conta = Conta::where('usuario_id', $user->id_usuario)->first();
+            $contaId = $conta ? $conta->id_conta : null;
+        } else {
+            $conta = Conta::where('usuario_id', $user->id_usuario)->where('id_conta', $contaId)->first();
+        }
+
+        // Credita valor na conta
+        if ($conta) {
+            $conta->increment('saldo', $valor);
+        }
+
+        // Registra transação de entrada
+        Transacao::create([
+            'usuario_id' => $user->id_usuario,
+            'conta_id' => $contaId,
+            'titulo' => "Ajuda recebida de {$nomeParceiro}",
+            'valor' => $valor,
+            'tipo' => 'entrada',
+            'data' => now()->format('Y-m-d'),
+            'emoji' => 'hand-coins',
+            'visibilidade' => 'privado',
+        ]);
+
+        // Notifica o parceiro confirmando
+        if ($parceiro) {
+            Notificacao::create([
+                'usuario_id' => $parceiro->id_usuario,
+                'tipo' => 'sucesso',
+                'titulo' => 'Recebimento confirmado!',
+                'mensagem' => explode(' ', $user->nome)[0] . " confirmou que o valor de R$ " . number_format($valor, 2, ',', '.') . " caiu na conta com sucesso.",
+                'lida' => false,
+            ]);
+        }
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => 'Recebimento confirmado com sucesso! R$ ' . number_format($valor, 2, ',', '.') . ' creditado na sua conta.',
+        ]);
+    }
+
+    /**
+     * Registra que o usuário NÃO recebeu o valor do parceiro (Disputa / Cobrança de comprovante).
+     */
+    public function disputarRecebimento(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Não autenticado'], 401);
+
+        $request->validate([
+            'motivo' => 'nullable|string|max:500',
+            'valor' => 'nullable|numeric',
+        ]);
+
+        $lar = $user->lares()->first();
+        $parceiro = $lar ? $lar->membros()->where('usuarios.id_usuario', '!=', $user->id_usuario)->first() : null;
+
+        $motivo = $request->input('motivo') ?: 'Valor não identificado no extrato.';
+        $valorStr = $request->input('valor') ? ' (R$ ' . number_format((float)$request->valor, 2, ',', '.') . ')' : '';
+
+        if ($parceiro) {
+            Notificacao::create([
+                'usuario_id' => $parceiro->id_usuario,
+                'tipo' => 'atencao',
+                'titulo' => 'Valor não recebido · Verifique o comprovante',
+                'mensagem' => explode(' ', $user->nome)[0] . " informou que NÃO recebeu o valor{$valorStr}. Motivo: \"{$motivo}\". Por favor, confira seu extrato ou envie o comprovante do PIX.",
+                'lida' => false,
+            ]);
+        }
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => 'Aviso enviado para ' . ($parceiro ? explode(' ', $parceiro->nome)[0] : 'seu parceiro') . '! Uma solicitação de conferência foi registrada.',
+        ]);
+    }
+
+    /**
+     * Salva um novo produto monitorado (Produtos de Olho / Wishlist).
+     */
+    public function adicionarProdutoWatchlist(Request $request)
+    {
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'preco' => 'required|numeric|min:0.01',
+            'loja' => 'nullable|string|max:100',
+            'link' => 'nullable|string|max:1000',
+            'imagem' => 'nullable|string|max:1000',
+        ]);
+
+        $user = Auth::user();
+        $produto = ProdutoWatchlist::create([
+            'usuario_id' => $user->id_usuario,
+            'nome' => $request->nome,
+            'preco_alvo' => $request->preco,
+            'loja' => $request->loja ?: 'Loja online',
+            'link_referencia' => $request->link,
+            'imagem' => $request->imagem ?: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120&auto=format&fit=crop&q=60',
+            'emoji' => 'shopping-bag',
+        ]);
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => "\"{$produto->nome}\" adicionado aos seus Produtos de Olho!",
+            'produto' => $produto,
+        ], 201);
+    }
+
+    /**
+     * Remove um produto monitorado da Wishlist.
+     */
+    public function removerProdutoWatchlist($id)
+    {
+        $user = Auth::user();
+        $produto = ProdutoWatchlist::where('usuario_id', $user->id_usuario)
+            ->where('id_produto', $id)
+            ->first();
+
+        if ($produto) {
+            $produto->delete();
+        }
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => 'Produto removido dos seus Produtos de Olho.',
+        ]);
     }
 }
 
