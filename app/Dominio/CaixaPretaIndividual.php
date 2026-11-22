@@ -200,32 +200,27 @@ class CaixaPretaIndividual
      */
     public function obterDespesasSoSuas(): array
     {
-        return [
-            [
-                'id' => 'desp_psi',
-                'titulo' => 'Consulta psicóloga',
-                'detalhe' => 'Sessão quinzenal · Dra. Helena · Vence dia 20',
-                'valor' => 180.00,
-                'privada' => true,
-                'icone' => 'brain',
-            ],
-            [
-                'id' => 'desp_dental',
-                'titulo' => 'Clareamento dental',
-                'detalhe' => 'Parcela 2 de 3 · Odonto Vida · Vence dia 15',
-                'valor' => 240.00,
-                'privada' => true,
-                'icone' => 'stethoscope',
-            ],
-            [
-                'id' => 'desp_alura',
-                'titulo' => 'Curso UX Alura',
-                'detalhe' => 'Assinatura mensal · Vence dia 28',
-                'valor' => 89.00,
-                'privada' => true,
-                'icone' => 'graduation-cap',
-            ],
-        ];
+        $userId = $this->usuario->id_usuario;
+        $despesasDb = \App\Models\DespesaIndividual::where('usuario_id', $userId)->get();
+
+        if ($despesasDb->count() > 0) {
+            return $despesasDb->map(function ($d) {
+                return [
+                    'id' => (int)$d->id_despesa_individual,
+                    'id_despesa' => (int)$d->id_despesa_individual,
+                    'titulo' => $d->titulo,
+                    'detalhe' => $d->detalhe ?: ('Vence dia ' . str_pad($d->dia_vencimento, 2, '0', STR_PAD_LEFT)),
+                    'valor' => (float)$d->valor,
+                    'dia_vencimento' => (int)$d->dia_vencimento,
+                    'privada' => true,
+                    'icone' => $d->icone ?: 'receipt',
+                    'status' => $d->status ?: 'pendente',
+                    'pago' => $d->status === 'pago',
+                ];
+            })->toArray();
+        }
+
+        return [];
     }
 
     /**

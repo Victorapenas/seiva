@@ -280,18 +280,25 @@
             </div>
         </section>
 
-        <!-- SEÇÃO: DESPESAS SÓ SUAS -->
+        <!-- SEÇÃO: DESPESAS SÓ SUAS (FIXAS INDIVIDUAIS COM CRUD & QUITAÇÃO) -->
         <section class="space-y-3.5">
-            <div>
-                <div class="flex items-center gap-2">
-                    <i data-lucide="lock" class="size-3.5 text-emerald-400"></i>
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-300/80">Despesas só suas</h3>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="lock" class="size-3.5 text-emerald-400"></i>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-300/80">Despesas fixas só suas</h3>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-0.5">Suas contas e compromissos individuais (faculdade, academia, saúde, cursos)</p>
                 </div>
-                <p class="text-xs text-gray-400 mt-0.5">Privadas por padrão — mas você pode dividir com o parceiro se quiser</p>
+                <button type="button" onclick="abrirModalNovaDespesaIndividual()" 
+                        class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs transition shadow-soft flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="plus" class="size-3.5"></i>
+                    <span>Nova Despesa Fixa</span>
+                </button>
             </div>
 
             <div id="caixaListaDespesasSoSuas" class="space-y-2.5">
-                <!-- Injetado dinamicamente via JS -->
+                <!-- Injetado dinamicamente via JS com botões de quitar, editar e remover -->
             </div>
         </section>
 

@@ -8,6 +8,8 @@ use App\Models\Transacao;
 use App\Models\Cobranca;
 use App\Models\Notificacao;
 use App\Models\ProdutoWatchlist;
+use App\Models\DespesaIndividual;
+use App\Models\HistoricoAuditoria;
 use App\Dominio\CaixaPretaIndividual;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -470,6 +472,184 @@ class CaixaPretaController extends Controller
         return response()->json([
             'sucesso' => true,
             'mensagem' => 'Produto removido dos seus Produtos de Olho.',
+        ]);
+    }
+
+    /**
+     * Cadastra uma nova Despesa Fixa Individual na Caixa Preta.
+     */
+    public function criarDespesaIndividual(Request $request)
+    {
+        $request->validate([
+            'titulo' => 'required|string|max:255',
+            'valor' => 'required|numeric|min:0.01',
+            'dia_vencimento' => 'nullable|integer|between:1,31',
+            'icone' => 'nullable|string|max:50',
+            'detalhe' => 'nullable|string|max:255',
+        ]);
+
+        $user = Auth::user();
+
+        $despesa = DespesaIndividual::create([
+            'usuario_id' => $user->id_usuario,
+            'titulo' => $request->titulo,
+            'valor' => $request->valor,
+            'dia_vencimento' => $request->dia_vencimento ?: 10,
+            'icone' => $request->icone ?: 'receipt',
+            'detalhe' => $request->detalhe,
+            'status' => 'pendente',
+            'recorrente' => true,
+        ]);
+
+        HistoricoAuditoria::create([
+            'usuario_id' => $user->id_usuario,
+            'entidade_tipo' => 'despesa_individual',
+            'entidade_id' => $despesa->id_despesa_individual,
+            'acao' => 'criacao',
+            'descricao' => "Cadastrou despesa fixa pessoal \"{$despesa->titulo}\" no valor de R$ " . number_format($despesa->valor, 2, ',', '.'),
+            'dados_novos' => $despesa->toArray(),
+        ]);
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => "Despesa fixa pessoal \"{$despesa->titulo}\" cadastrada com sucesso!",
+            'despesa' => $despesa,
+        ], 201);
+    }
+
+    /**
+     * Atualiza uma Despesa Fixa Individual existente.
+     */
+    public function atualizarDespesaIndividual(Request $request, $id)
+    {
+        $user = Auth::user();
+        $despesa = DespesaIndividual::where('usuario_id', $user->id_usuario)
+            ->where('id_despesa_individual', $id)
+            ->firstOrFail();
+
+        $request->validate([
+            'titulo' => 'required|string|max:255',
+            'valor' => 'required|numeric|min:0.01',
+            'dia_vencimento' => 'nullable|integer|between:1,31',
+            'icone' => 'nullable|string|max:50',
+            'detalhe' => 'nullable|string|max:255',
+        ]);
+
+        $dadosAntigos = $despesa->toArray();
+
+        $despesa->update([
+            'titulo' => $request->titulo,
+            'valor' => $request->valor,
+            'dia_vencimento' => $request->dia_vencimento ?: $despesa->dia_vencimento,
+            'icone' => $request->icone ?: $despesa->icone,
+            'detalhe' => $request->detalhe,
+        ]);
+
+        HistoricoAuditoria::create([
+            'usuario_id' => $user->id_usuario,
+            'entidade_tipo' => 'despesa_individual',
+            'entidade_id' => $despesa->id_despesa_individual,
+            'acao' => 'edicao',
+            'descricao' => "Atualizou despesa fixa pessoal \"{$despesa->titulo}\" para R$ " . number_format($despesa->valor, 2, ',', '.'),
+            'dados_anteriores' => $dadosAntigos,
+            'dados_novos' => $despesa->toArray(),
+        ]);
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => "Despesa fixa \"{$despesa->titulo}\" atualizada com sucesso!",
+            'despesa' => $despesa,
+        ]);
+    }
+
+    /**
+     * Remove uma Despesa Fixa Individual com registro formal de auditoria.
+     */
+    public function removerDespesaIndividual($id)
+    {
+        $user = Auth::user();
+        $despesa = DespesaIndividual::where('usuario_id', $user->id_usuario)
+            ->where('id_despesa_individual', $id)
+            ->firstOrFail();
+
+        $dadosAntigos = $despesa->toArray();
+        $despesa->delete();
+
+        HistoricoAuditoria::create([
+            'usuario_id' => $user->id_usuario,
+            'entidade_tipo' => 'despesa_individual',
+            'entidade_id' => $id,
+            'acao' => 'exclusao',
+            'descricao' => "Excluiu a despesa fixa pessoal \"{$dadosAntigos['titulo']}\"",
+            'dados_anteriores' => $dadosAntigos,
+        ]);
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => "Despesa fixa pessoal \"{$dadosAntigos['titulo']}\" removida com sucesso!",
+        ]);
+    }
+
+    /**
+     * Quita / Paga uma Despesa Fixa Individual com débito em conta e lançamento no extrato.
+     */
+    public function quitarDespesaIndividual(Request $request, $id)
+    {
+        $request->validate([
+            'conta_id' => 'required|exists:contas,id_conta',
+        ]);
+
+        $user = Auth::user();
+        $despesa = DespesaIndividual::where('usuario_id', $user->id_usuario)
+            ->where('id_despesa_individual', $id)
+            ->firstOrFail();
+
+        $conta = Conta::where('id_conta', $request->conta_id)
+            ->where('usuario_id', $user->id_usuario)
+            ->firstOrFail();
+
+        DB::transaction(function () use ($despesa, $conta, $user) {
+            // Debita da conta bancária
+            $conta->saldo -= $despesa->valor;
+            $conta->save();
+
+            // Registra a transação de pagamento
+            Transacao::create([
+                'usuario_id' => $user->id_usuario,
+                'conta_id' => $conta->id_conta,
+                'titulo' => "Pagamento: {$despesa->titulo}",
+                'valor' => $despesa->valor,
+                'tipo' => 'saida',
+                'data' => now()->format('Y-m-d'),
+                'visibilidade' => 'privado',
+                'pago' => true,
+            ]);
+
+            // Marca a despesa como quitada
+            $despesa->status = 'pago';
+            $despesa->pago_em = now()->format('Y-m-d');
+            $despesa->save();
+
+            HistoricoAuditoria::create([
+                'usuario_id' => $user->id_usuario,
+                'entidade_tipo' => 'despesa_individual',
+                'entidade_id' => $despesa->id_despesa_individual,
+                'acao' => 'quitacao',
+                'descricao' => "Quitou a despesa fixa \"{$despesa->titulo}\" (R$ " . number_format($despesa->valor, 2, ',', '.') . ") na conta {$conta->nome}",
+                'dados_novos' => [
+                    'despesa_id' => $despesa->id_despesa_individual,
+                    'conta_id' => $conta->id_conta,
+                    'valor_pago' => (float)$despesa->valor,
+                    'novo_saldo_conta' => (float)$conta->saldo,
+                ],
+            ]);
+        });
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => "Despesa \"{$despesa->titulo}\" quitada com sucesso na conta {$conta->nome}!",
+            'despesa' => $despesa->fresh(),
+            'novo_saldo_conta' => (float)$conta->fresh()->saldo,
         ]);
     }
 }

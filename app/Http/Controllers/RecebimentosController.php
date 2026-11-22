@@ -25,14 +25,30 @@ class RecebimentosController extends Controller
     {
         $userId = Auth::id();
 
-        // Período ativo (padrão = mês atual)
-        $mes = $request->mes ?? now()->format('Y-m');
+        // Período ativo (padrão = mês atual, com fallback robusto)
+        $mes = $request->mes;
+        if (!$mes || !preg_match('/^\d{4}-\d{2}$/', $mes)) {
+            $mes = now()->format('Y-m');
+        }
 
-        // Histórico: último 3 meses para o gráfico de evolução
+        try {
+            $dataCarbon = Carbon::createFromFormat('Y-m-d', $mes . '-01');
+        } catch (\Exception $e) {
+            $dataCarbon = now()->startOfMonth();
+            $mes = $dataCarbon->format('Y-m');
+        }
+
+        $mesAnterior = $dataCarbon->copy()->subMonth()->format('Y-m');
+        $proximoMes = $dataCarbon->copy()->addMonth()->format('Y-m');
+        $mesLabel = ucfirst($dataCarbon->locale('pt_BR')->translatedFormat('F \d\e Y'));
+        $mesCurto = ucfirst($dataCarbon->locale('pt_BR')->isoFormat('MMM/YY'));
+
+        // Histórico: 4 meses anteriores + mês ativo para o gráfico de evolução
         $historico = [];
-        for ($i = 2; $i >= 0; $i--) {
-            $m = now()->subMonths($i)->format('Y-m');
-            $mLabel = now()->subMonths($i)->locale('pt_BR')->isoFormat('MMM/YY');
+        for ($i = 4; $i >= 0; $i--) {
+            $mCarbon = $dataCarbon->copy()->subMonths($i);
+            $m = $mCarbon->format('Y-m');
+            $mLabel = ucfirst($mCarbon->locale('pt_BR')->isoFormat('MMM/YY'));
             $e = (float) Transacao::where('usuario_id', $userId)
                 ->where('tipo', 'entrada')
                 ->whereRaw("strftime('%Y-%m', data) = ?", [$m])
@@ -41,7 +57,7 @@ class RecebimentosController extends Controller
                 ->where('tipo', 'saida')
                 ->whereRaw("strftime('%Y-%m', data) = ?", [$m])
                 ->sum('valor');
-            $historico[] = ['mes' => $mLabel, 'entradas' => $e, 'saidas' => $s];
+            $historico[] = ['mes' => $mLabel, 'entradas' => $e, 'saidas' => $s, 'chave' => $m];
         }
 
         // Dados do mês solicitado
@@ -78,19 +94,27 @@ class RecebimentosController extends Controller
             ->sortByDesc('valor')
             ->values();
 
-        // Meses disponíveis para os chips (últimos 3)
+        // Meses disponíveis para os chips (últimos 6 meses até o mês atual + 1 futuro)
         $mesesDisponiveis = [];
-        for ($i = 2; $i >= 0; $i--) {
-            $d = now()->subMonths($i);
+        $baseMeses = now()->startOfMonth()->addMonth(); // inclui próximo mês
+        for ($i = 6; $i >= 0; $i--) {
+            $d = $baseMeses->copy()->subMonths($i);
             $mesesDisponiveis[] = [
                 'valor'  => $d->format('Y-m'),
-                'label'  => $d->locale('pt_BR')->isoFormat('MMM/YY'),
+                'label'  => ucfirst($d->locale('pt_BR')->isoFormat('MMM/YY')),
                 'ativo'  => $d->format('Y-m') === $mes,
             ];
         }
 
         return response()->json([
             'mes'                  => $mes,
+            'mes_anterior'         => $mesAnterior,
+            'proximo_mes'          => $proximoMes,
+            'mes_label'            => $mesLabel,
+            'mes_curto'            => $mesCurto,
+            'meses_disponiveis'    => $mesesDisponiveis,
+            'historico'            => $historico,
+            'por_categoria'        => $porCategoria,
             'total_entradas'       => $totalEntradas,
             'total_saidas'         => $totalSaidas,
             'sobra'                => $sobra,

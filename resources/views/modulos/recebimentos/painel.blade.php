@@ -12,11 +12,31 @@
         <p class="text-sm text-muted-foreground mt-0.5">Escolha o período e veja para onde seu dinheiro foi.</p>
     </header>
 
+    <!-- BARRA DE NAVEGAÇÃO DE MÊS (ANTERIOR < MÊS ATIVO > PRÓXIMO) -->
+    <div class="rounded-2xl border border-border bg-card p-3 shadow-2xs flex items-center justify-between gap-3">
+        <button type="button" id="btnRecebMesAnterior" onclick="navegarRecebMes('anterior')" 
+                class="px-3 py-2 rounded-xl border border-border hover:bg-muted text-xs font-bold text-foreground transition flex items-center gap-1.5 shadow-2xs cursor-pointer">
+            <i data-lucide="chevron-left" class="size-4"></i>
+            <span class="hidden sm:inline">Mês anterior</span>
+        </button>
+
+        <div class="text-center">
+            <span class="text-[10px] font-black uppercase tracking-wider text-muted-foreground block">Visualizando Período</span>
+            <strong id="recebMesAtivoLabel" class="text-sm sm:text-base font-black text-foreground">Carregando...</strong>
+        </div>
+
+        <button type="button" id="btnRecebMesProximo" onclick="navegarRecebMes('proximo')" 
+                class="px-3 py-2 rounded-xl border border-border hover:bg-muted text-xs font-bold text-foreground transition flex items-center gap-1.5 shadow-2xs cursor-pointer">
+            <span class="hidden sm:inline">Próximo mês</span>
+            <i data-lucide="chevron-right" class="size-4"></i>
+        </button>
+    </div>
+
     <!-- SELETOR DE PERÍODO -->
     <div class="p-1 rounded-2xl bg-muted/60 flex gap-1 shadow-2xs">
         <button onclick="filtrarRecebPeriodo('mes')" data-receb-periodo="mes"
                 class="receb-periodo-btn flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all bg-primary text-primary-foreground shadow-soft">
-            Último mês
+            Mês selecionado
         </button>
         <button onclick="filtrarRecebPeriodo('trimestre')" data-receb-periodo="trimestre"
                 class="receb-periodo-btn flex-1 py-2.5 px-3 rounded-xl text-xs font-semibold transition-all text-muted-foreground hover:text-foreground">
@@ -30,7 +50,7 @@
 
     <!-- CHIPS DE MÊS SELECIONÁVEL -->
     <div>
-        <p class="text-[11px] text-muted-foreground font-semibold mb-2">Quais meses puxar?</p>
+        <p class="text-[11px] text-muted-foreground font-semibold mb-2">Pular diretamente para o mês:</p>
         <div id="recebMesesChips" class="flex flex-wrap gap-2">
             <!-- Chips de meses injetados via JS -->
         </div>

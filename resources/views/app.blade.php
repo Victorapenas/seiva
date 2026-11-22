@@ -234,6 +234,8 @@
     @include('componentes.modais.modal-editar-transacao')
     @include('componentes.modais.modal-editar-conta')
     @include('componentes.modais.modal-historico-auditoria')
+    @include('componentes.modais.modal-despesa-individual')
+    @include('componentes.modais.modal-quitar-despesa-individual')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -2097,6 +2099,45 @@
                 </button>
             `).join('');
             lucide.createIcons();
+        }
+
+        // Funções de Filtro de Transações (Extrato / Relatório)
+        function filtrarTransacoesPeriodo(periodo, btn) {
+            txPeriodoAtivo = periodo;
+            document.querySelectorAll('.tx-periodo-btn').forEach(b => {
+                b.className = 'tx-periodo-btn py-2.5 rounded-2xl border border-border bg-card text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-primary/40 transition shadow-2xs cursor-pointer';
+            });
+            if (btn) {
+                btn.className = 'tx-periodo-btn py-2.5 rounded-2xl bg-primary text-primary-foreground text-xs font-extrabold shadow-soft cursor-pointer';
+            }
+            carregarExtratoDados();
+        }
+
+        function filtrarTransacoesConta(contaId, btn) {
+            txContaAtiva = contaId;
+            document.querySelectorAll('.tx-conta-chip').forEach(b => {
+                b.className = 'tx-conta-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground text-xs font-bold transition cursor-pointer';
+            });
+            if (btn) {
+                btn.className = 'tx-conta-chip flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-primary bg-primary text-primary-foreground text-xs font-bold transition cursor-pointer';
+            }
+            carregarExtratoDados();
+        }
+
+        function filtrarTransacoesCategoria(catNome, btn) {
+            txCategoriaAtiva = catNome;
+            document.querySelectorAll('.tx-cat-chip').forEach(b => {
+                b.className = 'tx-cat-chip inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition border border-border bg-card text-muted-foreground hover:text-foreground cursor-pointer';
+            });
+            if (btn) {
+                btn.className = 'tx-cat-chip inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition bg-primary text-primary-foreground shadow-soft cursor-pointer';
+            }
+            carregarExtratoDados();
+        }
+
+        function buscarTransacoes(termo) {
+            txBuscaAtiva = termo;
+            _renderizarListaAgrupada(txDadosCache);
         }
 
         // Formatador Universal de Datas do SEIVA (Impedir "Invalid Date")
@@ -4401,35 +4442,81 @@
                     pctCompEl.innerHTML = `Você compromete <strong class="text-rose-400 font-extrabold">${dev.percentual_renda || 0}%</strong> da sua renda com despesas fixas e acordos.`;
                 }
 
-                // 5. Despesas só suas
+                // 5. Despesas só suas (CRUD Completo e Quitação Individual)
                 const listaSoSuas = document.getElementById('caixaListaDespesasSoSuas');
                 if (listaSoSuas) {
-                    listaSoSuas.innerHTML = (data.despesas_so_suas || []).map(ds => `
-                        <div class="rounded-2xl border border-emerald-900/40 bg-[#0d2016] p-3.5 text-white flex items-center justify-between gap-3 shadow-2xs">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <span class="size-8 rounded-xl bg-white/10 text-emerald-300 flex items-center justify-center shrink-0">
-                                    <i data-lucide="${ds.icone || 'lock'}" class="size-4"></i>
-                                </span>
-                                <div class="min-w-0">
-                                    <h4 class="text-xs font-bold text-white truncate">${ds.titulo}</h4>
-                                    <span class="text-[10px] text-gray-400 block truncate">${ds.detalhe}</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <span class="text-xs font-black text-white valor-sensivel">${BRL(ds.valor)}</span>
-                                ${data.is_casal ? `
-                                    <button type="button" onclick="dividirDespesaComParceiro('${ds.id}', '${ds.titulo}', ${ds.valor})" 
-                                            class="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-[10px] font-bold text-emerald-300 hover:text-white transition flex items-center gap-1">
-                                        <i data-lucide="share-2" class="size-3"></i> Dividir
-                                    </button>
-                                ` : ''}
-                                <button type="button" onclick="abrirModalRegistrarPagamento('${ds.id}', '${ds.titulo}', ${ds.valor})" 
-                                        class="size-7 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition">
-                                    <i data-lucide="check" class="size-3.5"></i>
+                    const despesas = data.despesas_so_suas || [];
+                    if (!despesas.length) {
+                        listaSoSuas.innerHTML = `
+                            <div class="rounded-2xl border border-dashed border-white/20 p-6 text-center text-gray-400">
+                                <i data-lucide="receipt" class="size-6 mx-auto mb-2 text-gray-500"></i>
+                                <p class="text-xs">Nenhuma despesa fixa pessoal cadastrada.</p>
+                                <button type="button" onclick="abrirModalNovaDespesaIndividual()" class="mt-2 text-xs font-bold text-emerald-400 hover:underline">
+                                    + Cadastrar primeira despesa pessoal
                                 </button>
-                            </div>
-                        </div>
-                    `).join('');
+                            </div>`;
+                    } else {
+                        listaSoSuas.innerHTML = despesas.map(ds => {
+                            const isQuitado = ds.status === 'quitado';
+                            const dsJsonStr = JSON.stringify(ds).replace(/"/g, '&quot;');
+                            return `
+                            <div class="rounded-2xl border border-emerald-900/40 bg-[#0d2016] p-3.5 text-white flex items-center justify-between gap-3 shadow-2xs hover:border-emerald-700/50 transition">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <span class="size-8 rounded-xl bg-white/10 text-emerald-300 flex items-center justify-center shrink-0">
+                                        <i data-lucide="${ds.icone || 'receipt'}" class="size-4"></i>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="text-xs font-bold text-white truncate">${ds.titulo}</h4>
+                                            ${isQuitado ? `
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-bold border border-emerald-500/30">
+                                                    <i data-lucide="check" class="size-2.5"></i> Quitado
+                                                </span>
+                                            ` : `
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30">
+                                                    Dia ${ds.dia_vencimento || 10}
+                                                </span>
+                                            `}
+                                        </div>
+                                        <span class="text-[10px] text-gray-400 block truncate">${ds.detalhe || ('Vence dia ' + (ds.dia_vencimento || 10) + ' · Pessoal')}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <span class="text-xs font-black text-white valor-sensivel mr-1">${BRL(ds.valor)}</span>
+                                    
+                                    ${!isQuitado ? `
+                                        <button type="button" onclick="abrirModalQuitarDespesaIndividual(${dsJsonStr})" 
+                                                title="Quitar despesa"
+                                                class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-2xs transition cursor-pointer">
+                                            <i data-lucide="check" class="size-3.5"></i>
+                                            <span class="hidden sm:inline">Quitar</span>
+                                        </button>
+                                    ` : ''}
+
+                                    ${data.is_casal ? `
+                                        <button type="button" onclick="dividirDespesaComParceiro('${ds.id}', '${(ds.titulo || '').replace(/'/g, "\\'")}', ${ds.valor})" 
+                                                title="Propor divisão na Mesa de Acordos"
+                                                class="px-2 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-[10px] font-bold text-emerald-300 hover:text-white transition flex items-center gap-1">
+                                            <i data-lucide="share-2" class="size-3"></i>
+                                            <span class="hidden sm:inline">Dividir</span>
+                                        </button>
+                                    ` : ''}
+
+                                    <button type="button" onclick="abrirModalEditarDespesaIndividual(${dsJsonStr})" 
+                                            title="Editar despesa"
+                                            class="size-7 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-gray-300 hover:text-white flex items-center justify-center transition cursor-pointer">
+                                        <i data-lucide="edit-3" class="size-3.5"></i>
+                                    </button>
+
+                                    <button type="button" onclick="excluirDespesaIndividual(${ds.id}, '${(ds.titulo || '').replace(/'/g, "\\'")}')" 
+                                            title="Remover despesa"
+                                            class="size-7 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 flex items-center justify-center transition cursor-pointer">
+                                        <i data-lucide="trash-2" class="size-3.5"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                        }).join('');
+                    }
                 }
 
                 // 6. Suas Metas & Wishlist
@@ -4594,6 +4681,246 @@
 
             } catch (e) {
                 console.error('Erro ao carregar dados da Caixa Preta:', e);
+            }
+        }
+
+        // ==========================================
+        // DESPESAS FIXAS INDIVIDUAIS (CAIXA PRETA / SOLTEIRO)
+        // ==========================================
+        function abrirModalNovaDespesaIndividual() {
+            const mId = document.getElementById('formDespIndivId');
+            const titHeader = document.getElementById('tituloHeaderModalDespIndiv');
+            const fTit = document.getElementById('formDespIndivTitulo');
+            const fVal = document.getElementById('formDespIndivValor');
+            const fDia = document.getElementById('formDespIndivDia');
+            const fDet = document.getElementById('formDespIndivDetalhe');
+            const fIco = document.getElementById('formDespIndivIcone');
+
+            if (mId) mId.value = '';
+            if (titHeader) titHeader.innerText = 'Nova Despesa Fixa Pessoal';
+            if (fTit) fTit.value = '';
+            if (fVal) fVal.value = '';
+            if (fDia) fDia.value = '10';
+            if (fDet) fDet.value = '';
+            if (fIco) fIco.value = 'graduation-cap';
+
+            document.querySelectorAll('.chip-icone-desp-indiv').forEach(b => {
+                b.className = 'chip-icone-desp-indiv p-2.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground transition cursor-pointer';
+            });
+            const primeiroIcone = document.querySelector('.chip-icone-desp-indiv');
+            if (primeiroIcone) {
+                primeiroIcone.className = 'chip-icone-desp-indiv active p-2.5 rounded-xl border-2 border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 transition cursor-pointer';
+            }
+
+            abrirModalId('modalDespesaIndividual');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function abrirModalEditarDespesaIndividual(ds) {
+            if (!ds) return;
+            const mId = document.getElementById('formDespIndivId');
+            const titHeader = document.getElementById('tituloHeaderModalDespIndiv');
+            const fTit = document.getElementById('formDespIndivTitulo');
+            const fVal = document.getElementById('formDespIndivValor');
+            const fDia = document.getElementById('formDespIndivDia');
+            const fDet = document.getElementById('formDespIndivDetalhe');
+            const fIco = document.getElementById('formDespIndivIcone');
+
+            if (mId) mId.value = ds.id;
+            if (titHeader) titHeader.innerText = 'Editar Despesa Pessoal';
+            if (fTit) fTit.value = ds.titulo || '';
+            if (fVal) fVal.value = parseFloat(ds.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            if (fDia) fDia.value = ds.dia_vencimento || 10;
+            if (fDet) fDet.value = ds.detalhe || '';
+            if (fIco) fIco.value = ds.icone || 'receipt';
+
+            document.querySelectorAll('.chip-icone-desp-indiv').forEach(b => {
+                b.className = 'chip-icone-desp-indiv p-2.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground transition cursor-pointer';
+            });
+
+            abrirModalId('modalDespesaIndividual');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function selecionarIconeDespIndiv(btn, icone) {
+            const fIco = document.getElementById('formDespIndivIcone');
+            if (fIco) fIco.value = icone;
+            document.querySelectorAll('.chip-icone-desp-indiv').forEach(b => {
+                b.className = 'chip-icone-desp-indiv p-2.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground transition cursor-pointer';
+            });
+            if (btn) {
+                btn.className = 'chip-icone-desp-indiv active p-2.5 rounded-xl border-2 border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 transition cursor-pointer';
+            }
+        }
+
+        async function executarSalvarDespesaIndividual(event) {
+            if (event) event.preventDefault();
+            const id = document.getElementById('formDespIndivId')?.value;
+            const titulo = document.getElementById('formDespIndivTitulo')?.value?.trim();
+            const valorRaw = document.getElementById('formDespIndivValor')?.value || '0';
+            const dia = parseInt(document.getElementById('formDespIndivDia')?.value || '10', 10);
+            const icone = document.getElementById('formDespIndivIcone')?.value || 'receipt';
+            const detalhe = document.getElementById('formDespIndivDetalhe')?.value?.trim();
+
+            const valorLimpo = parseFloat(valorRaw.replace(/\./g, '').replace(',', '.')) || 0;
+            if (!titulo || valorLimpo <= 0) {
+                return seivaNotificar('Informe um nome e valor válido para a despesa pessoal.', 'aviso');
+            }
+
+            const url = id ? `/caixa-preta/despesas/${id}/atualizar` : '/caixa-preta/despesas';
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        titulo,
+                        valor: valorLimpo,
+                        dia_vencimento: dia,
+                        icone,
+                        detalhe
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    fecharModalId('modalDespesaIndividual');
+                    seivaNotificar(data.mensagem || 'Despesa pessoal salva com sucesso!', 'sucesso', 'Despesa Gravada');
+                    carregarCaixaPretaDados();
+                    carregarDashboardDados();
+                } else {
+                    seivaNotificar(data.mensagem || 'Erro ao salvar despesa pessoal.', 'erro');
+                }
+            } catch (err) {
+                console.error('Erro salvar despesa individual:', err);
+                seivaNotificar('Erro de conexão ao salvar despesa pessoal.', 'erro');
+            }
+        }
+
+        async function excluirDespesaIndividual(id, titulo) {
+            if (!id) return;
+            const confirmou = await seivaConfirm({
+                titulo: 'Remover despesa fixa pessoal?',
+                mensagem: `Deseja realmente remover a despesa "${titulo}"?`,
+                badge: { texto: 'Despesa Pessoal Privada', tipo: 'pessoal' },
+                impacto: {
+                    titulo: 'Atualização do Orçamento Pessoal',
+                    texto: 'O valor desta despesa deixará de comprometer a sua renda mensal e o histórico da remoção ficará gravado no seu registro de auditoria.'
+                },
+                tipo: 'perigo',
+                icone: 'trash-2',
+                confirmText: 'Remover Despesa',
+                cancelText: 'Cancelar (Manter)'
+            });
+            if (!confirmou) return;
+
+            try {
+                const res = await fetch(`/caixa-preta/despesas/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    seivaNotificar(data.mensagem || `Despesa "${titulo}" removida!`, 'sucesso', 'Despesa Excluída');
+                    carregarCaixaPretaDados();
+                    carregarDashboardDados();
+                } else {
+                    seivaNotificar(data.mensagem || 'Erro ao remover despesa.', 'erro');
+                }
+            } catch (err) {
+                console.error('Erro ao excluir despesa individual:', err);
+                seivaNotificar('Erro de conexão ao remover despesa.', 'erro');
+            }
+        }
+
+        // Quitar Despesa Fixa Individual
+        let despesaIndividualParaQuitar = null;
+
+        function abrirModalQuitarDespesaIndividual(ds) {
+            if (!ds) return;
+            despesaIndividualParaQuitar = ds;
+
+            const fId = document.getElementById('quitarDespIndivId');
+            const fTit = document.getElementById('quitarDespIndivTitulo');
+            const fVal = document.getElementById('quitarDespIndivValor');
+            const fVenc = document.getElementById('quitarDespIndivVenc');
+            const chipsContas = document.getElementById('quitarDespChipsContas');
+            const fContaId = document.getElementById('quitarDespContaId');
+
+            if (fId) fId.value = ds.id;
+            if (fTit) fTit.innerText = ds.titulo || 'Despesa';
+            if (fVal) fVal.innerText = BRL(ds.valor || 0);
+            if (fVenc) fVenc.innerText = `Vencimento dia ${ds.dia_vencimento || 10} · Privada`;
+
+            const contas = dashboardDadosCache?.contas || listaContas || [];
+            if (chipsContas && contas.length) {
+                const primeiraConta = contas[0]?.id_conta || '';
+                if (fContaId) fContaId.value = primeiraConta;
+
+                chipsContas.innerHTML = contas.map((c, i) => `
+                    <button type="button" onclick="selecionarContaQuitacaoDespIndiv(this, '${c.id_conta}')"
+                            class="chip-conta-quitacao px-3.5 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${i === 0 ? 'border-primary bg-primary text-primary-foreground shadow-2xs' : 'border-border bg-card text-muted-foreground hover:text-foreground'}">
+                        <span class="size-2 rounded-full" style="background-color: ${c.cor || '#10b981'}"></span>
+                        <span>${c.nome}</span>
+                        <span class="text-[10px] opacity-80">(${BRL(c.saldo)})</span>
+                    </button>
+                `).join('');
+            }
+
+            abrirModalId('modalQuitarDespesaIndividual');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function selecionarContaQuitacaoDespIndiv(btn, contaId) {
+            const fContaId = document.getElementById('quitarDespContaId');
+            if (fContaId) fContaId.value = contaId;
+            document.querySelectorAll('.chip-conta-quitacao').forEach(b => {
+                b.className = 'chip-conta-quitacao px-3.5 py-2 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground text-xs font-bold transition flex items-center gap-1.5 cursor-pointer';
+            });
+            if (btn) {
+                btn.className = 'chip-conta-quitacao px-3.5 py-2 rounded-xl border border-primary bg-primary text-primary-foreground shadow-2xs text-xs font-bold transition flex items-center gap-1.5 cursor-pointer';
+            }
+        }
+
+        async function executarConfirmarQuitacaoDespesaIndiv(event) {
+            if (event) event.preventDefault();
+            const id = document.getElementById('quitarDespIndivId')?.value;
+            const contaId = document.getElementById('quitarDespContaId')?.value;
+            if (!id || !contaId) {
+                return seivaNotificar('Selecione de qual conta bancária saiu o pagamento.', 'aviso');
+            }
+
+            try {
+                const res = await fetch(`/caixa-preta/despesas/${id}/quitar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ conta_id: contaId })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    fecharModalId('modalQuitarDespesaIndividual');
+                    seivaNotificar(data.mensagem || 'Despesa quitada com sucesso!', 'sucesso', 'Pagamento Registrado');
+                    carregarCaixaPretaDados();
+                    carregarDashboardDados();
+                    carregarExtratoDados();
+                } else {
+                    seivaNotificar(data.mensagem || 'Erro ao quitar despesa.', 'erro');
+                }
+            } catch (err) {
+                console.error('Erro quitar despesa individual:', err);
+                seivaNotificar('Erro de conexão ao quitar despesa.', 'erro');
             }
         }
 
@@ -6346,7 +6673,19 @@
         // ==========================================
         // RECEBIMENTOS — Relatórios por Período
         // ==========================================
+        // RELATÓRIOS E RECEBIMENTOS (NAVEGAÇÃO MENSAL E HISTÓRICO)
+        // ==========================================
         let recebMesAtivo = new Date().toISOString().slice(0,7);
+        let cacheRecebMesAnterior = null;
+        let cacheRecebMesProximo = null;
+
+        function navegarRecebMes(direcao) {
+            if (direcao === 'anterior' && cacheRecebMesAnterior) {
+                carregarRecebimentosDados(cacheRecebMesAnterior);
+            } else if (direcao === 'proximo' && cacheRecebMesProximo) {
+                carregarRecebimentosDados(cacheRecebMesProximo);
+            }
+        }
 
         async function carregarRecebimentosDados(mes) {
             if (mes) recebMesAtivo = mes;
@@ -6354,6 +6693,15 @@
                 const res = await fetch(`/api/recebimentos?mes=${recebMesAtivo}`);
                 if (!res.ok) return;
                 const d = await res.json();
+
+                cacheRecebMesAnterior = d.mes_anterior;
+                cacheRecebMesProximo = d.proximo_mes;
+
+                // Atualizar label em destaque do mês ativo
+                const lblAtivo = document.getElementById('recebMesAtivoLabel');
+                if (lblAtivo) {
+                    lblAtivo.innerText = d.mes_label || d.mes;
+                }
 
                 // Cards de resumo
                 const eEl  = document.getElementById('recebCardReceitas');
@@ -6384,9 +6732,8 @@
 
                 // Label de período
                 const rdLabel = document.getElementById('recebRDPeriodoLabel');
-                if (rdLabel && d.mes) {
-                    const dataRef = new Date(d.mes + '-01');
-                    rdLabel.innerText = dataRef.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+                if (rdLabel) {
+                    rdLabel.innerText = d.mes_label || (new Date(d.mes + '-01')).toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
                 }
 
                 // Gráfico de evolução
@@ -8641,42 +8988,137 @@
             }
         }
 
-        // 5. Modal Saúde Financeira (Imagem 4)
-        function abrirModalSaudeFinanceira() {
-            const sf = dashboardDadosCache?.saude_financeira;
-            if (sf) {
+        // 5. Modal Saúde Financeira (Dupla: Individual vs Casal / Lar)
+        let modalSaudeAbaAtiva = 'individual';
+
+        function alternarAbaModalSaude(tipo) {
+            modalSaudeAbaAtiva = tipo;
+            const btnIndiv = document.getElementById('modalSaudeBtnIndiv');
+            const btnLar = document.getElementById('modalSaudeBtnLar');
+            const linkMetodologia = document.getElementById('modalSaudeLinkMetodologiaLar');
+            const titHeader = document.getElementById('modalSaudeHeaderTitulo');
+
+            const isLar = (tipo === 'lar');
+            const dados = isLar 
+                ? (dashboardDadosCache?.saude_financeira_lar || cacheSaudeLar) 
+                : (dashboardDadosCache?.saude_financeira_individual || dashboardDadosCache?.saude_financeira || cacheSaudeIndiv);
+
+            if (btnIndiv && btnLar) {
+                if (isLar) {
+                    btnLar.className = 'py-2 px-3 rounded-xl text-xs font-bold transition shadow-2xs bg-card text-foreground flex items-center justify-center gap-1.5 cursor-pointer';
+                    btnLar.querySelector('i')?.setAttribute('class', 'size-3.5 text-emerald-600');
+                    btnIndiv.className = 'py-2 px-3 rounded-xl text-xs font-bold transition text-muted-foreground hover:text-foreground flex items-center justify-center gap-1.5 cursor-pointer';
+                    btnIndiv.querySelector('i')?.setAttribute('class', 'size-3.5 text-muted-foreground');
+                } else {
+                    btnIndiv.className = 'py-2 px-3 rounded-xl text-xs font-bold transition shadow-2xs bg-card text-foreground flex items-center justify-center gap-1.5 cursor-pointer';
+                    btnIndiv.querySelector('i')?.setAttribute('class', 'size-3.5 text-emerald-600');
+                    btnLar.className = 'py-2 px-3 rounded-xl text-xs font-bold transition text-muted-foreground hover:text-foreground flex items-center justify-center gap-1.5 cursor-pointer';
+                    btnLar.querySelector('i')?.setAttribute('class', 'size-3.5 text-muted-foreground');
+                }
+            }
+
+            if (linkMetodologia) {
+                if (isLar) linkMetodologia.classList.remove('hidden');
+                else linkMetodologia.classList.add('hidden');
+            }
+
+            if (titHeader) {
+                titHeader.innerText = isLar ? 'Saúde financeira do Nosso Lar' : 'Sua saúde financeira individual';
+            }
+
+            if (dados) {
+                const score = dados.score || 0;
+                const status = dados.status || 'Saudável';
                 const scoreTxt = document.getElementById('modalSaudeScoreTxt');
                 const statusTxt = document.getElementById('modalSaudeStatusTxt');
                 const notaTxt = document.getElementById('modalSaudeNotaTxt');
                 const circle = document.getElementById('modalSaudeCircleProgress');
+                const bannerBox = document.getElementById('modalSaudeBannerBox');
 
-                if (scoreTxt) scoreTxt.innerText = `${sf.score}%`;
+                if (scoreTxt) scoreTxt.innerText = `${score}%`;
                 if (statusTxt) {
-                    statusTxt.innerText = sf.status;
-                    statusTxt.className = `text-xs font-bold ${sf.score >= 80 ? 'text-emerald-600' : (sf.score >= 60 ? 'text-amber-600' : 'text-red-500')}`;
+                    statusTxt.innerText = status;
+                    statusTxt.className = `text-xs font-bold ${score >= 80 ? 'text-emerald-600' : (score >= 60 ? 'text-amber-600' : 'text-rose-600')}`;
                 }
                 if (notaTxt) {
-                    notaTxt.innerText = `Seu score é ${sf.score}% — ${sf.status.toLowerCase()} ao equilíbrio. Veja o que compõe essa nota:`;
+                    notaTxt.innerText = isLar
+                        ? `O score do Lar é ${score}% — ${status.toLowerCase()} ao equilíbrio. Veja o que compõe essa nota:`
+                        : `Seu score é ${score}% — ${status.toLowerCase()} ao equilíbrio. Veja o que compõe essa nota:`;
+                }
+                if (bannerBox) {
+                    bannerBox.className = `p-3.5 rounded-2xl border text-xs font-extrabold text-center shadow-2xs transition-colors ${
+                        score >= 80 
+                            ? 'border-emerald-300/80 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-950 dark:text-emerald-100' 
+                            : (score >= 60 
+                                ? 'border-amber-300/80 bg-amber-50 dark:bg-amber-950/50 text-amber-950 dark:text-amber-100' 
+                                : 'border-rose-300/80 bg-rose-50 dark:bg-rose-950/50 text-rose-950 dark:text-rose-100')
+                    }`;
                 }
                 if (circle) {
                     const C = 251.2;
-                    const offset = C - (sf.score / 100) * C;
+                    const offset = C - (score / 100) * C;
                     circle.setAttribute('stroke-dashoffset', Math.round(offset));
-                    circle.setAttribute('stroke', sf.score >= 80 ? '#10b981' : (sf.score >= 60 ? '#f59e0b' : '#ef4444'));
+                    circle.setAttribute('stroke', score >= 80 ? '#10b981' : (score >= 60 ? '#f59e0b' : '#ef4444'));
                 }
 
-                // Preencher insights específicos
-                if (sf.insights && sf.insights.length >= 3) {
-                    const p1 = document.getElementById('modalSaudePilar1Titulo');
-                    if (p1) p1.innerText = sf.insights[0].texto;
-                    const p2 = document.getElementById('modalSaudePilar2Titulo');
-                    if (p2) p2.innerText = sf.insights[1].texto;
-                    const p3 = document.getElementById('modalSaudePilar3Titulo');
-                    if (p3) p3.innerText = sf.insights[2].texto;
+                // Nomes dos Pilares e Insights (Sem Emojis)
+                const p1Nome = document.getElementById('modalSaudePilar1Nome');
+                const p2Nome = document.getElementById('modalSaudePilar2Nome');
+                const p3Nome = document.getElementById('modalSaudePilar3Nome');
+                const p1Txt = document.getElementById('modalSaudePilar1Titulo');
+                const p2Txt = document.getElementById('modalSaudePilar2Titulo');
+                const p3Txt = document.getElementById('modalSaudePilar3Titulo');
+                const p1Desc = document.getElementById('modalSaudePilar1DescTxt');
+                const p2Desc = document.getElementById('modalSaudePilar2DescTxt');
+                const p3Desc = document.getElementById('modalSaudePilar3DescTxt');
+
+                if (isLar) {
+                    if (p1Nome) p1Nome.innerText = 'Custo Fixo do Lar vs. Renda Conjunta';
+                    if (p2Nome) p2Nome.innerText = 'Fundo de Emergência da Casa';
+                    if (p3Nome) p3Nome.innerText = 'Equilíbrio e Quitação do Rateio do Mês';
+
+                    if (dados.insights && dados.insights.length >= 3) {
+                        if (p1Txt) p1Txt.innerText = dados.insights[0].texto;
+                        if (p2Txt) p2Txt.innerText = dados.insights[1].texto;
+                        if (p3Txt) p3Txt.innerText = dados.insights[2].texto;
+                    }
+                    if (p1Desc) p1Desc.innerText = 'Mede o comprometimento da soma das rendas com as contas essenciais da residência.';
+                    if (p2Desc) p2Desc.innerText = 'Segurança financeira conjunta para cobrir imprevistos residenciais sem desequilibrar o casal.';
+                    if (p3Desc) p3Desc.innerText = 'Mede a pontualidade e transparência da participação de cada parceiro nos pagamentos do mês.';
+                } else {
+                    if (p1Nome) p1Nome.innerText = 'Compromissos fixos vs. renda';
+                    if (p2Nome) p2Nome.innerText = 'Reserva de emergência';
+                    if (p3Nome) p3Nome.innerText = 'Gastos do dia a dia';
+
+                    if (dados.insights && dados.insights.length >= 3) {
+                        if (p1Txt) p1Txt.innerText = dados.insights[0].texto;
+                        if (p2Txt) p2Txt.innerText = dados.insights[1].texto;
+                        if (p3Txt) p3Txt.innerText = dados.insights[2].texto;
+                    }
+                    if (p1Desc) p1Desc.innerText = 'Fatura do cartão + despesas somam parte importante da renda. Acima de 70% sobra pouca folga.';
+                    if (p2Desc) p2Desc.innerText = 'O ideal é ter pelo menos 3x a sua renda guardada. Continue contribuindo aos poucos.';
+                    if (p3Desc) p3Desc.innerText = 'Você gastou menos do que entrou no mês, mantendo sobra livre.';
                 }
             }
-            abrirModalId('modalSaudeFinanceira');
             if (window.lucide) lucide.createIcons();
+        }
+
+        function abrirModalSaudeFinanceira() {
+            // Se o usuário estiver olhando a visão do Lar no Dashboard, abre já na aba do Lar
+            const iniciarComLar = (visaoSaudeDashAtiva === 'lar' && (dashboardDadosCache?.is_casal || cacheSaudeLar));
+            
+            // Oculta abas do topo se for usuário individual/solteiro sem Lar
+            const toggleAbas = document.getElementById('modalSaudeToggleAbas');
+            if (toggleAbas) {
+                if (dashboardDadosCache?.is_casal) {
+                    toggleAbas.classList.remove('hidden');
+                } else {
+                    toggleAbas.classList.add('hidden');
+                }
+            }
+
+            alternarAbaModalSaude(iniciarComLar ? 'lar' : 'individual');
+            abrirModalId('modalSaudeFinanceira');
         }
 
         // 6. Modal Registrar Pagamento (Imagem 6)

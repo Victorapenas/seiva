@@ -76,6 +76,10 @@ Route::prefix('api')->group(function () {
         Route::get('/caixa-preta/registros', [CaixaPretaController::class, 'index']);
         Route::post('/caixa-preta/registros', [CaixaPretaController::class, 'store']);
         Route::delete('/caixa-preta/registros/{id}', [CaixaPretaController::class, 'destroy']);
+        Route::post('/caixa-preta/despesas', [CaixaPretaController::class, 'criarDespesaIndividual']);
+        Route::post('/caixa-preta/despesas/{id}/atualizar', [CaixaPretaController::class, 'atualizarDespesaIndividual']);
+        Route::delete('/caixa-preta/despesas/{id}', [CaixaPretaController::class, 'removerDespesaIndividual']);
+        Route::post('/caixa-preta/despesas/{id}/quitar', [CaixaPretaController::class, 'quitarDespesaIndividual']);
 
         // RF004 & RF010: Lares, Convites e Despesas Compartilhadas
         Route::get('/lar', [LarController::class, 'show']);
@@ -213,6 +217,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/metas/{id}', [MetaController::class, 'destroy']);
     Route::post('/metas/{id}/excluir', [MetaController::class, 'destroy']);
     Route::post('/metas/{id}/atualizar', [MetaController::class, 'atualizarMeta']);
+
+    // Aliases de Caixa Preta / Despesas Individuais sem /api
+    Route::post('/caixa-preta/despesas', [CaixaPretaController::class, 'criarDespesaIndividual']);
+    Route::post('/caixa-preta/despesas/{id}/atualizar', [CaixaPretaController::class, 'atualizarDespesaIndividual']);
+    Route::delete('/caixa-preta/despesas/{id}', [CaixaPretaController::class, 'removerDespesaIndividual']);
+    Route::post('/caixa-preta/despesas/{id}/quitar', [CaixaPretaController::class, 'quitarDespesaIndividual']);
 
     // Aliases de Contas sem /api
     Route::put('/contas/{id}', [ContaController::class, 'update']);

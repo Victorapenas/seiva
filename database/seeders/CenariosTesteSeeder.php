@@ -651,5 +651,89 @@ class CenariosTesteSeeder extends Seeder
                 'tempo' => 'Ha 15 min',
             ]
         );
+
+        // =========================================================================
+        // DESPESAS FIXAS INDIVIDUAIS (CAIXA PRETA & CONTROLE PESSOAL)
+        // =========================================================================
+        // Despesas Pessoais do Victor Hugo (Usuário Individual / Solteiro)
+        \App\Models\DespesaIndividual::updateOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'titulo' => 'Pós-Graduação'],
+            [
+                'valor' => 450.00,
+                'dia_vencimento' => 10,
+                'icone' => 'graduation-cap',
+                'status' => 'pendente',
+                'detalhe' => 'Engenharia de Software · Mensalidade',
+                'recorrente' => true,
+            ]
+        );
+        \App\Models\DespesaIndividual::updateOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'titulo' => 'Academia SmartFit'],
+            [
+                'valor' => 119.90,
+                'dia_vencimento' => 15,
+                'icone' => 'dumbbell',
+                'status' => 'pendente',
+                'detalhe' => 'Plano Black · Débito automático',
+                'recorrente' => true,
+            ]
+        );
+        \App\Models\DespesaIndividual::updateOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'titulo' => 'Plano de Saúde'],
+            [
+                'valor' => 380.00,
+                'dia_vencimento' => 20,
+                'icone' => 'heart-pulse',
+                'status' => 'pendente',
+                'detalhe' => 'Unimed Nacional Individual',
+                'recorrente' => true,
+            ]
+        );
+        \App\Models\DespesaIndividual::updateOrCreate(
+            ['usuario_id' => $victor->id_usuario, 'titulo' => 'Internet Fibra'],
+            [
+                'valor' => 129.90,
+                'dia_vencimento' => 5,
+                'icone' => 'wifi',
+                'status' => 'pago',
+                'detalhe' => 'Vivo Fibra 500MB residencial',
+                'recorrente' => true,
+            ]
+        );
+
+        // Despesas Pessoais da Duda (Privadas, não convêm ao parceiro)
+        \App\Models\DespesaIndividual::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Consulta psicóloga'],
+            [
+                'valor' => 180.00,
+                'dia_vencimento' => 20,
+                'icone' => 'brain',
+                'status' => 'pendente',
+                'detalhe' => 'Sessão quinzenal · Dra. Helena',
+                'recorrente' => true,
+            ]
+        );
+        \App\Models\DespesaIndividual::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Clareamento dental'],
+            [
+                'valor' => 240.00,
+                'dia_vencimento' => 15,
+                'icone' => 'stethoscope',
+                'status' => 'pendente',
+                'detalhe' => 'Parcela 2 de 3 · Odonto Vida',
+                'recorrente' => true,
+            ]
+        );
+        \App\Models\DespesaIndividual::updateOrCreate(
+            ['usuario_id' => $duda->id_usuario, 'titulo' => 'Curso UX Alura'],
+            [
+                'valor' => 89.00,
+                'dia_vencimento' => 28,
+                'icone' => 'graduation-cap',
+                'status' => 'pendente',
+                'detalhe' => 'Assinatura anual de cursos',
+                'recorrente' => true,
+            ]
+        );
     }
 }

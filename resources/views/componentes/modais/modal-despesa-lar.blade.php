@@ -83,28 +83,30 @@
             </div>
 
             <!-- Switch de Despesa Extraordinária / Imprevisto (Alto Contraste WCAG AAA Garantido) -->
-            <div class="p-3.5 rounded-2xl space-y-2.5 shadow-2xs"
-                 style="background-color: #fef3c7 !important; border: 1.5px solid #f59e0b !important;">
+            <div class="p-3.5 rounded-2xl border border-amber-300/80 bg-amber-50/90 dark:bg-amber-950/40 dark:border-amber-700/60 space-y-2.5 shadow-2xs">
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="size-7 rounded-xl flex items-center justify-center shrink-0" style="background-color: #fde68a !important; color: #b45309 !important;">
-                            <i data-lucide="alert-triangle" class="size-4" style="color: #b45309 !important;"></i>
+                    <div class="flex items-center gap-2.5">
+                        <span class="size-7 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300/80 flex items-center justify-center shrink-0">
+                            <i data-lucide="alert-triangle" class="size-4 text-amber-700 dark:text-amber-300"></i>
                         </span>
                         <div>
-                            <strong class="text-xs font-black block" style="color: #451a03 !important;">Despesa Extraordinária / Imprevisto</strong>
-                            <span class="text-[10px] font-bold" style="color: #78350f !important;">Gasto fora da rotina planejada do mês</span>
+                            <strong class="text-xs font-black block text-amber-950 dark:text-amber-100">Despesa Extraordinária / Imprevisto</strong>
+                            <span class="text-[10px] font-semibold text-amber-800 dark:text-amber-300">Gasto fora da rotina planejada do mês</span>
                         </div>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="formLarDespExtraordinaria" class="sr-only peer" onchange="alternarAvisoExtraordinaria(this.checked)">
-                        <div class="w-11 h-6 bg-amber-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                        <div class="w-10 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
                     </label>
                 </div>
-                <!-- Box de Explicação com Fundo Branco Sólido e Tipografia Escura de Máximo Contraste -->
-                <div id="avisoExtraordinariaTxt" class="hidden p-3 rounded-xl shadow-2xs leading-relaxed"
-                     style="background-color: #ffffff !important; border: 1.5px solid #fbbf24 !important; color: #451a03 !important;">
-                    <p class="text-xs font-semibold" style="color: #451a03 !important;">
-                        <strong style="color: #78350f !important; font-weight: 900 !important;">💡 Como entra na conta:</strong> Despesas extraordinárias são imprevistos (ex: vazamento, conserto de eletro). Elas <strong style="color: #065f46 !important;">não distorcem o custo fixo mensal</strong> do casal e entram na <strong>Mesa de Acordos</strong> para rateio pontual sem afetar metas de longo prazo.
+                <!-- Box de Explicação com Fundo Branco Sólido e Tipografia Escura de Máximo Contraste (Sem Emojis, Ícone Lucide SVG) -->
+                <div id="avisoExtraordinariaTxt" class="hidden p-3 rounded-xl border border-amber-300/80 bg-white dark:bg-amber-950/90 text-amber-950 dark:text-amber-100 shadow-2xs leading-relaxed space-y-1">
+                    <div class="flex items-center gap-1.5 font-extrabold text-xs text-amber-900 dark:text-amber-200">
+                        <i data-lucide="info" class="size-3.5 text-amber-700 dark:text-amber-400 shrink-0"></i>
+                        <span>Como entra na conta:</span>
+                    </div>
+                    <p class="text-[11px] font-medium text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+                        Despesas extraordinárias são imprevistos (ex: vazamento, conserto de eletro). Elas <strong>não distorcem o custo fixo mensal</strong> do casal e entram na <strong>Mesa de Acordos</strong> para rateio pontual sem afetar metas de longo prazo.
                     </p>
                 </div>
             </div>
