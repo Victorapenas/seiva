@@ -4651,7 +4651,7 @@
                 });
 
                 if (res.ok) {
-                    seivaNotificar(`+ ${BRL(valor)} guardados com sucesso! Você antecipou sua conquista! 🚀`, 'sucesso', 'Meta Acelerada');
+                    seivaNotificar(`+ ${BRL(valor)} guardados com sucesso! Você antecipou sua conquista.`, 'sucesso', 'Meta Acelerada');
                     carregarMetasDados();
                     carregarDashboardDados();
                 } else {
@@ -4692,41 +4692,41 @@
                 const diasEconomia100 = Math.min(diasRestantes, Math.round(100 / aporteDiario));
                 const diasEconomia200 = Math.min(diasRestantes, Math.round(200 / aporteDiario));
 
-                // Status de conquista / Projeção emocional
+                // Status de conquista / Projeção emocional com alto contraste e ZERO emojis
                 let statusBadge = '';
                 if (faltam <= 0) {
                     statusBadge = `
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-500/40 text-emerald-800 dark:text-emerald-300 text-xs font-black">
-                            <i data-lucide="award" class="size-3.5 text-emerald-600"></i>
-                            <span>🏆 Objetivo Conquistado!</span>
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-400 dark:border-emerald-700/60 text-emerald-950 dark:text-emerald-200 text-xs font-black shadow-2xs">
+                            <i data-lucide="check-circle-2" class="size-3.5 text-emerald-700 dark:text-emerald-400"></i>
+                            <span>Objetivo Conquistado!</span>
                         </div>`;
                 } else if (p >= 80) {
                     statusBadge = `
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs font-black animate-pulse">
-                            <i data-lucide="zap" class="size-3.5 text-amber-500"></i>
-                            <span>🚀 Na reta final! Faltam apenas ~${diasRestantes} dias!</span>
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-amber-200 text-xs font-black shadow-2xs">
+                            <i data-lucide="zap" class="size-3.5 text-amber-600 dark:text-amber-400"></i>
+                            <span>Na reta final! Faltam apenas ~${diasRestantes} dias</span>
                         </div>`;
                 } else if (p >= 40) {
                     statusBadge = `
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-500/25 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
-                            <i data-lucide="clock" class="size-3.5 text-emerald-600"></i>
-                            <span>✨ Faltam ~${diasRestantes} dias no seu ritmo</span>
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/50 text-emerald-950 dark:text-emerald-200 text-xs font-bold shadow-2xs">
+                            <i data-lucide="clock" class="size-3.5 text-emerald-700 dark:text-emerald-400"></i>
+                            <span>Faltam ~${diasRestantes} dias no seu ritmo</span>
                         </div>`;
                 } else {
                     statusBadge = `
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted border border-border text-foreground text-xs font-bold">
-                            <i data-lucide="target" class="size-3.5 text-muted-foreground"></i>
-                            <span>🎯 Previsão de entrega em ~${diasRestantes} dias</span>
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-muted border border-border text-foreground text-xs font-bold shadow-2xs">
+                            <i data-lucide="calendar" class="size-3.5 text-muted-foreground"></i>
+                            <span>Previsão de entrega em ~${diasRestantes} dias</span>
                         </div>`;
                 }
 
-                // Cor da barra de progresso
-                const corBarra = p >= 70 ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : p >= 30 ? 'bg-gradient-to-r from-amber-500 to-amber-400' : 'bg-gradient-to-r from-rose-500 to-rose-400';
+                // Cor da barra de progresso verde institucional
+                const corBarra = p >= 100 ? 'bg-emerald-600' : 'bg-gradient-to-r from-emerald-700 to-emerald-500';
 
-                // Imagem real ou ícone Lucide com visual nobre
+                // Imagem real ou ícone Lucide com visual nobre e harmonioso
                 const visualProduto = m.imagem
                     ? `<img src="${m.imagem}" alt="${m.titulo}" class="size-16 rounded-2xl object-cover shrink-0 border border-emerald-500/20 shadow-soft">`
-                    : `<span class="size-16 rounded-2xl bg-gradient-to-br from-[#06140c] to-[#0a2215] text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-soft"><i data-lucide="${m.icone || (isLar ? 'home' : 'laptop')}" class="size-8"></i></span>`;
+                    : `<span class="size-16 rounded-2xl bg-emerald-800/10 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-600/30 flex items-center justify-center shrink-0 shadow-soft"><i data-lucide="${m.icone || (isLar ? 'home' : 'laptop')}" class="size-7"></i></span>`;
 
                 return `
                 <div class="rounded-3xl border border-border/80 bg-card shadow-card overflow-hidden transition hover:border-emerald-500/30">
@@ -4747,15 +4747,16 @@
                                                 <i data-lucide="external-link" class="size-3"></i>
                                                 <span>Ver na loja</span>
                                             </a>
-                                            <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.2 rounded-full border border-emerald-300/40">
-                                                <i data-lucide="bell" class="size-3 text-emerald-600"></i>
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-900 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700/50">
+                                                <i data-lucide="bell" class="size-3 text-emerald-700 dark:text-emerald-400"></i>
                                                 <span>Monitorando</span>
                                             </span>
                                         </div>
                                     ` : `
                                         <button type="button" onclick="abrirModalEditarMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${alvo}, '${m.categoria||'produto'}', '', '', '', true)"
-                                                class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline mt-1">
-                                            <i data-lucide="link" class="size-3"></i> Adicionar link de compra
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-muted text-[10px] font-bold text-foreground transition mt-1 shadow-2xs">
+                                            <i data-lucide="link" class="size-3 text-emerald-700"></i>
+                                            <span>Adicionar link de compra</span>
                                         </button>
                                     `}
                                 </div>
@@ -4800,24 +4801,36 @@
                                     <i data-lucide="hourglass" class="size-3 text-amber-500"></i>
                                     Falta guardar
                                 </span>
-                                <strong class="text-xs font-black ${faltam <= 0 ? 'text-emerald-600' : 'text-foreground'} block">
+                                <strong class="text-xs font-black ${faltam <= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-foreground'} block">
                                     ${faltam <= 0 ? 'Concluída!' : BRL(faltam)}
                                 </strong>
                             </div>
                         </div>
 
                         ${isLar ? `
-                            <!-- Divisão do Lar (Casal) -->
-                            <div class="rounded-2xl border border-emerald-600/20 bg-emerald-50/30 dark:bg-emerald-950/20 p-3 space-y-1.5">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">Divisão do Casal</span>
+                            <!-- Divisão do Lar (Casal) com Alto Contraste e Legibilidade -->
+                            <div class="rounded-2xl border border-border bg-muted/40 p-3.5 space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[11px] font-black uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                                        <i data-lucide="users" class="size-3.5 text-emerald-700"></i>
+                                        <span>Divisão do Casal</span>
+                                    </span>
+                                    <span class="text-[10px] font-bold text-muted-foreground">50% / 50%</span>
+                                </div>
                                 <div class="grid grid-cols-2 gap-2 text-xs">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="size-5 rounded-full bg-emerald-700 text-white text-[9px] font-black flex items-center justify-center">ME</span>
-                                        <span>Você: <strong>R$ ${(m.divisao_voce || 250).toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês</strong></span>
+                                    <div class="flex items-center gap-2.5 p-2 rounded-xl bg-card border border-border shadow-2xs">
+                                        <span class="size-6 rounded-full bg-emerald-800 text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-2xs">ME</span>
+                                        <div class="min-w-0">
+                                            <span class="text-[10px] text-muted-foreground block font-medium">Você</span>
+                                            <strong class="text-xs text-foreground font-black truncate block">R$ ${(m.divisao_voce || 250).toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês</strong>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="size-5 rounded-full bg-emerald-500 text-white text-[9px] font-black flex items-center justify-center">IM</span>
-                                        <span>Ian: <strong>R$ ${(m.divisao_parceiro || 250).toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês</strong></span>
+                                    <div class="flex items-center gap-2.5 p-2 rounded-xl bg-card border border-border shadow-2xs">
+                                        <span class="size-6 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-2xs">IM</span>
+                                        <div class="min-w-0">
+                                            <span class="text-[10px] text-muted-foreground block font-medium">Ian</span>
+                                            <strong class="text-xs text-foreground font-black truncate block">R$ ${(m.divisao_parceiro || 250).toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês</strong>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -4825,29 +4838,29 @@
 
                         <!-- Simulador / Acelerador de Meta (Agilizar Conquista) -->
                         ${faltam > 0 ? `
-                        <div class="rounded-2xl border border-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/15 p-3 space-y-2">
+                        <div class="rounded-2xl border border-border bg-card p-3.5 space-y-2.5 shadow-2xs">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs font-bold text-foreground flex items-center gap-1.5">
+                                <span class="text-xs font-black text-foreground flex items-center gap-1.5">
                                     <i data-lucide="zap" class="size-3.5 text-amber-500"></i>
                                     <span>Agilizar Conquista</span>
                                 </span>
-                                <span class="text-[10px] text-muted-foreground">Toque para depositar e adiantar dias</span>
+                                <span class="text-[10px] font-semibold text-muted-foreground">Toque para depositar e adiantar dias</span>
                             </div>
                             <div class="grid grid-cols-3 gap-2">
                                 <button type="button" onclick="fazerAporteRapidoMeta(${m.id_meta}, 50)"
-                                        class="py-2 px-1 rounded-xl border border-emerald-600/30 bg-card hover:bg-emerald-700 hover:text-white text-foreground text-xs font-black transition flex flex-col items-center justify-center shadow-2xs group">
-                                    <span>+ R$ 50</span>
-                                    <span class="text-[9px] font-medium text-muted-foreground group-hover:text-emerald-100">-${diasEconomia50} dias</span>
+                                        class="py-2.5 px-1.5 rounded-xl border border-border bg-muted/40 hover:bg-emerald-800 hover:text-white hover:border-emerald-800 text-foreground text-xs font-black transition flex flex-col items-center justify-center shadow-2xs group">
+                                    <span class="font-extrabold">+ R$ 50</span>
+                                    <span class="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 group-hover:text-emerald-100">-${diasEconomia50} dias</span>
                                 </button>
                                 <button type="button" onclick="fazerAporteRapidoMeta(${m.id_meta}, 100)"
-                                        class="py-2 px-1 rounded-xl border border-emerald-600/30 bg-card hover:bg-emerald-700 hover:text-white text-foreground text-xs font-black transition flex flex-col items-center justify-center shadow-2xs group">
-                                    <span>+ R$ 100</span>
-                                    <span class="text-[9px] font-medium text-muted-foreground group-hover:text-emerald-100">-${diasEconomia100} dias</span>
+                                        class="py-2.5 px-1.5 rounded-xl border border-border bg-muted/40 hover:bg-emerald-800 hover:text-white hover:border-emerald-800 text-foreground text-xs font-black transition flex flex-col items-center justify-center shadow-2xs group">
+                                    <span class="font-extrabold">+ R$ 100</span>
+                                    <span class="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 group-hover:text-emerald-100">-${diasEconomia100} dias</span>
                                 </button>
                                 <button type="button" onclick="fazerAporteRapidoMeta(${m.id_meta}, 200)"
-                                        class="py-2 px-1 rounded-xl border border-emerald-600/30 bg-card hover:bg-emerald-700 hover:text-white text-foreground text-xs font-black transition flex flex-col items-center justify-center shadow-2xs group">
-                                    <span>+ R$ 200</span>
-                                    <span class="text-[9px] font-medium text-muted-foreground group-hover:text-emerald-100">-${diasEconomia200} dias</span>
+                                        class="py-2.5 px-1.5 rounded-xl border border-border bg-muted/40 hover:bg-emerald-800 hover:text-white hover:border-emerald-800 text-foreground text-xs font-black transition flex flex-col items-center justify-center shadow-2xs group">
+                                    <span class="font-extrabold">+ R$ 200</span>
+                                    <span class="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 group-hover:text-emerald-100">-${diasEconomia200} dias</span>
                                 </button>
                             </div>
                         </div>

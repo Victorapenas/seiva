@@ -156,17 +156,22 @@
                     </div>
                 </button>
 
-                <!-- Aviso amarelo: visível apenas quando "Compartilhada" é selecionada -->
-                <div id="avisoMetaCompartilhada" class="hidden mt-2 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 space-y-2.5">
-                    <div class="flex items-start gap-2">
-                        <i data-lucide="info" class="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"></i>
-                        <p class="text-xs text-amber-800 dark:text-amber-300 font-medium">
-                            Metas compartilhadas precisam de aprovação do seu parceiro. Leve para a <strong>Mesa de Acordos</strong> para negociar juntos.
-                        </p>
+                <!-- Aviso de Meta Compartilhada: Alto Contraste e Legibilidade Perfeita -->
+                <div id="avisoMetaCompartilhada" class="hidden mt-3 p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 space-y-3">
+                    <div class="flex items-start gap-3">
+                        <span class="size-7 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                            <i data-lucide="info" class="size-4"></i>
+                        </span>
+                        <div class="space-y-1">
+                            <strong class="text-xs font-black text-foreground block">Aprovação Necessária do Parceiro</strong>
+                            <p class="text-xs text-foreground/80 font-medium leading-relaxed">
+                                Metas compartilhadas impactam o orçamento conjunto. Leve para a <strong>Mesa de Acordos</strong> para definir os valores juntos.
+                            </p>
+                        </div>
                     </div>
-                    <button type="button" onclick="levarMetaParaAcordos()" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition flex items-center justify-center gap-2">
-                        <i data-lucide="handshake" class="size-3.5"></i>
-                        → Levar para a Mesa de Acordos
+                    <button type="button" onclick="levarMetaParaAcordos()" class="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs transition flex items-center justify-center gap-2 shadow-2xs">
+                        <i data-lucide="handshake" class="size-4"></i>
+                        <span>Levar Proposta para a Mesa de Acordos</span>
                     </button>
                 </div>
 

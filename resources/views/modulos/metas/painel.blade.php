@@ -101,9 +101,11 @@
 
         <!-- Botão Adicionar Meta Pessoal -->
         <button onclick="abrirModalCriarMeta('individual')"
-                class="w-full py-4 rounded-3xl border-2 border-dashed border-emerald-600/30 hover:border-emerald-600 bg-card hover:bg-emerald-50/20 text-xs font-extrabold text-foreground transition flex items-center justify-center gap-2 shadow-2xs">
-            <i data-lucide="plus" class="size-4 text-emerald-700 dark:text-emerald-400"></i>
-            <span>+ Criar novo objetivo pessoal</span>
+                class="w-full py-3.5 rounded-2xl border border-border bg-card hover:bg-muted/50 text-xs font-black text-foreground transition flex items-center justify-center gap-2 shadow-2xs">
+            <span class="size-6 rounded-lg bg-emerald-800 text-white flex items-center justify-center shadow-2xs">
+                <i data-lucide="plus" class="size-3.5"></i>
+            </span>
+            <span>Criar novo objetivo pessoal</span>
         </button>
     </div>
 
@@ -134,9 +136,11 @@
 
         <!-- Botão Criar Meta Compartilhada -->
         <button onclick="abrirModalCriarMeta('compartilhada')"
-                class="w-full py-4 rounded-3xl border-2 border-dashed border-emerald-600/30 hover:border-emerald-600 bg-card hover:bg-emerald-50/20 text-xs font-extrabold text-foreground transition flex items-center justify-center gap-2 shadow-2xs">
-            <i data-lucide="plus" class="size-4 text-emerald-700 dark:text-emerald-400"></i>
-            <span>+ Adicionar nova meta do Lar</span>
+                class="w-full py-3.5 rounded-2xl border border-border bg-card hover:bg-muted/50 text-xs font-black text-foreground transition flex items-center justify-center gap-2 shadow-2xs">
+            <span class="size-6 rounded-lg bg-emerald-800 text-white flex items-center justify-center shadow-2xs">
+                <i data-lucide="plus" class="size-3.5"></i>
+            </span>
+            <span>Adicionar nova meta do Lar</span>
         </button>
     </div>
 
