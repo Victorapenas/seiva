@@ -506,6 +506,109 @@
         let divisaoOnboarding = 'proporcional';
         let usoLarOnboarding = true;
 
+        // Estado da Saúde Financeira Dupla (Individual vs Lar / Casal)
+        let visaoSaudeDashAtiva = 'individual';
+        let cacheSaudeIndiv = null;
+        let cacheSaudeLar = null;
+
+        function alternarVisaoSaudeDashboard(visao) {
+            visaoSaudeDashAtiva = visao;
+            atualizarCardSaudeDashboard();
+        }
+
+        function abrirModalSaudeAtual() {
+            if (visaoSaudeDashAtiva === 'lar') {
+                abrirModalSaudeFinanceiraLar();
+            } else {
+                abrirModalSaudeFinanceira();
+            }
+        }
+
+        function atualizarCardSaudeDashboard() {
+            const btnIndiv = document.getElementById('btnDashSaudeIndiv');
+            const btnLar = document.getElementById('btnDashSaudeLar');
+            const titSecao = document.getElementById('dashSaudeTituloTexto');
+            const subSecao = document.getElementById('dashSaudeSubtituloTexto');
+            const iconeSecao = document.getElementById('dashSaudeIconeSecao');
+            const circuloProg = document.getElementById('dashSaudeCirculoProgresso');
+            const scoreVal = document.getElementById('dashSaudeScoreValor');
+            const scoreStatus = document.getElementById('dashSaudeScoreStatus');
+            const listaInsights = document.getElementById('dashSaudeInsightsLista');
+            const btnAnaliseTxt = document.getElementById('btnDashSaudeVerAnaliseTexto');
+
+            const ehLar = (visaoSaudeDashAtiva === 'lar' && cacheSaudeLar);
+            const dadosAtivos = ehLar ? cacheSaudeLar : cacheSaudeIndiv;
+
+            // Atualiza botões do toggle
+            if (btnIndiv && btnLar) {
+                if (ehLar) {
+                    btnLar.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs bg-card text-foreground flex items-center gap-1.5 cursor-pointer';
+                    btnLar.querySelector('i')?.setAttribute('class', 'size-3.5 text-emerald-600');
+                    btnIndiv.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition text-muted-foreground hover:text-foreground flex items-center gap-1.5 cursor-pointer';
+                    btnIndiv.querySelector('i')?.setAttribute('class', 'size-3.5 text-muted-foreground');
+                } else {
+                    btnIndiv.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs bg-card text-foreground flex items-center gap-1.5 cursor-pointer';
+                    btnIndiv.querySelector('i')?.setAttribute('class', 'size-3.5 text-emerald-600');
+                    btnLar.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition text-muted-foreground hover:text-foreground flex items-center gap-1.5 cursor-pointer';
+                    btnLar.querySelector('i')?.setAttribute('class', 'size-3.5 text-muted-foreground');
+                }
+            }
+
+            if (!dadosAtivos) return;
+
+            // Título e Subtítulo
+            if (titSecao) {
+                titSecao.innerText = ehLar ? 'Saúde financeira do Nosso Lar' : 'Sua saúde financeira individual';
+            }
+            if (subSecao) {
+                subSecao.innerText = ehLar 
+                    ? 'Despesas da casa, fundo de emergência conjunto e equilíbrio do casal'
+                    : 'Equilíbrio da sua renda pessoal, faturas e reservas';
+            }
+            if (iconeSecao) {
+                iconeSecao.setAttribute('data-lucide', ehLar ? 'home' : 'heart-pulse');
+            }
+
+            // Gauge e Score
+            const score = dadosAtivos.score || 0;
+            const status = dadosAtivos.status || 'Saudável';
+            if (scoreVal) scoreVal.innerText = `${score}%`;
+            if (scoreStatus) {
+                scoreStatus.innerText = status;
+                scoreStatus.className = `text-[11px] font-extrabold ${score >= 80 ? 'text-emerald-600' : (score >= 60 ? 'text-amber-600' : 'text-rose-600')}`;
+            }
+
+            if (circuloProg) {
+                const circumference = 251.2;
+                const offset = circumference - (score / 100) * circumference;
+                circuloProg.setAttribute('stroke-dashoffset', Math.round(offset));
+                const corScore = score >= 80 ? '#10b981' : (score >= 60 ? '#f59e0b' : '#ef4444');
+                circuloProg.setAttribute('stroke', corScore);
+            }
+
+            // Insights
+            if (listaInsights && dadosAtivos.insights?.length) {
+                listaInsights.innerHTML = dadosAtivos.insights.map(ins => {
+                    const isSucesso = ins.tipo === 'sucesso';
+                    return `
+                    <div class="flex items-start gap-2.5 text-xs text-foreground">
+                        <span class="size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5"
+                              style="background-color: ${isSucesso ? '#ecfdf5' : '#fef3c7'} !important; border-color: ${isSucesso ? '#10b981' : '#f59e0b'} !important; color: ${isSucesso ? '#059669' : '#b45309'} !important;">
+                            <i data-lucide="${isSucesso ? 'check-circle-2' : 'alert-triangle'}" class="size-3" style="color: ${isSucesso ? '#059669' : '#b45309'} !important;"></i>
+                        </span>
+                        <p class="leading-relaxed">${ins.texto}</p>
+                    </div>`;
+                }).join('');
+            }
+
+            // Botão Ver Análise
+            if (btnAnaliseTxt) {
+                btnAnaliseTxt.innerText = ehLar ? 'Ver análise completa do Lar' : 'Ver análise individual completa';
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
+
         const BRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -7863,43 +7966,21 @@
                 `;
             }
 
-            // — Saúde Financeira dinâmica —
-            const sf = data.saude_financeira;
-            if (sf) {
-                // Atualiza o gauge (círculo SVG)
-                const circleProgress = document.querySelector('#pane-dashboard circle:last-child');
-                if (circleProgress) {
-                    const circumference = 251.2;
-                    const offset = circumference - (sf.score / 100) * circumference;
-                    circleProgress.setAttribute('stroke-dashoffset', Math.round(offset));
-                    const corScore = sf.score >= 80 ? '#10b981' : (sf.score >= 60 ? '#f59e0b' : '#ef4444');
-                    circleProgress.setAttribute('stroke', corScore);
-                }
-                // Atualiza texto central
-                const textoScore = document.querySelector('#pane-dashboard .absolute.inset-0 span:first-child');
-                const textoStatus = document.querySelector('#pane-dashboard .absolute.inset-0 span:last-child');
-                if (textoScore) textoScore.innerText = `${sf.score}%`;
-                if (textoStatus) {
-                    textoStatus.innerText = sf.status;
-                    textoStatus.className = `text-[11px] font-bold ${sf.score >= 80 ? 'text-emerald-600' : (sf.score >= 60 ? 'text-amber-600' : 'text-red-500')}`;
-                }
+            // — Saúde Financeira Dupla: Individual vs Casal / Lar —
+            cacheSaudeIndiv = data.saude_financeira_individual || data.saude_financeira || null;
+            cacheSaudeLar = data.saude_financeira_lar || null;
 
-                // Atualiza insights (Sem emojis, usando ícones Lucide vetoriais)
-                const insightsCont = document.querySelector('#pane-dashboard .space-y-2\\.5.flex-1');
-                if (insightsCont && sf.insights?.length) {
-                    const verAnaliseBtn = insightsCont.querySelector('.pt-2');
-                    insightsCont.innerHTML = sf.insights.map(ins => {
-                        const isSucesso = ins.tipo === 'sucesso';
-                        return `<div class="flex items-start gap-2.5 text-xs text-foreground">
-                            <span class="mt-0.5 shrink-0 ${isSucesso ? 'text-emerald-600' : 'text-amber-500'}">
-                                <i data-lucide="${isSucesso ? 'check-circle-2' : 'alert-triangle'}" class="size-4"></i>
-                            </span>
-                            <p>${ins.texto}</p>
-                        </div>`;
-                    }).join('');
-                    if (verAnaliseBtn) insightsCont.appendChild(verAnaliseBtn);
+            const toggleContainer = document.getElementById('dashSaudeToggleContainer');
+            if (toggleContainer) {
+                if (data.is_casal && cacheSaudeLar) {
+                    toggleContainer.classList.remove('hidden');
+                } else {
+                    toggleContainer.classList.add('hidden');
+                    visaoSaudeDashAtiva = 'individual';
                 }
             }
+
+            atualizarCardSaudeDashboard();
 
             // — Pra registrar hoje (Alerta harmonioso e botões integrados) —
             const secaoPraReg = document.getElementById('dashPraRegistrarHojeList');

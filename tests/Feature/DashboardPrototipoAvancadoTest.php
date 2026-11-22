@@ -35,6 +35,8 @@ class DashboardPrototipoAvancadoTest extends TestCase
         $this->assertArrayHasKey('gastos_por_categoria', $data);
         $this->assertArrayHasKey('alertas_inteligentes', $data);
         $this->assertArrayHasKey('saude_financeira', $data);
+        $this->assertArrayHasKey('saude_financeira_individual', $data);
+        $this->assertArrayHasKey('saude_financeira_lar', $data);
         $this->assertArrayHasKey('pra_registrar_hoje', $data);
         $this->assertArrayHasKey('onde_esta_meu_dinheiro', $data);
 
@@ -236,5 +238,35 @@ class DashboardPrototipoAvancadoTest extends TestCase
         $responsePos = $this->actingAs($duda)->getJson('/api/notificacoes');
         $responsePos->assertStatus(200);
         $this->assertEquals(0, $responsePos->json('total_nao_lidas'));
+    }
+
+    public function test_dashboard_retorna_duas_saudes_financeiras_para_casal_e_individual_para_solteiro(): void
+    {
+        // 1. Cenário Casal (Duda está em um lar compartilhado)
+        $duda = Usuario::where('email', 'duda@seiva.com')->first();
+        $respCasal = $this->actingAs($duda)->getJson('/api/dashboard');
+        $respCasal->assertStatus(200);
+        
+        $dataCasal = $respCasal->json();
+        $this->assertTrue($dataCasal['is_casal']);
+        $this->assertNotNull($dataCasal['saude_financeira_individual']);
+        $this->assertEquals('individual', $dataCasal['saude_financeira_individual']['tipo']);
+        $this->assertNotEmpty($dataCasal['saude_financeira_individual']['insights']);
+
+        $this->assertNotNull($dataCasal['saude_financeira_lar']);
+        $this->assertEquals('lar', $dataCasal['saude_financeira_lar']['tipo']);
+        $this->assertNotEmpty($dataCasal['saude_financeira_lar']['insights']);
+        $this->assertArrayHasKey('renda_casal', $dataCasal['saude_financeira_lar']);
+        $this->assertArrayHasKey('custo_lar', $dataCasal['saude_financeira_lar']);
+
+        // 2. Cenário Individual (Victor Hugo é solteiro sem lar)
+        $vh = Usuario::where('email', 'victor@seiva.com')->first();
+        $respIndiv = $this->actingAs($vh)->getJson('/api/dashboard');
+        $respIndiv->assertStatus(200);
+
+        $dataIndiv = $respIndiv->json();
+        $this->assertFalse($dataIndiv['is_casal']);
+        $this->assertNotNull($dataIndiv['saude_financeira_individual']);
+        $this->assertNull($dataIndiv['saude_financeira_lar']);
     }
 }

@@ -442,56 +442,79 @@
         </div>
     </section>
 
-    <!-- 6. SEÇÃO: "SUA SAÚDE FINANCEIRA EM JUNHO" (IMAGE 5) -->
+    <!-- 6. SEÇÃO: SAÚDE FINANCEIRA (DUPLA: INDIVIDUAL VS CASAL / LAR) -->
     <section class="rounded-3xl border border-border bg-card p-6 shadow-card space-y-4">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Sua saúde financeira em junho
-        </h3>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <h3 id="dashSaudeTituloSecao" class="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <i id="dashSaudeIconeSecao" data-lucide="heart-pulse" class="size-4 text-emerald-600"></i>
+                    <span id="dashSaudeTituloTexto">Sua saúde financeira</span>
+                </h3>
+                <p id="dashSaudeSubtituloTexto" class="text-[11px] text-muted-foreground mt-0.5">Equilíbrio da sua renda, gastos e reservas</p>
+            </div>
+
+            <!-- Segmented Control Casal vs Individual (Exibido para usuários em um Lar) -->
+            <div id="dashSaudeToggleContainer" class="hidden inline-flex p-1 rounded-2xl bg-muted/60 border border-border/60 self-start sm:self-auto shadow-2xs">
+                <button type="button" id="btnDashSaudeIndiv" onclick="alternarVisaoSaudeDashboard('individual')" 
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs bg-card text-foreground flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="user" class="size-3.5 text-emerald-600"></i>
+                    <span>Individual (Você)</span>
+                </button>
+                <button type="button" id="btnDashSaudeLar" onclick="alternarVisaoSaudeDashboard('lar')" 
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition text-muted-foreground hover:text-foreground flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="home" class="size-3.5 text-muted-foreground"></i>
+                    <span>Casal / Lar</span>
+                </button>
+            </div>
+        </div>
 
         <div class="flex flex-col md:flex-row items-center gap-6">
-            <!-- Medidor Gauge Semicircular 58% -->
+            <!-- Medidor Gauge Circular Dinâmico -->
             <div class="flex flex-col items-center justify-center shrink-0 w-44">
-                <div class="relative size-36 flex items-center justify-center">
+                <div class="relative size-36 flex items-center justify-center cursor-pointer group" onclick="abrirModalSaudeAtual()" title="Clique para ver a análise completa">
                     <svg class="size-36 -rotate-90" viewBox="0 0 100 100">
                         <!-- Trilha de fundo -->
-                        <circle cx="50" cy="50" r="40" stroke="#f0ede6" stroke-width="12" fill="none" stroke-dasharray="125 125" stroke-dashoffset="0" stroke-linecap="round"/>
-                        <!-- Arco de progresso 58% -->
-                        <circle cx="50" cy="50" r="40" stroke="#f59e0b" stroke-width="12" fill="none" stroke-dasharray="251.2" stroke-dashoffset="105" stroke-linecap="round"/>
+                        <circle cx="50" cy="50" r="40" stroke="#f0ede6" stroke-width="12" fill="none" stroke-dasharray="125 125" stroke-dashoffset="0" stroke-linecap="round" class="dark:stroke-slate-800"/>
+                        <!-- Arco de progresso dinâmico -->
+                        <circle id="dashSaudeCirculoProgresso" cx="50" cy="50" r="40" stroke="#10b981" stroke-width="12" fill="none" stroke-dasharray="251.2" stroke-dashoffset="38" stroke-linecap="round" class="transition-all duration-700"/>
                     </svg>
-                    <div class="absolute inset-0 flex flex-col items-center justify-center pt-2">
-                        <span class="text-2xl font-black text-foreground">58%</span>
-                        <span class="text-[11px] font-bold text-amber-600">Atenção</span>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pt-2 text-center">
+                        <span id="dashSaudeScoreValor" class="text-3xl font-black text-foreground group-hover:scale-105 transition-transform">85%</span>
+                        <span id="dashSaudeScoreStatus" class="text-[11px] font-extrabold text-emerald-600">Excelente</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Lista de Insights de Saúde Financeira (Sem Emojis, com Ícones Lucide SVG) -->
-            <div class="space-y-2.5 flex-1">
-                <div class="flex items-start gap-2.5 text-xs text-foreground">
-                    <span class="size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5"
-                          style="background-color: #fef3c7 !important; border-color: #f59e0b !important; color: #b45309 !important;">
-                        <i data-lucide="alert-triangle" class="size-3" style="color: #b45309 !important;"></i>
-                    </span>
-                    <p><strong>81%</strong> da sua renda já tem destino (R$ 1.370 de R$ 1.700).</p>
-                </div>
-                <div class="flex items-start gap-2.5 text-xs text-foreground">
-                    <span class="size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5"
-                          style="background-color: #fef3c7 !important; border-color: #f59e0b !important; color: #b45309 !important;">
-                        <i data-lucide="alert-triangle" class="size-3" style="color: #b45309 !important;"></i>
-                    </span>
-                    <p>Reserva em <strong>41%</strong> da meta (R$ 2.100 de R$ 5.100).</p>
-                </div>
-                <div class="flex items-start gap-2.5 text-xs text-foreground">
-                    <span class="size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5"
-                          style="background-color: #ecfdf5 !important; border-color: #10b981 !important; color: #059669 !important;">
-                        <i data-lucide="check-circle-2" class="size-3" style="color: #059669 !important;"></i>
-                    </span>
-                    <p>Gastos de junho (R$ 1.185) menores que sua renda.</p>
+            <!-- Lista de Insights Dinâmicos (Alto Contraste WCAG AAA e Ícones Lucide SVG) -->
+            <div class="space-y-2.5 flex-1 w-full">
+                <div id="dashSaudeInsightsLista" class="space-y-2.5">
+                    <div class="flex items-start gap-2.5 text-xs text-foreground">
+                        <span class="size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5"
+                              style="background-color: #ecfdf5 !important; border-color: #10b981 !important; color: #059669 !important;">
+                            <i data-lucide="check-circle-2" class="size-3" style="color: #059669 !important;"></i>
+                        </span>
+                        <p>58% da sua renda já tem destino (R$ 2.990,00 de R$ 5.200,00).</p>
+                    </div>
+                    <div class="flex items-start gap-2.5 text-xs text-foreground">
+                        <span class="size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5"
+                              style="background-color: #ecfdf5 !important; border-color: #10b981 !important; color: #059669 !important;">
+                            <i data-lucide="check-circle-2" class="size-3" style="color: #059669 !important;"></i>
+                        </span>
+                        <p>Reserva em 66% da meta (R$ 2.100,00 de R$ 3.200,00).</p>
+                    </div>
+                    <div class="flex items-start gap-2.5 text-xs text-foreground">
+                        <span class="size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5"
+                              style="background-color: #ecfdf5 !important; border-color: #10b981 !important; color: #059669 !important;">
+                            <i data-lucide="check-circle-2" class="size-3" style="color: #059669 !important;"></i>
+                        </span>
+                        <p>Gastos do mês (R$ 1.574,30) menores que sua renda.</p>
+                    </div>
                 </div>
 
                 <div class="pt-2">
-                    <button type="button" onclick="abrirModalSaudeFinanceira()" class="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-1">
-                        Ver análise completa <i data-lucide="arrow-right" class="size-3.5"></i>
+                    <button type="button" id="btnDashSaudeVerAnalise" onclick="abrirModalSaudeAtual()" class="text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer">
+                        <span id="btnDashSaudeVerAnaliseTexto">Ver análise completa</span> 
+                        <i data-lucide="arrow-right" class="size-3.5"></i>
                     </button>
                 </div>
             </div>
