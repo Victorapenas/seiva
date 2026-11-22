@@ -465,18 +465,27 @@
                 </div>
             </div>
 
-            <!-- Lista de Insights de Saúde Financeira -->
+            <!-- Lista de Insights de Saúde Financeira (Sem Emojis, com Ícones Lucide SVG) -->
             <div class="space-y-2.5 flex-1">
                 <div class="flex items-start gap-2.5 text-xs text-foreground">
-                    <span class="text-amber-500 font-bold shrink-0">⚠️</span>
+                    <span class="size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5"
+                          style="background-color: #fef3c7 !important; border-color: #f59e0b !important; color: #b45309 !important;">
+                        <i data-lucide="alert-triangle" class="size-3" style="color: #b45309 !important;"></i>
+                    </span>
                     <p><strong>81%</strong> da sua renda já tem destino (R$ 1.370 de R$ 1.700).</p>
                 </div>
                 <div class="flex items-start gap-2.5 text-xs text-foreground">
-                    <span class="text-amber-500 font-bold shrink-0">⚠️</span>
+                    <span class="size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5"
+                          style="background-color: #fef3c7 !important; border-color: #f59e0b !important; color: #b45309 !important;">
+                        <i data-lucide="alert-triangle" class="size-3" style="color: #b45309 !important;"></i>
+                    </span>
                     <p>Reserva em <strong>41%</strong> da meta (R$ 2.100 de R$ 5.100).</p>
                 </div>
                 <div class="flex items-start gap-2.5 text-xs text-foreground">
-                    <span class="text-emerald-600 font-bold shrink-0">✅</span>
+                    <span class="size-5 rounded-md flex items-center justify-center shrink-0 border mt-0.5"
+                          style="background-color: #ecfdf5 !important; border-color: #10b981 !important; color: #059669 !important;">
+                        <i data-lucide="check-circle-2" class="size-3" style="color: #059669 !important;"></i>
+                    </span>
                     <p>Gastos de junho (R$ 1.185) menores que sua renda.</p>
                 </div>
 

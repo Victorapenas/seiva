@@ -8392,8 +8392,8 @@
                     if (p3) p3.innerText = sf.insights[2].texto;
                 }
             }
-            document.getElementById('modalSaudeFinanceira')?.classList.remove('hidden');
-            lucide.createIcons();
+            abrirModalId('modalSaudeFinanceira');
+            if (window.lucide) lucide.createIcons();
         }
 
         // 6. Modal Registrar Pagamento (Imagem 6)

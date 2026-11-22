@@ -34,18 +34,24 @@
                 </div>
             </div>
 
-            <!-- Banner Explicativo -->
-            <div class="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 text-xs font-semibold text-emerald-900 dark:text-emerald-200 text-center">
-                <span id="modalSaudeNotaTxt">Seu score é 58% — atenção ao equilíbrio. Veja o que compõe essa nota:</span>
+            <!-- Banner Explicativo com Alto Contraste (WCAG AAA Garantido) -->
+            <div class="p-3.5 rounded-2xl border text-xs font-black text-center shadow-2xs"
+                 style="background-color: #ecfdf5 !important; border: 1.5px solid #10b981 !important; color: #064e3b !important;">
+                <span id="modalSaudeNotaTxt" class="block leading-relaxed" style="color: #064e3b !important; font-weight: 800 !important;">
+                    Seu score é 58% — atenção ao equilíbrio. Veja o que compõe essa nota:
+                </span>
             </div>
 
-            <!-- 3 Cards Detalhados dos Pilares -->
+            <!-- 3 Cards Detalhados dos Pilares (Sem Emojis, com Ícones Lucide SVG) -->
             <div class="space-y-3 pt-1">
                 <!-- Pilar 1: Compromissos fixos vs. renda -->
                 <div class="rounded-2xl border border-border bg-card p-4 shadow-2xs space-y-2">
                     <div class="flex items-center gap-2 text-xs font-bold text-foreground">
-                        <span id="modalSaudeIconeComp" class="text-amber-500 font-extrabold text-sm">⚠️</span>
-                        <span>Compromissos fixos vs. renda</span>
+                        <span id="modalSaudeIconeComp" class="size-6 rounded-lg flex items-center justify-center shrink-0 border"
+                              style="background-color: #fef3c7 !important; border-color: #f59e0b !important; color: #b45309 !important;">
+                            <i data-lucide="alert-triangle" class="size-3.5" style="color: #b45309 !important;"></i>
+                        </span>
+                        <span class="font-extrabold text-foreground">Compromissos fixos vs. renda</span>
                     </div>
                     <p id="modalSaudePilar1Titulo" class="text-xs font-extrabold text-foreground">
                         81% da sua renda já tem destino (R$ 1.370 de R$ 1.700).
@@ -59,8 +65,11 @@
                 <!-- Pilar 2: Reserva de emergência -->
                 <div class="rounded-2xl border border-border bg-card p-4 shadow-2xs space-y-2">
                     <div class="flex items-center gap-2 text-xs font-bold text-foreground">
-                        <span id="modalSaudeIconeReserva" class="text-amber-500 font-extrabold text-sm">⚠️</span>
-                        <span>Reserva de emergência</span>
+                        <span id="modalSaudeIconeReserva" class="size-6 rounded-lg flex items-center justify-center shrink-0 border"
+                              style="background-color: #fef3c7 !important; border-color: #f59e0b !important; color: #b45309 !important;">
+                            <i data-lucide="alert-triangle" class="size-3.5" style="color: #b45309 !important;"></i>
+                        </span>
+                        <span class="font-extrabold text-foreground">Reserva de emergência</span>
                     </div>
                     <p id="modalSaudePilar2Titulo" class="text-xs font-extrabold text-foreground">
                         Reserva em 41% da meta (R$ 2.100 de R$ 5.100).
@@ -74,8 +83,11 @@
                 <!-- Pilar 3: Gastos do dia a dia -->
                 <div class="rounded-2xl border border-border bg-card p-4 shadow-2xs space-y-2">
                     <div class="flex items-center gap-2 text-xs font-bold text-foreground">
-                        <span id="modalSaudeIconeGastos" class="text-emerald-600 font-extrabold text-sm">✅</span>
-                        <span>Gastos do dia a dia</span>
+                        <span id="modalSaudeIconeGastos" class="size-6 rounded-lg flex items-center justify-center shrink-0 border"
+                              style="background-color: #ecfdf5 !important; border-color: #10b981 !important; color: #059669 !important;">
+                            <i data-lucide="check-circle-2" class="size-3.5" style="color: #059669 !important;"></i>
+                        </span>
+                        <span class="font-extrabold text-foreground">Gastos do dia a dia</span>
                     </div>
                     <p id="modalSaudePilar3Titulo" class="text-xs font-extrabold text-foreground">
                         Gastos do mês menores que sua renda.
@@ -89,7 +101,7 @@
 
             <!-- Botão Fechar -->
             <div class="pt-2">
-                <button type="button" onclick="fecharModalId('modalSaudeFinanceira')" class="w-full py-3 rounded-2xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs transition">
+                <button type="button" onclick="fecharModalId('modalSaudeFinanceira')" class="w-full py-3.5 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs shadow-soft transition">
                     Fechar análise
                 </button>
             </div>
