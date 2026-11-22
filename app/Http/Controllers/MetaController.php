@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Meta;
 use App\Models\Conta;
 use App\Models\Transacao;
+use App\Models\ProdutoWatchlist;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -176,9 +177,14 @@ class MetaController extends Controller
             ]);
         }
 
+        $produtosWatchlist = ProdutoWatchlist::where('usuario_id', $user->id_usuario)
+            ->orderByDesc('id_produto')
+            ->get();
+
         return response()->json([
             'individuais' => $metasIndividuais,
             'lar' => $metasLar,
+            'produtos_de_olho' => $produtosWatchlist,
         ]);
     }
 

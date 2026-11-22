@@ -34,6 +34,8 @@ class Meta extends Model
         'monitorar_promocao' => 'boolean'
     ];
 
+    protected $appends = ['progresso', 'icone_lucide', 'compartilhada'];
+
     public function usuario() { return $this->belongsTo(Usuario::class, 'usuario_id', 'id_usuario'); }
     public function lar() { return $this->belongsTo(Lar::class, 'lar_id', 'id_lar'); }
 

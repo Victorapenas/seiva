@@ -224,6 +224,7 @@
     @include('componentes.modais.modal-editar-meta')
     @include('componentes.modais.modal-personalizar-icone-transacao')
     @include('componentes.modais.modal-disputar-recebimento')
+    @include('componentes.modais.modal-adicionar-produto-olho')
     @include('componentes.modais.modal-confirmacao-seiva')
 
     <!-- ============================================================== -->
@@ -3874,12 +3875,28 @@
             }
         }
 
-        function abrirModalCriarMetaComDados(nome, preco) {
+        function abrirModalCriarMetaComDados(nome, preco, loja = '', link = '', imagem = '') {
             abrirModalCriarMeta();
             const nomeEl = document.getElementById('novaMetaNome');
             const valEl = document.getElementById('novaMetaValor');
+            const lojaEl = document.getElementById('novaMetaLoja');
+            const linkEl = document.getElementById('novaMetaLinkProduto');
+            const imgEl = document.getElementById('novaMetaFotoUrl');
             if (nomeEl) nomeEl.value = nome;
-            if (valEl) valEl.value = preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            if (valEl) valEl.value = typeof preco === 'number' ? preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : preco;
+            if (lojaEl && loja) lojaEl.value = loja;
+            if (linkEl && link) linkEl.value = link;
+            if (imgEl && imagem) {
+                imgEl.value = imagem;
+                const previewCont = document.getElementById('previewFotoMetaContainer');
+                const previewImg = document.getElementById('previewFotoMetaImg');
+                const boxUpload = document.getElementById('boxUploadFotoMeta');
+                const previewTit = document.getElementById('previewFotoMetaTitulo');
+                if (previewImg) previewImg.src = imagem;
+                if (previewTit) previewTit.innerText = nome || 'Foto do produto';
+                if (previewCont) previewCont.classList.remove('hidden');
+                if (boxUpload) boxUpload.classList.add('hidden');
+            }
         }
 
         function selecionarTipoMeta(btn, tipo, icone) {
@@ -4565,8 +4582,8 @@
             const tabInd    = document.getElementById('tabMeusObjetivos');
             const tabLar    = document.getElementById('tabPlanoLar');
 
-            const ativoClass = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all bg-card text-foreground shadow-2xs flex items-center justify-center gap-2';
-            const inativoClass = 'flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all text-muted-foreground hover:text-foreground flex items-center justify-center gap-2';
+            const ativoClass = 'flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all bg-card text-foreground shadow-2xs border border-border/50 flex items-center justify-center gap-2';
+            const inativoClass = 'flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all text-muted-foreground hover:text-foreground flex items-center justify-center gap-2 border border-transparent';
 
             if (aba === 'individual') {
                 if (painelInd) painelInd.classList.remove('hidden');
@@ -4592,7 +4609,7 @@
                 const metasLar    = data.lar || [];
                 const todas       = [...individuais, ...metasLar];
 
-                // Hero Card
+                // Hero Card com métricas nobres
                 const totalAtual  = todas.reduce((s, m) => s + parseFloat(m.valor_atual || 0), 0);
                 const totalAlvo   = todas.reduce((s, m) => s + parseFloat(m.valor_alvo  || 1), 0);
                 const pct         = totalAlvo > 0 ? Math.round((totalAtual / totalAlvo) * 100) : 0;
@@ -4607,10 +4624,11 @@
                 if (heroPctEl)   heroPctEl.innerText   = `${pct}%`;
                 if (heroMensEl)  heroMensEl.innerText  = BRL(mensal);
 
-                // Ocultar aba do Lar se usuário for individual
-                const semLar = !larSessao;
-                const tabLarEl = document.getElementById('tabPlanoLar');
-                if (semLar && tabLarEl) tabLarEl.classList.add('hidden');
+                // Contadores nas Abas
+                const badgeInd = document.getElementById('badgeCountMetasIndiv');
+                const badgeLar = document.getElementById('badgeCountMetasLar');
+                if (badgeInd) badgeInd.innerText = String(individuais.length);
+                if (badgeLar) badgeLar.innerText = String(metasLar.length);
 
                 // Renderizar metas individuais
                 _renderizarCardsMetasNovo(individuais, '#metasListaMeusObjetivos', false);
@@ -4618,7 +4636,30 @@
                 // Renderizar metas do lar
                 _renderizarCardsMetasNovo(metasLar, '#metasListaPlanoLar', true);
 
+                // Renderizar radar de produtos de olho
+                _renderizarGridProdutosOlho(data.produtos_de_olho || []);
+
             } catch(e) { console.error('Erro metas:', e); }
+        }
+
+        async function fazerAporteRapidoMeta(metaId, valor) {
+            try {
+                const res = await fetch(`/api/metas/${metaId}/contribuir`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ valor: parseFloat(valor) })
+                });
+
+                if (res.ok) {
+                    seivaNotificar(`+ ${BRL(valor)} guardados com sucesso! Você antecipou sua conquista! 🚀`, 'sucesso', 'Meta Acelerada');
+                    carregarMetasDados();
+                    carregarDashboardDados();
+                } else {
+                    seivaNotificar('Não foi possível registrar o aporte.', 'erro');
+                }
+            } catch(e) {
+                seivaNotificar('Erro de conexão ao guardar na meta.', 'erro');
+            }
         }
 
         function _renderizarCardsMetasNovo(metas, seletor, isLar) {
@@ -4626,9 +4667,10 @@
             if (!cont) return;
 
             if (!metas.length) {
-                cont.innerHTML = `<div class="flex flex-col items-center justify-center py-12 gap-2 text-center">
-                    <i data-lucide="${isLar ? 'home' : 'target'}" class="size-10 text-muted-foreground/30 mx-auto"></i>
-                    <p class="text-sm text-muted-foreground">${isLar ? 'Nenhuma meta compartilhada.' : 'Nenhuma meta individual cadastrada.'}</p>
+                cont.innerHTML = `<div class="rounded-3xl border border-border bg-card p-10 text-center space-y-2 shadow-2xs">
+                    <i data-lucide="${isLar ? 'home' : 'target'}" class="size-10 text-muted-foreground/40 mx-auto"></i>
+                    <p class="text-sm font-bold text-foreground">${isLar ? 'Nenhum plano do lar cadastrado ainda.' : 'Nenhum objetivo individual cadastrado.'}</p>
+                    <p class="text-xs text-muted-foreground">${isLar ? 'Crie um plano conjunto para mobília, viagens ou reserva do casal.' : 'Defina um objetivo para comprar sem culpa e com prazo definido.'}</p>
                 </div>`;
                 lucide.createIcons();
                 return;
@@ -4640,165 +4682,358 @@
                 const faltam = Math.max(0, alvo - atual);
                 const p     = Math.min(100, Math.round((atual / alvo) * 100));
 
-                // Cor da barra de progresso
-                const corBarra = p >= 70 ? 'bg-emerald-600' : p >= 30 ? 'bg-amber-500' : 'bg-rose-500';
+                // Estimativa de tempo / dias restantes para conquista
+                const aporteMensal = parseFloat(m.contribuicao_mensal || 300);
+                const aporteDiario = Math.max(1, aporteMensal / 30);
+                const diasRestantes = faltam > 0 ? Math.max(1, Math.round(faltam / aporteDiario)) : 0;
 
-                // Data limite formatada
-                let dataLabel = '';
-                if (m.data_limite) {
-                    const dataPura = String(m.data_limite).substring(0, 10);
-                    const d = new Date(dataPura + 'T12:00:00');
-                    if (!isNaN(d.getTime())) {
-                        dataLabel = `Meta para ${d.toLocaleDateString('pt-BR', {month:'short', year:'numeric'})}`;
-                    }
+                // Dias economizados com aportes extras
+                const diasEconomia50 = Math.min(diasRestantes, Math.round(50 / aporteDiario));
+                const diasEconomia100 = Math.min(diasRestantes, Math.round(100 / aporteDiario));
+                const diasEconomia200 = Math.min(diasRestantes, Math.round(200 / aporteDiario));
+
+                // Status de conquista / Projeção emocional
+                let statusBadge = '';
+                if (faltam <= 0) {
+                    statusBadge = `
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-500/40 text-emerald-800 dark:text-emerald-300 text-xs font-black">
+                            <i data-lucide="award" class="size-3.5 text-emerald-600"></i>
+                            <span>🏆 Objetivo Conquistado!</span>
+                        </div>`;
+                } else if (p >= 80) {
+                    statusBadge = `
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs font-black animate-pulse">
+                            <i data-lucide="zap" class="size-3.5 text-amber-500"></i>
+                            <span>🚀 Na reta final! Faltam apenas ~${diasRestantes} dias!</span>
+                        </div>`;
+                } else if (p >= 40) {
+                    statusBadge = `
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-500/25 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
+                            <i data-lucide="clock" class="size-3.5 text-emerald-600"></i>
+                            <span>✨ Faltam ~${diasRestantes} dias no seu ritmo</span>
+                        </div>`;
+                } else {
+                    statusBadge = `
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted border border-border text-foreground text-xs font-bold">
+                            <i data-lucide="target" class="size-3.5 text-muted-foreground"></i>
+                            <span>🎯 Previsão de entrega em ~${diasRestantes} dias</span>
+                        </div>`;
                 }
 
-                // Imagem real ou ícone Lucide
+                // Cor da barra de progresso
+                const corBarra = p >= 70 ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : p >= 30 ? 'bg-gradient-to-r from-amber-500 to-amber-400' : 'bg-gradient-to-r from-rose-500 to-rose-400';
+
+                // Imagem real ou ícone Lucide com visual nobre
                 const visualProduto = m.imagem
-                    ? `<img src="${m.imagem}" alt="${m.titulo}" class="size-12 rounded-2xl object-cover shrink-0 border border-border shadow-2xs">`
-                    : `<span class="size-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-500/20 shadow-2xs"><i data-lucide="${m.icone || 'target'}" class="size-6"></i></span>`;
+                    ? `<img src="${m.imagem}" alt="${m.titulo}" class="size-16 rounded-2xl object-cover shrink-0 border border-emerald-500/20 shadow-soft">`
+                    : `<span class="size-16 rounded-2xl bg-gradient-to-br from-[#06140c] to-[#0a2215] text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-soft"><i data-lucide="${m.icone || (isLar ? 'home' : 'laptop')}" class="size-8"></i></span>`;
 
                 return `
-                <div class="rounded-3xl border border-border bg-card shadow-2xs overflow-hidden">
-                    <!-- Cabeçalho do card -->
-                    <div class="p-4 pb-3 flex items-start justify-between gap-3">
-                        <div class="flex items-start gap-3 min-w-0 flex-1">
-                            ${visualProduto}
-                            <div class="min-w-0 flex-1">
-                                <h4 class="text-sm font-extrabold text-foreground truncate">${m.titulo}</h4>
-                                ${dataLabel ? `<span class="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5"><i data-lucide="calendar" class="size-3"></i> ${dataLabel}</span>` : ''}
-                                ${m.link_referencia ? `
-                                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                                        <a href="${m.link_referencia}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline">
-                                            <i data-lucide="external-link" class="size-3"></i>
-                                            <span>${m.loja || 'Link'}</span>
-                                        </a>
-                                        <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-300/40">
-                                            <i data-lucide="bell" class="size-3 text-emerald-600"></i>
-                                            <span>Monitorando</span>
-                                        </span>
+                <div class="rounded-3xl border border-border/80 bg-card shadow-card overflow-hidden transition hover:border-emerald-500/30">
+                    <!-- Cabeçalho do card com produto e badge -->
+                    <div class="p-5 pb-3 space-y-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                                ${visualProduto}
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="text-base font-extrabold text-foreground truncate">${m.titulo}</h4>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <span class="text-xs text-muted-foreground font-medium">Guardo ${BRL(aporteMensal)}/mês</span>
+                                        ${m.loja ? `<span class="text-[10px] font-bold px-2 py-0.2 rounded-full bg-muted text-muted-foreground">${m.loja}</span>` : ''}
                                     </div>
-                                ` : `
-                                    <button type="button" onclick="abrirModalEditarMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${alvo}, '${m.categoria||'produto'}', '', '', '', true)"
-                                            class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline mt-0.5">
-                                        <i data-lucide="link" class="size-3"></i> Adicionar link para monitorar
-                                    </button>
-                                `}
+                                    ${m.link_referencia ? `
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <a href="${m.link_referencia}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline">
+                                                <i data-lucide="external-link" class="size-3"></i>
+                                                <span>Ver na loja</span>
+                                            </a>
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.2 rounded-full border border-emerald-300/40">
+                                                <i data-lucide="bell" class="size-3 text-emerald-600"></i>
+                                                <span>Monitorando</span>
+                                            </span>
+                                        </div>
+                                    ` : `
+                                        <button type="button" onclick="abrirModalEditarMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${alvo}, '${m.categoria||'produto'}', '', '', '', true)"
+                                                class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline mt-1">
+                                            <i data-lucide="link" class="size-3"></i> Adicionar link de compra
+                                        </button>
+                                    `}
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="flex items-center gap-1.5 shrink-0">
-                            ${m.em_negociacao ? `
-                                <span class="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-300 text-amber-800 dark:text-amber-300 text-[10px] font-bold inline-flex items-center gap-1">
-                                    <i data-lucide="alert-triangle" class="size-3 text-amber-600"></i>
-                                    <span>Em negociação</span>
-                                </span>
-                            ` : ''}
                             <button type="button" onclick="abrirModalEditarMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${alvo}, '${m.categoria||'produto'}', '${(m.link_referencia||'').replace(/'/g, "\\'")}', '${(m.imagem||'').replace(/'/g, "\\'")}', '${(m.loja||'').replace(/'/g, "\\'")}', ${m.monitorar_promocao !== false})"
-                                    class="size-8 rounded-xl border border-border bg-muted/30 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs"
-                                    title="Editar objetivo, imagem ou link">
-                                <i data-lucide="edit-3" class="size-3.5"></i>
+                                    class="size-8 rounded-xl border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shrink-0"
+                                    title="Editar meta">
+                                <i data-lucide="edit-3" class="size-4"></i>
                             </button>
                         </div>
-                    </div>
 
-                    <!-- Barra de progresso -->
-                    <div class="px-4">
-                        <div class="h-2 w-full rounded-full bg-muted overflow-hidden">
-                            <div class="h-full ${corBarra} rounded-full transition-all duration-700" style="width:${p}%"></div>
+                        <!-- Badge de Status e Estimativa em Dias -->
+                        <div>
+                            ${statusBadge}
                         </div>
                     </div>
 
-                    <!-- Valores -->
-                    <div class="px-4 py-2 flex items-center justify-between text-xs text-muted-foreground">
-                        <strong class="font-bold text-foreground">${BRL(atual)}</strong>
-                        <span>de ${BRL(alvo)} · <strong class="${corBarra === 'bg-emerald-600' ? 'text-emerald-600' : 'text-amber-600'}">${p}%</strong></span>
+                    <!-- Barra de progresso robusta -->
+                    <div class="px-5 space-y-1.5">
+                        <div class="h-3 w-full rounded-full bg-muted overflow-hidden border border-border/40">
+                            <div class="h-full ${corBarra} rounded-full transition-all duration-700 shadow-2xs" style="width:${p}%"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-xs font-bold">
+                            <span class="text-foreground">${BRL(atual)} acumulados <span class="text-emerald-700 dark:text-emerald-400 font-extrabold">(${p}%)</span></span>
+                            <span class="text-muted-foreground">de ${BRL(alvo)}</span>
+                        </div>
                     </div>
 
-                    ${isLar ? `
-                        <!-- Seção de Participantes (Divisão do Lar) -->
-                        <div class="px-4 space-y-1.5 pt-2 border-t border-border/40">
-                            <div class="flex items-center justify-between text-xs py-0.5">
-                                <div class="flex items-center gap-2">
-                                    <span class="size-5 rounded-full bg-muted text-muted-foreground font-extrabold text-[9px] flex items-center justify-center">ME</span>
-                                    <span class="font-medium text-foreground">Você</span>
-                                </div>
-                                <strong class="font-bold text-foreground">R$ ${(m.divisao_voce || 250).toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês</strong>
-                            </div>
-                            <div class="flex items-center justify-between text-xs py-0.5">
-                                <div class="flex items-center gap-2">
-                                    <span class="size-5 rounded-full bg-muted text-muted-foreground font-extrabold text-[9px] flex items-center justify-center">${m.parceiro_iniciais || 'IM'}</span>
-                                    <span class="font-medium text-foreground">${m.parceiro_nome || 'Ian'}</span>
-                                </div>
-                                <strong class="font-bold text-foreground">R$ ${(m.divisao_parceiro || 250).toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês</strong>
-                            </div>
-                        </div>
-
-                        <!-- Card de Destino e Responsável -->
-                        <div class="px-4 pt-2">
-                            <div class="rounded-2xl border border-border bg-muted/30 p-3 grid grid-cols-2 gap-3 text-xs">
-                                <div>
-                                    <span class="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                                        <i data-lucide="wallet" class="size-3"></i>
-                                        Vai para
-                                    </span>
-                                    <strong class="font-bold text-foreground text-xs truncate block">${m.conta_destino || m.onde_guardado || 'Nubank Maria Eduarda'}</strong>
-                                </div>
-                                <div>
-                                    <span class="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                                        <i data-lucide="user" class="size-3"></i>
-                                        Responsável
-                                    </span>
-                                    <strong class="font-bold text-foreground text-xs truncate block">${m.responsavel_nome || 'Maria Eduarda'}</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Botão de Ação do Lar -->
-                        <div class="p-4 pt-3">
-                            ${m.em_negociacao ? `
-                                <button onclick="trocarAbaApp('acordos')" class="w-full py-3 rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-100 text-amber-900 dark:text-amber-200 font-bold text-xs flex items-center justify-center gap-1.5 transition">
-                                    <span>Abrir Mesa de Acordos →</span>
-                                </button>
-                            ` : `
-                                <button onclick="abrirGuardarNaMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${atual}, ${alvo}, 'lar')"
-                                        class="w-full py-3.5 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-soft transition">
-                                    <i data-lucide="plus" class="size-4"></i>
-                                    <span>+ Guardar minha parte</span>
-                                </button>
-                            `}
-                        </div>
-                    ` : `
-                        <!-- Mini-cards informativos Individuais -->
-                        <div class="px-4 pb-2 grid grid-cols-2 gap-2">
-                            <div class="rounded-xl border border-border bg-muted/30 p-2.5 space-y-0.5">
-                                <span class="text-[10px] text-muted-foreground flex items-center gap-1">
-                                    <i data-lucide="credit-card" class="size-2.5"></i>
+                    <!-- Valores e Detalhes de Conta -->
+                    <div class="p-5 pt-3 space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="rounded-2xl border border-border/70 bg-muted/30 p-3 space-y-0.5">
+                                <span class="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                                    <i data-lucide="wallet" class="size-3 text-emerald-700"></i>
                                     Guardado em
                                 </span>
-                                <p class="text-xs font-bold text-foreground truncate">${m.onde_guardado || 'Reserva Pessoal'}</p>
+                                <strong class="text-xs font-black text-foreground truncate block">${m.onde_guardado || 'Poupança Caixa'}</strong>
                             </div>
-                            <div class="rounded-xl border border-border bg-muted/30 p-2.5 space-y-0.5">
-                                <span class="text-[10px] text-muted-foreground flex items-center gap-1">
-                                    <i data-lucide="trending-up" class="size-2.5"></i>
-                                    Faltam
+                            <div class="rounded-2xl border border-border/70 bg-muted/30 p-3 space-y-0.5">
+                                <span class="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                                    <i data-lucide="hourglass" class="size-3 text-amber-500"></i>
+                                    Falta guardar
                                 </span>
-                                <p class="text-xs font-extrabold ${faltam <= 0 ? 'text-emerald-600' : 'text-foreground'}">${faltam <= 0 ? 'Concluída!' : BRL(faltam)}</p>
+                                <strong class="text-xs font-black ${faltam <= 0 ? 'text-emerald-600' : 'text-foreground'} block">
+                                    ${faltam <= 0 ? 'Concluída!' : BRL(faltam)}
+                                </strong>
                             </div>
                         </div>
 
-                        <!-- Botão de Aporte Individual -->
-                        <div class="p-4 pt-1">
-                            <button onclick="abrirGuardarNaMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${atual}, ${alvo}, 'individual')"
-                                    class="w-full py-3 rounded-2xl bg-primary text-primary-foreground font-extrabold text-xs flex items-center justify-center gap-2 shadow-soft hover:bg-primary/90 transition">
+                        ${isLar ? `
+                            <!-- Divisão do Lar (Casal) -->
+                            <div class="rounded-2xl border border-emerald-600/20 bg-emerald-50/30 dark:bg-emerald-950/20 p-3 space-y-1.5">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">Divisão do Casal</span>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="size-5 rounded-full bg-emerald-700 text-white text-[9px] font-black flex items-center justify-center">ME</span>
+                                        <span>Você: <strong>R$ ${(m.divisao_voce || 250).toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês</strong></span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="size-5 rounded-full bg-emerald-500 text-white text-[9px] font-black flex items-center justify-center">IM</span>
+                                        <span>Ian: <strong>R$ ${(m.divisao_parceiro || 250).toLocaleString('pt-BR', {minimumFractionDigits:2})}/mês</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <!-- Simulador / Acelerador de Meta (Agilizar Conquista) -->
+                        ${faltam > 0 ? `
+                        <div class="rounded-2xl border border-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/15 p-3 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-foreground flex items-center gap-1.5">
+                                    <i data-lucide="zap" class="size-3.5 text-amber-500"></i>
+                                    <span>Agilizar Conquista</span>
+                                </span>
+                                <span class="text-[10px] text-muted-foreground">Toque para depositar e adiantar dias</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" onclick="fazerAporteRapidoMeta(${m.id_meta}, 50)"
+                                        class="py-2 px-1 rounded-xl border border-emerald-600/30 bg-card hover:bg-emerald-700 hover:text-white text-foreground text-xs font-black transition flex flex-col items-center justify-center shadow-2xs group">
+                                    <span>+ R$ 50</span>
+                                    <span class="text-[9px] font-medium text-muted-foreground group-hover:text-emerald-100">-${diasEconomia50} dias</span>
+                                </button>
+                                <button type="button" onclick="fazerAporteRapidoMeta(${m.id_meta}, 100)"
+                                        class="py-2 px-1 rounded-xl border border-emerald-600/30 bg-card hover:bg-emerald-700 hover:text-white text-foreground text-xs font-black transition flex flex-col items-center justify-center shadow-2xs group">
+                                    <span>+ R$ 100</span>
+                                    <span class="text-[9px] font-medium text-muted-foreground group-hover:text-emerald-100">-${diasEconomia100} dias</span>
+                                </button>
+                                <button type="button" onclick="fazerAporteRapidoMeta(${m.id_meta}, 200)"
+                                        class="py-2 px-1 rounded-xl border border-emerald-600/30 bg-card hover:bg-emerald-700 hover:text-white text-foreground text-xs font-black transition flex flex-col items-center justify-center shadow-2xs group">
+                                    <span>+ R$ 200</span>
+                                    <span class="text-[9px] font-medium text-muted-foreground group-hover:text-emerald-100">-${diasEconomia200} dias</span>
+                                </button>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- Botão Principal de Guardar -->
+                        <div class="pt-1">
+                            <button onclick="abrirGuardarNaMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${atual}, ${alvo}, '${isLar ? 'lar' : 'individual'}')"
+                                    class="w-full py-3.5 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-soft transition">
                                 <i data-lucide="plus" class="size-4"></i>
-                                <span>+ Guardar para esta meta</span>
+                                <span>Guardar dinheiro nesta meta</span>
                             </button>
                         </div>
-                    `}
+                    </div>
                 </div>`;
             }).join('');
             lucide.createIcons();
+        }
+
+        // --- RADAR DE PRODUTOS DE OLHO (WISHLIST DE METAS) ---
+        function _renderizarGridProdutosOlho(produtos) {
+            const cont = document.getElementById('metasGridProdutosOlho');
+            if (!cont) return;
+
+            if (!produtos || !produtos.length) {
+                cont.innerHTML = `
+                    <div class="col-span-full rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center space-y-2">
+                        <i data-lucide="shopping-bag" class="size-8 text-emerald-400/50 mx-auto"></i>
+                        <p class="text-xs font-bold text-white">Nenhum produto sendo monitorado ainda.</p>
+                        <p class="text-[11px] text-emerald-200/70 max-w-sm mx-auto">Cole um link da Amazon ou Mercado Livre para monitorar promoções e planejar compras com meta!</p>
+                        <button type="button" onclick="abrirModalAdicionarProdutoOlho()" class="mt-2 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition inline-flex items-center gap-1 shadow-2xs">
+                            <i data-lucide="plus" class="size-3.5"></i>
+                            <span>Adicionar primeiro produto</span>
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            cont.innerHTML = produtos.map(p => {
+                const precoVal = parseFloat(p.preco_alvo || p.preco || 0);
+                const precoFmt = BRL(precoVal);
+                const loja = p.loja || 'Loja online';
+                const link = p.link_referencia || p.link || '';
+                const img = p.imagem || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&auto=format&fit=crop&q=80';
+                const nomeEscaped = (p.nome || '').replace(/'/g, "\\'");
+                const lojaEscaped = loja.replace(/'/g, "\\'");
+                const linkEscaped = link.replace(/'/g, "\\'");
+                const imgEscaped = img.replace(/'/g, "\\'");
+                const idProd = p.id_produto || '';
+
+                return `
+                <div class="rounded-2xl border border-emerald-500/20 bg-[#0d2015] hover:border-emerald-500/40 p-3.5 transition flex flex-col justify-between space-y-3 shadow-2xs group">
+                    <div class="flex items-start gap-3">
+                        <img src="${img}" alt="${p.nome}" class="size-16 rounded-xl object-cover shrink-0 border border-emerald-500/30 bg-black/40 shadow-2xs" onerror="this.src='/icon.svg'">
+                        <div class="min-w-0 flex-1">
+                            <span class="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                                <i data-lucide="bell" class="size-2.5 text-emerald-400"></i>
+                                Monitorando
+                            </span>
+                            <h4 class="text-xs font-bold text-white truncate mt-1 group-hover:text-emerald-300 transition" title="${p.nome}">${p.nome}</h4>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="text-[10px] text-gray-400 truncate">${loja}</span>
+                                ${link ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-[10px] font-bold text-emerald-400 hover:underline inline-flex items-center gap-0.5 shrink-0">Ver link ↗</a>` : ''}
+                            </div>
+                            <strong class="text-sm font-black text-white block mt-1">${precoFmt}</strong>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-emerald-900/40 flex items-center justify-between gap-2">
+                        <button type="button" onclick="abrirModalCriarMetaComDados('${nomeEscaped}', ${precoVal}, '${lojaEscaped}', '${linkEscaped}', '${imgEscaped}')"
+                                class="flex-1 py-2 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-extrabold transition flex items-center justify-center gap-1.5 shadow-2xs">
+                            <i data-lucide="target" class="size-3.5"></i>
+                            <span>Transformar em Meta</span>
+                        </button>
+                        ${idProd ? `
+                            <button type="button" onclick="removerProdutoOlho(${idProd})" title="Remover dos produtos de olho"
+                                    class="size-8 rounded-xl border border-white/10 bg-white/5 hover:bg-rose-500/20 hover:border-rose-500/40 text-gray-400 hover:text-rose-400 flex items-center justify-center transition shrink-0">
+                                <i data-lucide="trash-2" class="size-3.5"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function abrirModalAdicionarProdutoOlho() {
+            const modal = document.getElementById('modalAdicionarProdutoOlho');
+            if (!modal) return;
+            ['modalProdOlhoLink', 'modalProdOlhoNome', 'modalProdOlhoPreco', 'modalProdOlhoLoja', 'modalProdOlhoFotoUrl'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            const prev = document.getElementById('modalProdOlhoPreviewFoto');
+            if (prev) prev.classList.add('hidden');
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        async function buscarDadosLinkProdOlhoModal() {
+            const url = document.getElementById('modalProdOlhoLink')?.value?.trim();
+            if (!url) return seivaNotificar('Cole um link válido antes de buscar.', 'aviso');
+
+            const btn = document.getElementById('btnBuscarLinkProdOlho');
+            const textoOriginal = btn ? btn.innerHTML : 'Buscar';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i data-lucide="loader-2" class="size-3.5 animate-spin"></i><span>...</span>`;
+                lucide.createIcons();
+            }
+
+            try {
+                const res = await fetch('/api/metas/consultar-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.titulo) document.getElementById('modalProdOlhoNome').value = data.titulo;
+                    if (data.preco) {
+                        const valFmt = typeof data.preco === 'number' 
+                            ? data.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                            : data.preco;
+                        document.getElementById('modalProdOlhoPreco').value = valFmt;
+                    }
+                    if (data.loja) document.getElementById('modalProdOlhoLoja').value = data.loja;
+                    if (data.imagem) {
+                        document.getElementById('modalProdOlhoFotoUrl').value = data.imagem;
+                        const prev = document.getElementById('modalProdOlhoPreviewFoto');
+                        const img = document.getElementById('modalProdOlhoImg');
+                        const tit = document.getElementById('modalProdOlhoImgTit');
+                        if (img) img.src = data.imagem;
+                        if (tit) tit.innerText = data.titulo || 'Produto';
+                        if (prev) prev.classList.remove('hidden');
+                    }
+                    seivaNotificar(`Dados carregados da ${data.loja || 'loja'}!`, 'sucesso', 'Radar de Produtos');
+                } else {
+                    seivaNotificar('Link não identificado. Você pode preencher os campos manualmente.', 'aviso');
+                }
+            } catch(e) {
+                seivaNotificar('Erro de conexão ao consultar link.', 'erro');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = textoOriginal;
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        async function executarSalvarProdutoOlhoModal(event) {
+            event.preventDefault();
+            const nome = document.getElementById('modalProdOlhoNome')?.value?.trim();
+            const precoRaw = document.getElementById('modalProdOlhoPreco')?.value?.replace(/\./g, '')?.replace(',', '.');
+            const preco = parseFloat(precoRaw) || 0;
+            const loja = document.getElementById('modalProdOlhoLoja')?.value?.trim();
+            const link = document.getElementById('modalProdOlhoLink')?.value?.trim();
+            const imagem = document.getElementById('modalProdOlhoFotoUrl')?.value?.trim();
+
+            if (!nome || preco <= 0) {
+                return seivaNotificar('Informe o nome e um preço válido para o produto.', 'aviso');
+            }
+
+            try {
+                const res = await fetch('/api/caixa-preta/produtos-watchlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ nome, preco, loja, link, imagem })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    seivaNotificar(`"${nome}" adicionado aos seus Produtos de Olho!`, 'sucesso', 'Radar de Desejos');
+                    fecharModalId('modalAdicionarProdutoOlho');
+                    carregarMetasDados();
+                    carregarCaixaPretaDados();
+                } else {
+                    seivaNotificar(data.error || 'Erro ao salvar produto.', 'erro');
+                }
+            } catch(e) {
+                seivaNotificar('Erro ao salvar produto monitorado.', 'erro');
+            }
         }
 
         function abrirGuardarNaMeta(id, titulo, atual, alvo, tipo) {
