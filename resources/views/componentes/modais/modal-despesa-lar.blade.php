@@ -1,39 +1,165 @@
 {{-- 
     Componente Modal: Lançar Despesa do Lar
-    Responsável: Jhon Abner (RF004, RF010)
-    Funcionalidade: Divisão proporcional ou 50/50 de despesas compartilhadas entre membros do Lar
+    Responsável Acadêmico: Jhon Abner (RF004, RF010)
+    Bordão Oficial: "Onde seu dinheiro cria raízes"
+    Funcionalidade: Cadastro de despesas compartilhadas com divisão proporcional à renda (60/40),
+    50/50, categorias, indicação de despesa extraordinária/imprevisto e simulação do rateio em tempo real.
 --}}
-<div id="modalDespesaLar" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-    <div class="rounded-3xl border border-border bg-card p-6 max-w-md w-full shadow-elevated relative">
-        <button onclick="fecharModalId('modalDespesaLar')" class="absolute top-5 right-5 text-muted-foreground hover:text-foreground p-1 rounded-xl hover:bg-muted transition">
-            <i data-lucide="x" class="size-5"></i>
-        </button>
-        <h3 class="text-lg font-bold text-foreground mb-4">Lançar Despesa do Lar</h3>
-        <form onsubmit="salvarDespesaLarForm(event)" class="space-y-4" novalidate>
-            <div>
-                <label class="text-xs font-medium text-foreground">Nome da Despesa</label>
-                <input type="text" id="formLarDespTitulo" placeholder="Ex: Aluguel, Internet, Supermercado" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
-            </div>
-            <div class="grid grid-cols-2 gap-3">
+<div id="modalDespesaLar" class="hidden fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-xs" onclick="fecharModalId('modalDespesaLar')"></div>
+
+    <div class="relative w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl shadow-elevated flex flex-col overflow-hidden max-h-[92vh] transition-all" style="animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)">
+        <!-- Drag handle mobile -->
+        <div class="flex justify-center pt-3 pb-1 sm:hidden">
+            <div class="w-10 h-1 rounded-full bg-muted"></div>
+        </div>
+
+        <!-- Header -->
+        <div class="px-6 pt-4 pb-3 border-b border-border/60 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <span class="size-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 flex items-center justify-center border border-emerald-500/20">
+                    <i data-lucide="receipt" class="size-5"></i>
+                </span>
                 <div>
-                    <label class="text-xs font-medium text-foreground">Valor Total (R$)</label>
-                    <input type="number" step="0.01" id="formLarDespValor" placeholder="0,00" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-base font-bold text-foreground outline-none focus:border-primary">
-                </div>
-                <div>
-                    <label class="text-xs font-medium text-foreground">Regra de Divisão</label>
-                    <select id="formLarDespDivisao" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-3 text-xs text-foreground outline-none focus:border-primary">
-                        <option value="proporcional">Proporcional à renda</option>
-                        <option value="50/50">50% / 50%</option>
-                    </select>
+                    <h3 class="text-base font-extrabold text-foreground">Lançar Despesa do Lar</h3>
+                    <p class="text-xs text-muted-foreground">Divisão justa e sem atrito no Nosso Cantinho</p>
                 </div>
             </div>
-            <div>
-                <label class="text-xs font-medium text-foreground">Vencimento</label>
-                <input type="date" id="formLarDespData" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none focus:border-primary">
-            </div>
-            <button type="submit" class="w-full mt-2 h-12 rounded-2xl bg-primary text-primary-foreground font-semibold text-sm shadow-card hover:bg-primary/90 transition">
-                Calcular Rateio & Salvar
+            <button type="button" onclick="fecharModalId('modalDespesaLar')" class="size-8 rounded-xl border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition">
+                <i data-lucide="x" class="size-4"></i>
             </button>
+        </div>
+
+        <form onsubmit="salvarDespesaLarForm(event)" class="p-6 space-y-4 overflow-y-auto no-scrollbar">
+            <!-- Título da Despesa -->
+            <div class="space-y-1.5">
+                <label class="text-xs font-bold text-foreground">Nome da Despesa</label>
+                <input type="text" id="formLarDespTitulo" required
+                       placeholder="Ex: Aluguel do Mês, Supermercado, Conserto Chuveiro"
+                       class="w-full h-12 px-4 rounded-2xl border border-border bg-card text-sm font-semibold text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition shadow-2xs">
+            </div>
+
+            <!-- Valor e Categoria -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-foreground">Valor Total (R$)</label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
+                        <input type="number" step="0.01" id="formLarDespValor" required
+                               placeholder="0,00" oninput="atualizarSimulacaoRateioLar()"
+                               class="w-full h-12 pl-10 pr-3 rounded-2xl border border-border bg-card text-base font-black text-foreground focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition shadow-2xs">
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-foreground">Vencimento</label>
+                    <input type="date" id="formLarDespData" required
+                           class="w-full h-12 px-3 rounded-2xl border border-border bg-card text-xs font-semibold text-foreground focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition shadow-2xs">
+                </div>
+            </div>
+
+            <!-- Tipo de Despesa: Fixa vs Variável -->
+            <div class="space-y-1.5">
+                <label class="text-xs font-bold text-foreground">Tipo de Custo no Lar</label>
+                <div class="grid grid-cols-2 gap-2" id="gridTipoDespesaLar">
+                    <button type="button" onclick="selecionarTipoDespesaLar(this, 'fixa')" 
+                            class="chip-tipo-desp-lar active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition flex items-center gap-2.5">
+                        <i data-lucide="calendar" class="size-4 text-emerald-600"></i>
+                        <div>
+                            <strong class="text-xs font-extrabold text-foreground block">Despesa Fixa</strong>
+                            <span class="text-[10px] text-muted-foreground">Aluguel, Luz, Internet</span>
+                        </div>
+                    </button>
+                    <button type="button" onclick="selecionarTipoDespesaLar(this, 'variavel')" 
+                            class="chip-tipo-desp-lar p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30 flex items-center gap-2.5">
+                        <i data-lucide="shopping-cart" class="size-4 text-muted-foreground"></i>
+                        <div>
+                            <strong class="text-xs font-extrabold text-foreground block">Gasto Variável</strong>
+                            <span class="text-[10px] text-muted-foreground">Mercado, Feira, Farmácia</span>
+                        </div>
+                    </button>
+                </div>
+                <input type="hidden" id="formLarDespTipo" value="fixa">
+            </div>
+
+            <!-- Switch de Despesa Extraordinária / Imprevisto -->
+            <div class="p-3.5 rounded-2xl border border-amber-300/60 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20 space-y-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="size-6 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center">
+                            <i data-lucide="alert-triangle" class="size-3.5"></i>
+                        </span>
+                        <div>
+                            <strong class="text-xs font-extrabold text-foreground block">Despesa Extraordinária / Imprevisto</strong>
+                            <span class="text-[10px] text-muted-foreground">Gasto fora da rotina planejada do mês</span>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="formLarDespExtraordinaria" class="sr-only peer" onchange="alternarAvisoExtraordinaria(this.checked)">
+                        <div class="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                    </label>
+                </div>
+                <p id="avisoExtraordinariaTxt" class="text-[11px] text-amber-900/80 dark:text-amber-300/80 leading-relaxed hidden">
+                    💡 <strong>Como entra na conta:</strong> Despesas extraordinárias são imprevistos (ex: vazamento, conserto de eletro). Elas não distorcem o custo fixo mensal do casal e entram na Mesa de Acordos para rateio pontual sem afetar metas de longo prazo.
+                </p>
+            </div>
+
+            <!-- Regra de Divisão: Proporcional vs 50/50 -->
+            <div class="space-y-1.5 pt-1">
+                <label class="text-xs font-bold text-foreground">Regra de Divisão do Casal</label>
+                <div class="grid grid-cols-2 gap-2" id="gridRegraDivisaoLar">
+                    <button type="button" onclick="selecionarRegraDivisaoLar(this, 'proporcional')" 
+                            class="chip-regra-divisao active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition">
+                        <div class="flex items-center justify-between">
+                            <strong class="text-xs font-extrabold text-foreground">Proporcional</strong>
+                            <span class="px-1.5 py-0.5 rounded-md bg-emerald-600 text-white text-[9px] font-black">Recomendado</span>
+                        </div>
+                        <span class="text-[10px] text-muted-foreground block mt-1">Duda (40%) · Ian (60%) de acordo com a renda</span>
+                    </button>
+
+                    <button type="button" onclick="selecionarRegraDivisaoLar(this, '50/50')" 
+                            class="chip-regra-divisao p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30">
+                        <strong class="text-xs font-extrabold text-foreground block">50% / 50%</strong>
+                        <span class="text-[10px] text-muted-foreground block mt-1">Metade exata para cada um</span>
+                    </button>
+                </div>
+                <input type="hidden" id="formLarDespDivisao" value="proporcional">
+            </div>
+
+            <!-- SIMULAÇÃO DO RATEIO EM TEMPO REAL -->
+            <div class="p-3.5 rounded-2xl bg-muted/40 border border-border space-y-2">
+                <span class="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground block">
+                    Simulação do Rateio Desta Despesa
+                </span>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="p-2.5 rounded-xl bg-card border border-border/60">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <span class="size-5 rounded-full bg-pink-100 text-pink-700 text-[10px] font-black flex items-center justify-center">ME</span>
+                            <span class="text-[11px] font-bold text-foreground">Parte da Duda</span>
+                        </div>
+                        <strong id="simulacaoParteDuda" class="text-sm font-black text-foreground">R$ 0,00</strong>
+                        <span id="simulacaoPctDuda" class="text-[10px] text-muted-foreground block mt-0.5">(40% do total)</span>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-card border border-border/60">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <span class="size-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black flex items-center justify-center">IM</span>
+                            <span class="text-[11px] font-bold text-foreground">Parte do Ian</span>
+                        </div>
+                        <strong id="simulacaoParteIan" class="text-sm font-black text-foreground">R$ 0,00</strong>
+                        <span id="simulacaoPctIan" class="text-[10px] text-muted-foreground block mt-0.5">(60% do total)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botão de Ação -->
+            <div class="pt-2">
+                <button type="submit" 
+                        class="w-full py-4 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs shadow-soft transition flex items-center justify-center gap-2">
+                    <i data-lucide="check" class="size-4"></i>
+                    <span>Calcular Rateio & Lançar no Lar</span>
+                </button>
+            </div>
         </form>
     </div>
 </div>

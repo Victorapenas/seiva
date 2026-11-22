@@ -85,6 +85,9 @@ Route::prefix('api')->group(function () {
         Route::post('/lar/despesas/quitar/{id}', [LarController::class, 'quitarParticipacao']);
         Route::post('/lar/despesas/pagar', [LarController::class, 'pagarDespesa']);
         Route::post('/lar/fundo-emergencia/reforcar', [LarController::class, 'reforcarFundoEmergencia']);
+        Route::post('/lar/fundo-emergencia/resgatar', [LarController::class, 'solicitarResgateEmergencia']);
+        Route::post('/lar/notificar-pendencia', [LarController::class, 'notificarPendencia']);
+        Route::post('/lar/foto-capa', [LarController::class, 'atualizarFotoCapa']);
 
         // RF006: Mesa de Acordos
         Route::get('/acordos', [AcordoController::class, 'index']);

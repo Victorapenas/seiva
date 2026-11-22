@@ -192,4 +192,78 @@ class AreaDoLarPainelTest extends TestCase
         $meta->refresh();
         $this->assertEquals('concluida', $meta->status);
     }
+
+    public function test_solicitar_resgate_emergencia_lar()
+    {
+        $this->actingAs($this->userDuda);
+
+        $res = $this->postJson('/api/lar/fundo-emergencia/resgatar', [
+            'valor' => 500.00,
+            'motivo' => 'imovel',
+            'descricao' => 'Conserto urgente de encanamento quebrado',
+            'conta_destino' => 'nubank_duda',
+        ]);
+
+        $res->assertStatus(200)
+            ->assertJson(['sucesso' => true]);
+
+        $this->assertDatabaseHas('notificacoes', [
+            'usuario_id' => $this->userDuda->id_usuario,
+            'titulo' => 'Solicitação de Emergência do Lar',
+        ]);
+    }
+
+    public function test_notificar_pendencia_cobrador_diplomata()
+    {
+        $this->actingAs($this->userDuda);
+
+        $res = $this->postJson('/api/lar/notificar-pendencia', [
+            'tipo_acao' => 'diplomata',
+        ]);
+
+        $res->assertStatus(200)
+            ->assertJson(['sucesso' => true]);
+
+        $this->assertDatabaseHas('notificacoes', [
+            'usuario_id' => $this->userDuda->id_usuario,
+            'titulo' => 'Equilíbrio da Contribuição do Lar',
+        ]);
+    }
+
+    public function test_atualizar_foto_capa_e_nome_do_lar()
+    {
+        $this->actingAs($this->userDuda);
+
+        $res = $this->postJson('/api/lar/foto-capa', [
+            'nome' => 'Nosso Ninho de Amor',
+            'foto' => '/lar-inicio.png',
+            'desde' => 'maio de 2026',
+        ]);
+
+        $res->assertStatus(200)
+            ->assertJson(['sucesso' => true]);
+
+        $this->lar->refresh();
+        $this->assertEquals('Nosso Ninho de Amor', $this->lar->nome);
+    }
+
+    public function test_lancar_despesa_lar_com_rateio_proporcional()
+    {
+        $this->actingAs($this->userDuda);
+
+        $res = $this->postJson('/api/lar/despesas', [
+            'titulo' => 'Supermercado Mensal',
+            'valor_total' => 1000.00,
+            'tipo' => 'variavel',
+            'divisao' => 'proporcional',
+            'data_vencimento' => '2026-11-25',
+        ]);
+
+        $res->assertStatus(201);
+        $this->assertDatabaseHas('despesas_lares', [
+            'titulo' => 'Supermercado Mensal',
+            'valor_total' => 1000.00,
+            'divisao' => 'proporcional',
+        ]);
+    }
 }

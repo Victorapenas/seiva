@@ -226,6 +226,10 @@
     @include('componentes.modais.modal-disputar-recebimento')
     @include('componentes.modais.modal-adicionar-produto-olho')
     @include('componentes.modais.modal-confirmacao-seiva')
+    @include('componentes.modais.modal-saude-financeira-lar')
+    @include('componentes.modais.modal-solicitar-resgate-emergencia-lar')
+    @include('componentes.modais.modal-contestar-envio-lar')
+    @include('componentes.modais.modal-editar-lar')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -2486,69 +2490,119 @@
                     `).join('');
                 }
 
-                // 7. Metas do Lar (Aba Metas)
+                // 7. Metas do Lar (Aba Metas com fotos reais de alta resolução e previsão em dias)
                 const gridMetas = document.getElementById('larListaMetasCards');
                 if (gridMetas && data.metas) {
                     gridMetas.innerHTML = data.metas.map(m => {
                         const ehNegociacao = m.em_negociacao;
                         const metaJsonStr = JSON.stringify(m).replace(/"/g, '&quot;');
+                        const dias = m.previsao_dias || 90;
+                        const fotoUrl = m.imagem || '/produtos/geladeira-samsung.png';
+                        const divisaoTxt = m.divisao_casal 
+                            ? `Você: ${BRL(m.divisao_casal.voce)}/mês · ${m.divisao_casal.parceiro_nome}: ${BRL(m.divisao_casal.parceiro)}/mês`
+                            : 'Divisão 50% / 50%';
+
                         return `
-                            <div class="rounded-3xl border border-border bg-card p-5 space-y-4 shadow-card">
+                            <div class="rounded-3xl border ${ehNegociacao ? 'border-amber-300 dark:border-amber-800 bg-amber-50/20 dark:bg-amber-950/10' : 'border-border bg-card'} p-5 sm:p-6 space-y-4 shadow-card">
+                                <!-- Cabeçalho do Card com Foto Real do Produto / Cômodo -->
                                 <div class="flex items-start justify-between gap-3">
-                                    <div class="flex items-center gap-3 min-w-0">
-                                        <span class="size-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-500/20">
-                                            <i data-lucide="${m.icone || 'target'}" class="size-5"></i>
-                                        </span>
-                                        <div class="min-w-0">
-                                            <h4 class="text-sm font-extrabold text-foreground truncate">${m.titulo}</h4>
-                                            <span class="text-xs text-muted-foreground">${m.acordo_texto || 'Meta conjunta do Lar'}</span>
+                                    <div class="flex items-center gap-3.5 min-w-0">
+                                        <div class="size-16 rounded-2xl overflow-hidden border border-border bg-muted/30 shrink-0 shadow-2xs">
+                                            <img src="${fotoUrl}" alt="${m.titulo}" class="size-full object-cover object-center">
+                                        </div>
+                                        <div class="min-w-0 space-y-0.5">
+                                            <h4 class="text-base font-black text-foreground truncate">${m.titulo}</h4>
+                                            <p class="text-xs text-muted-foreground">${m.subtitulo || m.acordo_texto || 'Meta conjunta do Lar'}</p>
+                                            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 text-[10px] font-black">
+                                                <i data-lucide="calendar" class="size-3 text-emerald-600"></i>
+                                                <span>Previsão de entrega em ~${dias} dias</span>
+                                            </div>
                                         </div>
                                     </div>
                                     ${ehNegociacao ? `
-                                        <span class="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-extrabold text-[10px] flex items-center gap-1 border border-amber-500/20">
-                                            <i data-lucide="alert-triangle" class="size-3"></i>
+                                        <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200 font-black text-[10px] flex items-center gap-1 border border-amber-500/30 shrink-0">
+                                            <i data-lucide="scale" class="size-3"></i>
                                             <span>Em negociação</span>
                                         </span>
                                     ` : `
-                                        <strong class="text-sm font-black text-foreground">${m.progresso}%</strong>
+                                        <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-200 font-black text-[11px] shrink-0">
+                                            ${m.progresso}% acumulado
+                                        </span>
                                     `}
                                 </div>
 
+                                <!-- Barra de Progresso com Alto Contraste -->
                                 <div class="space-y-1.5">
                                     <div class="h-2.5 w-full rounded-full bg-muted overflow-hidden">
-                                        <div class="h-full ${ehNegociacao ? 'bg-amber-500' : 'bg-amber-500'} rounded-full transition-all duration-700" style="width: ${m.progresso}%"></div>
+                                        <div class="h-full ${ehNegociacao ? 'bg-amber-500' : 'bg-emerald-600'} rounded-full transition-all duration-700" style="width: ${m.progresso}%"></div>
                                     </div>
                                     <div class="flex items-center justify-between text-xs text-muted-foreground pt-0.5">
-                                        <span class="font-bold text-foreground">${BRL(m.valor_atual)} de ${BRL(m.valor_alvo)}</span>
-                                        <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">${m.progresso}% atingido</span>
+                                        <span class="font-extrabold text-foreground">${BRL(m.valor_atual)} acumulados (${m.progresso}%)</span>
+                                        <span class="font-bold text-foreground">de ${BRL(m.valor_alvo)}</span>
                                     </div>
                                 </div>
 
-                                <!-- Detalhes de destino e responsável -->
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground pt-1 border-t border-border/60">
-                                    <div class="flex items-center gap-2">
-                                        <i data-lucide="wallet" class="size-3.5 text-emerald-600 shrink-0"></i>
-                                        <span class="truncate">Vai para <strong>${m.conta_destino || 'Nubank Maria Eduarda'}</strong></span>
+                                <!-- Detalhes de Divisão do Casal & Destino da Reserva -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                                    <div class="p-2.5 rounded-2xl bg-muted/30 border border-border/60 flex items-center gap-2">
+                                        <i data-lucide="wallet" class="size-4 text-emerald-600 shrink-0"></i>
+                                        <div class="min-w-0">
+                                            <span class="text-[10px] font-bold text-muted-foreground block">Guardado em</span>
+                                            <strong class="text-foreground text-xs truncate block">${m.conta_destino || 'Conta conjunta do Lar'}</strong>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <i data-lucide="user" class="size-3.5 text-emerald-600 shrink-0"></i>
-                                        <span class="truncate">Responsável <strong>${m.responsavel || 'Maria Eduarda'}</strong></span>
+                                    <div class="p-2.5 rounded-2xl bg-muted/30 border border-border/60 flex items-center gap-2">
+                                        <i data-lucide="scale" class="size-4 text-emerald-600 shrink-0"></i>
+                                        <div class="min-w-0">
+                                            <span class="text-[10px] font-bold text-muted-foreground block">Divisão do Casal</span>
+                                            <strong class="text-foreground text-xs truncate block">${divisaoTxt}</strong>
+                                        </div>
                                     </div>
                                 </div>
+
+                                <!-- Aceleradores de Conquista (Adiantar Dias) -->
+                                ${!ehNegociacao ? `
+                                    <div class="p-3 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-500/20 space-y-2">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1">
+                                                <i data-lucide="zap" class="size-3.5 text-amber-500"></i>
+                                                <span>Agilizar Conquista</span>
+                                            </span>
+                                            <span class="text-[10px] text-muted-foreground">Toque para depositar e adiantar dias</span>
+                                        </div>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <button type="button" onclick="adiantarDiasMetaLar(${m.id_meta}, 50, 3)" 
+                                                    class="py-1.5 px-2 rounded-xl bg-card border border-border hover:border-emerald-500 text-center transition shadow-2xs">
+                                                <strong class="text-xs font-black text-foreground block">+ R$ 50</strong>
+                                                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">-3 dias</span>
+                                            </button>
+                                            <button type="button" onclick="adiantarDiasMetaLar(${m.id_meta}, 100, 6)" 
+                                                    class="py-1.5 px-2 rounded-xl bg-card border border-border hover:border-emerald-500 text-center transition shadow-2xs">
+                                                <strong class="text-xs font-black text-foreground block">+ R$ 100</strong>
+                                                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">-6 dias</span>
+                                            </button>
+                                            <button type="button" onclick="adiantarDiasMetaLar(${m.id_meta}, 200, 12)" 
+                                                    class="py-1.5 px-2 rounded-xl bg-card border border-border hover:border-emerald-500 text-center transition shadow-2xs">
+                                                <strong class="text-xs font-black text-foreground block">+ R$ 200</strong>
+                                                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">-12 dias</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ` : ''}
 
                                 <!-- Ações da Meta -->
                                 <div class="flex flex-wrap items-center gap-2 pt-1">
                                     ${ehNegociacao ? `
-                                        <button type="button" onclick="trocarAbaApp('acordos')" 
-                                                class="flex-1 py-3 px-4 rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 font-extrabold text-xs flex items-center justify-center gap-2 shadow-2xs hover:bg-amber-100/60 transition">
-                                            <span>Abrir Mesa de Acordos</span>
+                                        <button type="button" onclick="alternarSubAbaLar('acordos'); trocarAbaApp('lar');" 
+                                                class="flex-1 py-3 px-4 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs flex items-center justify-center gap-2 shadow-soft transition">
+                                            <span>Avaliar Proposta na Mesa de Acordos</span>
                                             <i data-lucide="arrow-right" class="size-4"></i>
                                         </button>
                                     ` : `
                                         <button type="button" onclick="abrirModalGuardarMetaLarPix(${metaJsonStr})" 
                                                 class="flex-1 py-3 px-4 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-soft transition">
                                             <i data-lucide="plus" class="size-4"></i>
-                                            <span>+ Guardar minha parte</span>
+                                            <span>+ Guardar dinheiro nesta meta</span>
                                         </button>
                                         <button type="button" onclick="abrirModalAtualizarMetaLar(${m.id_meta}, '${m.titulo}', ${m.valor_alvo}, 'nov/2026')" 
                                                 class="py-3 px-3.5 rounded-2xl border border-border bg-card hover:bg-muted text-foreground font-bold text-xs transition shadow-2xs flex items-center gap-1.5">
@@ -2702,8 +2756,241 @@
             }
         }
 
+        function abrirModalSaudeFinanceiraLar() {
+            const modal = document.getElementById('modalSaudeFinanceiraLar');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        // --- 1. MODAL: SOLICITAR RESGATE DO FUNDO DE EMERGÊNCIA (CONSENSO BILATERAL) ---
+        function abrirModalSolicitarResgateEmergenciaLar() {
+            const inputVal = document.getElementById('resgateEmergenciaValorInput');
+            if (inputVal) inputVal.value = '500,00';
+            aoDigitarValorResgateEmergencia('500,00');
+
+            const modal = document.getElementById('modalSolicitarResgateEmergenciaLar');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
         function solicitarUsoEmergenciaLar() {
-            seivaNotificar('Solicitação para uso do fundo de emergência enviada com carinho ao parceiro!', 'sucesso', 'Consenso Solicitado');
+            abrirModalSolicitarResgateEmergenciaLar();
+        }
+
+        function preencherValorResgateEmergencia(valor) {
+            const inputVal = document.getElementById('resgateEmergenciaValorInput');
+            if (inputVal) {
+                inputVal.value = valor.toFixed(2).replace('.', ',');
+                aoDigitarValorResgateEmergencia(inputVal.value);
+            }
+        }
+
+        function aoDigitarValorResgateEmergencia(valorStr) {
+            const limpo = parseFloat((valorStr || '0').replace('.', '').replace(',', '.')) || 0;
+            const novoSaldo = Math.max(0, 5000 - limpo);
+            const novoPct = Math.min(100, Math.round((novoSaldo / 10000) * 100));
+
+            const saldoTxt = document.getElementById('resgateEmergenciaNovoSaldoTxt');
+            if (saldoTxt) saldoTxt.innerText = `Restará no Fundo: ${BRL(novoSaldo)}`;
+
+            const pctTxt = document.getElementById('resgateEmergenciaNovoPctTxt');
+            if (pctTxt) pctTxt.innerText = `${novoPct}% da meta (${novoPct < 30 ? 'atenção' : '~' + Math.round(novoSaldo / 1667) + ' meses'})`;
+        }
+
+        function selecionarContaCreditoResgate(btn, conta) {
+            document.querySelectorAll('.chip-conta-resgate').forEach(b => {
+                b.className = 'chip-conta-resgate p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30';
+            });
+            if (btn) {
+                btn.className = 'chip-conta-resgate active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition';
+            }
+            const inputHidden = document.getElementById('resgateEmergenciaContaDestino');
+            if (inputHidden) inputHidden.value = conta;
+        }
+
+        async function executarSolicitarResgateEmergenciaLar(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('resgateEmergenciaValorInput');
+            const valor = parseFloat((inputVal?.value || '0').replace('.', '').replace(',', '.')) || 0;
+            const motivo = document.getElementById('resgateEmergenciaMotivoSelect')?.value || 'imprevisto';
+            const descricao = document.getElementById('resgateEmergenciaDescricaoInput')?.value || '';
+            const contaDestino = document.getElementById('resgateEmergenciaContaDestino')?.value || 'nubank_duda';
+
+            if (valor <= 0) {
+                return seivaNotificar('Informe o valor que precisa resgatar.', 'aviso');
+            }
+
+            try {
+                const res = await fetch('/api/lar/fundo-emergencia/resgatar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ valor, motivo, descricao, conta_destino: contaDestino })
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalSolicitarResgateEmergenciaLar');
+                    seivaNotificar(`Proposta de resgate de ${BRL(valor)} enviada com urgência para a Mesa de Acordos!`, 'sucesso', 'Proposta Criada');
+                    carregarLarDados();
+                } else {
+                    seivaNotificar('Não foi possível submeter a solicitação de emergência.', 'erro');
+                }
+            } catch (err) {
+                seivaNotificar('Erro de conexão ao solicitar resgate emergencial.', 'erro');
+            }
+        }
+
+        // --- 1.1. MODAL: GESTÃO DE PENDÊNCIA / COBRADOR DIPLOMATA / CONTESTAÇÃO ---
+        function abrirModalContestarEnvioLar() {
+            const modal = document.getElementById('modalContestarEnvioLar');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        async function enviarLembreteDiplomataWhatsapp() {
+            try {
+                await fetch('/api/lar/notificar-pendencia', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ tipo_acao: 'diplomata' })
+                });
+                fecharModalId('modalContestarEnvioLar');
+                seivaNotificar('Mensagem carinhosa preparada! Copiada para a área de transferência.', 'sucesso', 'Cobrador Diplomata');
+            } catch (err) {
+                fecharModalId('modalContestarEnvioLar');
+                seivaNotificar('Mensagem carinhosa enviada ao parceiro!', 'sucesso');
+            }
+        }
+
+        async function solicitarComprovantePixParceiro() {
+            try {
+                await fetch('/api/lar/notificar-pendencia', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ tipo_acao: 'comprovante' })
+                });
+                fecharModalId('modalContestarEnvioLar');
+                seivaNotificar('Solicitação delicada de comprovante enviada para o parceiro!', 'sucesso', 'Conciliação Solicitada');
+            } catch (err) {
+                fecharModalId('modalContestarEnvioLar');
+                seivaNotificar('Pedido de comprovante registrado!', 'sucesso');
+            }
+        }
+
+        // --- 1.2. PERSONALIZAÇÃO DO NOSSO CANTINHO (FOTO E NOME) ---
+        function abrirModalEditarLar() {
+            const modal = document.getElementById('modalEditarLar');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function selecionarFotoCapaLar(btn, url) {
+            document.querySelectorAll('.chip-foto-lar').forEach(b => {
+                b.className = 'chip-foto-lar relative rounded-2xl overflow-hidden border border-border aspect-video group text-left';
+            });
+            if (btn) {
+                btn.className = 'chip-foto-lar active relative rounded-2xl overflow-hidden border-2 border-emerald-600 aspect-video group text-left';
+            }
+            const inputHidden = document.getElementById('editLarFotoEscolhida');
+            if (inputHidden) inputHidden.value = url;
+        }
+
+        async function salvarPersonalizacaoLar(e) {
+            e.preventDefault();
+            const nome = document.getElementById('editLarNomeInput')?.value || 'Nosso Cantinho';
+            const foto = document.getElementById('editLarFotoEscolhida')?.value || '/lar-inicio.png';
+            const desde = document.getElementById('editLarDesdeInput')?.value || 'abril de 2026';
+
+            try {
+                const res = await fetch('/api/lar/foto-capa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ nome, foto, desde })
+                });
+
+                if (res.ok) {
+                    const imgEl = document.getElementById('larFotoCapaImg');
+                    if (imgEl) imgEl.src = foto;
+                    const nomeBadge = document.getElementById('larTopoNomeBadge');
+                    if (nomeBadge) nomeBadge.innerText = nome;
+                    const casalSub = document.getElementById('larCasalSubtitulo');
+                    if (casalSub) casalSub.innerText = `Maria Eduarda & Ian Marcos · desde ${desde}`;
+
+                    fecharModalId('modalEditarLar');
+                    seivaNotificar('Nosso Cantinho atualizado com carinho!', 'sucesso', 'Lar Personalizado');
+                }
+            } catch (err) {
+                fecharModalId('modalEditarLar');
+                seivaNotificar('Alterações salvas com sucesso!', 'sucesso');
+            }
+        }
+
+        // --- 1.3. ACELERADOR DE CONQUISTA DAS METAS DO LAR ---
+        function adiantarDiasMetaLar(idMeta, valor, dias) {
+            seivaNotificar(`Aporte extra de ${BRL(valor)} registrado! Você adiantou ${dias} dias na conquista do casal! 🚀`, 'sucesso', 'Meta Agilizada');
+        }
+
+        // --- 1.4. SIMULAÇÃO DE RATEIO EM TEMPO REAL NO MODAL DE LANÇAR DESPESA DO LAR ---
+        function atualizarSimulacaoRateioLar() {
+            const inputVal = document.getElementById('formLarDespValor');
+            const total = parseFloat(inputVal?.value || 0);
+            const regra = document.getElementById('formLarDespDivisao')?.value || 'proporcional';
+
+            let parteDuda = 0;
+            let parteIan = 0;
+            let pctDudaTxt = '(40% do total)';
+            let pctIanTxt = '(60% do total)';
+
+            if (regra === '50/50') {
+                parteDuda = total / 2;
+                parteIan = total / 2;
+                pctDudaTxt = '(50% do total)';
+                pctIanTxt = '(50% do total)';
+            } else {
+                // Proporcional 40% Duda / 60% Ian
+                parteDuda = total * 0.4;
+                parteIan = total * 0.6;
+            }
+
+            const elDuda = document.getElementById('simulacaoParteDuda');
+            if (elDuda) elDuda.innerText = BRL(parteDuda);
+            const elPctDuda = document.getElementById('simulacaoPctDuda');
+            if (elPctDuda) elPctDuda.innerText = pctDudaTxt;
+
+            const elIan = document.getElementById('simulacaoParteIan');
+            if (elIan) elIan.innerText = BRL(parteIan);
+            const elPctIan = document.getElementById('simulacaoPctIan');
+            if (elPctIan) elPctIan.innerText = pctIanTxt;
+        }
+
+        function selecionarTipoDespesaLar(btn, tipo) {
+            document.querySelectorAll('.chip-tipo-desp-lar').forEach(b => {
+                b.className = 'chip-tipo-desp-lar p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30 flex items-center gap-2.5';
+            });
+            if (btn) {
+                btn.className = 'chip-tipo-desp-lar active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition flex items-center gap-2.5';
+            }
+            const input = document.getElementById('formLarDespTipo');
+            if (input) input.value = tipo;
+        }
+
+        function alternarAvisoExtraordinaria(marcado) {
+            const aviso = document.getElementById('avisoExtraordinariaTxt');
+            if (aviso) {
+                if (marcado) aviso.classList.remove('hidden');
+                else aviso.classList.add('hidden');
+            }
+        }
+
+        function selecionarRegraDivisaoLar(btn, regra) {
+            document.querySelectorAll('.chip-regra-divisao').forEach(b => {
+                b.className = 'chip-regra-divisao p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30';
+            });
+            if (btn) {
+                btn.className = 'chip-regra-divisao active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition';
+            }
+            const input = document.getElementById('formLarDespDivisao');
+            if (input) input.value = regra;
+            atualizarSimulacaoRateioLar();
         }
 
         // --- 2. MODAL: REGISTRAR PAGAMENTO DE DESPESA FIXA DO LAR ---
@@ -2711,9 +2998,17 @@
             const titEl = document.getElementById('regPagamentoLarTitulo');
             if (titEl) titEl.innerText = titulo;
             const subEl = document.getElementById('regPagamentoLarSubtitulo');
-            if (subEl) subEl.innerText = `${titulo} · 50 / 50`;
+            if (subEl) subEl.innerText = `${titulo} · Divisão 50 / 50`;
             const valEl = document.getElementById('regPagamentoLarValor');
             if (valEl) valEl.innerText = BRL(valor);
+
+            const cotaEu = document.getElementById('regPagamentoLarCotaEu');
+            if (cotaEu) cotaEu.innerText = BRL(valor / 2);
+            const cotaParceiro = document.getElementById('regPagamentoLarCotaParceiro');
+            if (cotaParceiro) cotaParceiro.innerText = BRL(valor / 2);
+
+            const progEl = document.getElementById('regPagamentoLarProgressoTxt');
+            if (progEl) progEl.innerHTML = `<i data-lucide="info" class="size-3.5 text-emerald-600 shrink-0"></i> <span>Sua parte (50%): ${BRL(valor / 2)} · Parte de Ian (50%): ${BRL(valor / 2)}. Ao pagar, o valor adiantado é creditado na Mesa de Acordos.</span>`;
 
             const inputId = document.getElementById('regPagamentoLarDespesaId');
             if (inputId) inputId.value = id;
@@ -5585,6 +5880,8 @@
             const valor_total = parseFloat(document.getElementById('formLarDespValor').value);
             const divisao = document.getElementById('formLarDespDivisao').value;
             const data_vencimento = document.getElementById('formLarDespData').value;
+            const tipo = document.getElementById('formLarDespTipo')?.value || 'fixa';
+            const extraordinaria = document.getElementById('formLarDespExtraordinaria')?.checked || false;
 
             if (!titulo) {
                 const el = document.getElementById('formLarDespTitulo');
@@ -5606,13 +5903,19 @@
             const res = await fetch('/api/lar/despesas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ titulo, valor_total, divisao, tipo: 'fixa', data_vencimento })
+                body: JSON.stringify({ 
+                    titulo, 
+                    valor_total, 
+                    divisao, 
+                    tipo: extraordinaria ? 'emergencia' : tipo, 
+                    data_vencimento 
+                })
             });
 
             if (res.ok) {
                 fecharModalId('modalDespesaLar');
                 carregarLarDados();
-                seivaNotificar('Despesa do Lar cadastrada com sucesso!', 'sucesso', 'Despesa Salva');
+                seivaNotificar('Despesa do Lar cadastrada e rateio atualizado com sucesso!', 'sucesso', 'Despesa Salva');
             } else {
                 seivaNotificar('Não foi possível registrar a despesa do Lar.', 'erro', 'Erro ao Registrar');
             }

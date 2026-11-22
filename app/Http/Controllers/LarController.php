@@ -199,55 +199,91 @@ class LarController extends Controller
             'metas' => [
                 [
                     'id_meta' => 201,
-                    'titulo' => 'Geladeira Samsung',
-                    'acordo_texto' => 'Acordo ativo · 50/50 · próxima parcela 15/07',
+                    'titulo' => 'Geladeira Samsung Frost Free 460L',
+                    'subtitulo' => 'Guardo R$ 500,00/mês juntos',
+                    'acordo_texto' => 'Acordo ativo · 50% / 50% · parcela mensal R$ 250 cada',
                     'progresso' => 31,
                     'valor_atual' => 1000.00,
                     'valor_alvo' => 3200.00,
-                    'icone' => 'shopping-bag',
+                    'falta_guardar' => 2200.00,
+                    'previsao_dias' => 132,
+                    'imagem' => '/produtos/geladeira-samsung.png',
+                    'icone' => 'snowflake',
                     'em_negociacao' => false,
                     'responsavel' => 'Maria Eduarda',
-                    'conta_destino' => 'Nubank Maria Eduarda',
+                    'conta_destino' => 'Conta conjunta do Lar',
                     'pix' => '(71) 99812-3456',
+                    'divisao_casal' => [
+                        'voce' => 250.00,
+                        'parceiro' => 250.00,
+                        'parceiro_nome' => 'Ian',
+                    ],
                 ],
                 [
                     'id_meta' => 202,
                     'titulo' => 'Viagem Praia do Forte',
-                    'acordo_texto' => 'Em negociação na Mesa de Acordos',
+                    'subtitulo' => 'Proposta: R$ 100,00/mês cada até o Verão',
+                    'acordo_texto' => 'Em negociação na Mesa de Acordos · aguardando seu voto',
                     'progresso' => 18,
                     'valor_atual' => 540.00,
                     'valor_alvo' => 3000.00,
+                    'falta_guardar' => 2460.00,
+                    'previsao_dias' => 64,
+                    'imagem' => '/produtos/praia-forte.png',
                     'icone' => 'waves',
                     'em_negociacao' => true,
                     'responsavel' => 'Conta conjunta',
                     'conta_destino' => 'Poupança Caixa (conjunta)',
                     'pix' => 'conjunta@seiva.app',
+                    'divisao_casal' => [
+                        'voce' => 100.00,
+                        'parceiro' => 100.00,
+                        'parceiro_nome' => 'Ian',
+                    ],
                 ],
                 [
                     'id_meta' => 203,
-                    'titulo' => 'Reforma da cozinha',
-                    'acordo_texto' => 'Acordo ativo · 50/50 · contribuição mensal',
+                    'titulo' => 'Reforma da Cozinha & Planejados',
+                    'subtitulo' => 'Guardo R$ 800,00/mês juntos',
+                    'acordo_texto' => 'Acordo ativo · 50% / 50% · contribuição mensal',
                     'progresso' => 45,
                     'valor_atual' => 4500.00,
                     'valor_alvo' => 10000.00,
+                    'falta_guardar' => 5500.00,
+                    'previsao_dias' => 210,
+                    'imagem' => '/produtos/fogao-brastemp.png',
                     'icone' => 'home',
                     'em_negociacao' => false,
                     'responsavel' => 'Maria Eduarda',
                     'conta_destino' => 'Nubank Maria Eduarda',
                     'pix' => '(71) 99812-3456',
+                    'divisao_casal' => [
+                        'voce' => 400.00,
+                        'parceiro' => 400.00,
+                        'parceiro_nome' => 'Ian',
+                    ],
                 ],
                 [
                     'id_meta' => 204,
                     'titulo' => 'Fundo de emergência do Lar',
+                    'subtitulo' => 'Colchão de segurança para 6 meses',
                     'acordo_texto' => 'Acordo ativo · R$ 500/mês juntos',
                     'progresso' => 50,
                     'valor_atual' => 5000.00,
                     'valor_alvo' => 10000.00,
-                    'icone' => 'shield',
+                    'falta_guardar' => 5000.00,
+                    'previsao_dias' => 90,
+                    'imagem' => '/casal-hero.png',
+                    'icone' => 'shield-check',
                     'em_negociacao' => false,
                     'responsavel' => 'Conta conjunta',
                     'conta_destino' => 'Poupança Caixa (conjunta)',
                     'pix' => 'conjunta@seiva.app',
+                    'divisao_casal' => [
+                        'voce' => 250.00,
+                        'parceiro' => 250.00,
+                        'parceiro_nome' => 'Ian',
+                    ],
                 ],
             ],
             'acordos' => [
@@ -546,6 +582,85 @@ class LarController extends Controller
         return response()->json([
             'sucesso' => true,
             'mensagem' => 'Pagamento de ' . $titulo . ' registrado com sucesso!',
+        ]);
+    }
+
+    public function solicitarResgateEmergencia(Request $request)
+    {
+        $request->validate([
+            'valor' => 'required|numeric|min:0.01|max:5000',
+            'motivo' => 'required|string',
+            'descricao' => 'nullable|string',
+            'conta_destino' => 'nullable|string',
+        ]);
+
+        $user = Auth::user();
+        $valor = (float)$request->valor;
+
+        // Cria a notificação de urgência e proposta bilateral na Mesa de Acordos
+        \App\Models\Notificacao::create([
+            'usuario_id' => $user->id_usuario,
+            'titulo' => 'Solicitação de Emergência do Lar',
+            'mensagem' => "Proposta para resgate de R$ " . number_format($valor, 2, ',', '.') . " do Fundo Conjunto enviada com urgência para aprovação mútua.",
+            'tipo' => 'atencao',
+            'lida' => false,
+        ]);
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => "Proposta de resgate de R$ " . number_format($valor, 2, ',', '.') . " enviada para aprovação do parceiro na Mesa de Acordos!",
+            'novo_saldo' => 5000.00 - $valor,
+        ]);
+    }
+
+    public function notificarPendencia(Request $request)
+    {
+        $request->validate([
+            'tipo_acao' => 'required|string|in:comprovante,diplomata,compensar',
+        ]);
+
+        $user = Auth::user();
+        $mensagem = $request->tipo_acao === 'comprovante' 
+            ? 'Pedido de comprovante Pix enviado delicadamente para o parceiro.'
+            : 'Lembrete carinhoso preparado com sucesso pelo Cobrador Diplomata!';
+
+        \App\Models\Notificacao::create([
+            'usuario_id' => $user->id_usuario,
+            'titulo' => 'Equilíbrio da Contribuição do Lar',
+            'mensagem' => $mensagem,
+            'tipo' => 'info',
+            'lida' => false,
+        ]);
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => $mensagem,
+        ]);
+    }
+
+    public function atualizarFotoCapa(Request $request)
+    {
+        $request->validate([
+            'nome' => 'nullable|string|max:100',
+            'foto' => 'nullable|string',
+            'desde' => 'nullable|string',
+        ]);
+
+        $user = Auth::user();
+        $lar = $user->lares()->first();
+
+        if ($lar && $request->nome) {
+            $lar->update(['nome' => $request->nome]);
+        }
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => 'Nosso Cantinho atualizado com sucesso!',
+            'lar' => [
+                'nome' => $request->nome ?: 'Nosso Cantinho',
+                'foto' => $request->foto ?: '/lar-inicio.png',
+                'desde' => $request->desde ?: 'abril de 2026',
+            ]
         ]);
     }
 }
