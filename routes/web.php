@@ -129,13 +129,17 @@ Route::prefix('api')->group(function () {
         // RF005: Cobrador Diplomata
         Route::get('/cobrancas', [CobrancaController::class, 'index']);
         Route::post('/cobrancas/lembrete', [CobrancaController::class, 'enviarLembrete']);
+        Route::post('/cobrancas/{id}/confirmar', [CobrancaController::class, 'confirmarRecebimento']);
+        Route::post('/cobrancas/configurar', [CobrancaController::class, 'salvarConfiguracao']);
 
         // RF011: Gestão de Conta e LGPD
         Route::get('/perfil', [LgpdController::class, 'show']);
         Route::put('/perfil', [LgpdController::class, 'updateProfile']);
+        Route::post('/perfil/atualizar', [LgpdController::class, 'updateProfile']);
+        Route::post('/perfil/divisao-lar', [LgpdController::class, 'atualizarDivisaoLar']);
         Route::get('/perfil/exportar', [LgpdController::class, 'exportData']);
         Route::delete('/perfil/excluir', [LgpdController::class, 'deleteAccount']);
-        Route::post('/cobrancas/configurar', [CobrancaController::class, 'salvarConfiguracao']);
+        Route::post('/perfil/excluir', [LgpdController::class, 'deleteAccount']);
 
         // Notificações do Painel de Boas-Vindas
         Route::get('/notificacoes', [NotificacoesController::class, 'index']);
@@ -240,4 +244,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/lar/fundo-emergencia/resgatar', [LarController::class, 'solicitarResgateEmergencia']);
     Route::post('/lar/notificar-pendencia', [LarController::class, 'notificarPendencia']);
     Route::post('/lar/foto-capa', [LarController::class, 'atualizarFotoCapa']);
+
+    // Aliases de Cobrador Diplomata sem /api
+    Route::post('/cobrancas/lembrete', [CobrancaController::class, 'enviarLembrete']);
+    Route::post('/cobrancas/{id}/confirmar', [CobrancaController::class, 'confirmarRecebimento']);
+    Route::post('/cobrancas/configurar', [CobrancaController::class, 'salvarConfiguracao']);
+
+    // Aliases de Perfil sem /api
+    Route::post('/perfil/atualizar', [LgpdController::class, 'updateProfile']);
+    Route::post('/perfil/divisao-lar', [LgpdController::class, 'atualizarDivisaoLar']);
+    Route::delete('/perfil/excluir', [LgpdController::class, 'deleteAccount']);
+    Route::post('/perfil/excluir', [LgpdController::class, 'deleteAccount']);
 });

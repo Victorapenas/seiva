@@ -17,20 +17,66 @@ class LgpdController extends Controller
         $user = Auth::user();
         $lar = $user->lares()->first();
 
+        $dadosLar = null;
+        if ($lar) {
+            $parceiro = $lar->membros()->where('usuarios.id_usuario', '!=', $user->id_usuario)->first();
+            $regraAtiva = \App\Models\RegraDivisao::where('lar_id', $lar->id_lar)->where('ativa', true)->first();
+            
+            $divisaoTxt = '50% / 50%';
+            $pctUser = 50.0;
+            $pctParc = 50.0;
+
+            if ($regraAtiva) {
+                $detalhes = \App\Models\RegraDivisaoDetalhe::where('regra_id', $regraAtiva->id_regra_divisao)->get();
+                $detUser = $detalhes->firstWhere('usuario_id', $user->id_usuario);
+                $detParc = $parceiro ? $detalhes->firstWhere('usuario_id', $parceiro->id_usuario) : null;
+                if ($detUser) $pctUser = (float)$detUser->percentual;
+                if ($detParc) $pctParc = (float)$detParc->percentual;
+
+                if ($regraAtiva->tipo === 'customizada') {
+                    $divisaoTxt = "Personalizada ({$pctUser}% / {$pctParc}%)";
+                } elseif ($regraAtiva->tipo === 'proporcional') {
+                    $divisaoTxt = "Proporcional ({$pctUser}% / {$pctParc}%)";
+                } else {
+                    $divisaoTxt = "50% / 50%";
+                }
+            }
+
+            $dadosLar = [
+                'id_lar'       => $lar->id_lar,
+                'nome'         => $lar->nome,
+                'criado_em'    => $lar->created_at ? $lar->created_at->format('d/m/Y') : 'Desde abril de 2026',
+                'divisao_txt'  => $divisaoTxt,
+                'pct_usuario'  => $pctUser,
+                'pct_parceiro' => $pctParc,
+                'parceiro'     => $parceiro ? [
+                    'id_usuario' => $parceiro->id_usuario,
+                    'nome'       => $parceiro->nome,
+                    'email'      => $parceiro->email,
+                    'avatar'     => $parceiro->avatar,
+                    'iniciais'   => $parceiro->iniciais,
+                ] : null,
+            ];
+        }
+
         return response()->json([
             'usuario' => [
-                'id_usuario'   => $user->id_usuario,
-                'nome'         => $user->nome,
-                'email'        => $user->email,
-                'renda_mensal' => $user->renda_mensal ?? 0,
-                'chave_pix'    => $user->chave_pix ?? $user->email,
-                'created_at'   => $user->created_at,
+                'id_usuario'      => $user->id_usuario,
+                'nome'            => $user->nome,
+                'email'           => $user->email,
+                'telefone'        => $user->telefone ?? '',
+                'avatar'          => $user->avatar ?? '',
+                'iniciais'        => $user->iniciais,
+                'renda_mensal'    => $user->renda_mensal ?? 0,
+                'renda_total'     => $user->renda_total,
+                'banco_principal' => $user->banco_principal ?? 'Nubank',
+                'chave_pix'       => $user->chave_pix ?? $user->email,
+                'created_at'      => $user->created_at,
+                'membro_desde'    => $user->created_at ? $user->created_at->translatedFormat('F \d\e Y') : 'novembro de 2026',
             ],
-            'lar' => $lar ? [
-                'id_lar'    => $lar->id_lar,
-                'nome'      => $lar->nome,
-                'criado_em' => $lar->created_at,
-            ] : null,
+            'is_casal' => ($lar !== null && $dadosLar && $dadosLar['parceiro'] !== null),
+            'lar'      => $dadosLar,
+            'versao'   => 'SEIVA v2.0 (2º Semestre 2026)',
         ]);
     }
 
@@ -39,24 +85,120 @@ class LgpdController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'nome' => 'required|string|max:255',
-            'telefone' => 'nullable|string|max:20',
-            'tipo_renda' => 'nullable|in:clt,pj,autonomo,outro',
-            'renda_mensal' => 'nullable|numeric|min:0',
-            'renda_extra' => 'nullable|numeric|min:0',
+            'nome'            => 'required|string|max:255',
+            'email'           => 'nullable|email|max:255',
+            'telefone'        => 'nullable|string|max:20',
+            'tipo_renda'      => 'nullable|in:clt,pj,autonomo,outro',
+            'renda_mensal'    => 'nullable|numeric|min:0',
+            'renda_extra'     => 'nullable|numeric|min:0',
             'banco_principal' => 'nullable|string|max:100',
-            'chave_pix' => 'nullable|string|max:100',
+            'chave_pix'       => 'nullable|string|max:100',
+            'avatar'          => 'nullable|string|max:255',
             'pin_caixa_preta' => 'nullable|string|max:10',
         ]);
 
-        $user->update($request->only([
+        $dados = $request->only([
             'nome', 'telefone', 'tipo_renda', 'renda_mensal',
-            'renda_extra', 'banco_principal', 'chave_pix', 'pin_caixa_preta'
-        ]));
+            'renda_extra', 'banco_principal', 'chave_pix', 'avatar', 'pin_caixa_preta'
+        ]);
+
+        if ($request->filled('email') && $request->email !== $user->email) {
+            $request->validate(['email' => 'unique:usuarios,email,' . $user->id_usuario . ',id_usuario']);
+            $dados['email'] = $request->email;
+        }
+
+        $user->update($dados);
+
+        \App\Models\HistoricoAuditoria::registrar(
+            $user->id_usuario,
+            'usuario',
+            $user->id_usuario,
+            'edicao_perfil',
+            "Perfil atualizado: Nome, contato ou chave PIX redefinidos com sucesso.",
+            ['nome' => $user->nome, 'email' => $user->email, 'chave_pix' => $user->chave_pix],
+            null,
+            null
+        );
 
         return response()->json([
+            'sucesso' => true,
             'message' => 'Perfil atualizado com sucesso!',
             'usuario' => $user->fresh(),
+        ]);
+    }
+
+    public function atualizarDivisaoLar(Request $request)
+    {
+        $user = Auth::user();
+        $lar = $user->lares()->first();
+        if (!$lar) {
+            return response()->json(['error' => 'Você não pertence a um Lar compartilhado.'], 400);
+        }
+
+        $request->validate([
+            'tipo' => 'required|in:igualitaria,proporcional,customizada',
+            'pct_usuario' => 'nullable|numeric|between:0,100',
+            'pct_parceiro' => 'nullable|numeric|between:0,100',
+        ]);
+
+        $tipo = $request->tipo;
+        $parceiro = $lar->membros()->where('usuarios.id_usuario', '!=', $user->id_usuario)->first();
+
+        // Desativa regras anteriores
+        \App\Models\RegraDivisao::where('lar_id', $lar->id_lar)->update(['ativa' => false]);
+
+        $regra = \App\Models\RegraDivisao::create([
+            'lar_id' => $lar->id_lar,
+            'tipo' => $tipo,
+            'ativa' => true,
+        ]);
+
+        $pctUser = 50.0;
+        $pctParc = 50.0;
+        if ($tipo === 'customizada') {
+            $pctUser = (float)($request->pct_usuario ?? 50.0);
+            $pctParc = (float)($request->pct_parceiro ?? (100.0 - $pctUser));
+        } elseif ($tipo === 'proporcional' && $parceiro) {
+            $rendaUser = (float)$user->renda_mensal ?: 4000;
+            $rendaParc = (float)$parceiro->renda_mensal ?: 6000;
+            $total = max(1, $rendaUser + $rendaParc);
+            $pctUser = round(($rendaUser / $total) * 100, 1);
+            $pctParc = round(100 - $pctUser, 1);
+        }
+
+        \App\Models\RegraDivisaoDetalhe::create([
+            'regra_id' => $regra->id_regra_divisao,
+            'usuario_id' => $user->id_usuario,
+            'percentual' => $pctUser,
+        ]);
+
+        if ($parceiro) {
+            \App\Models\RegraDivisaoDetalhe::create([
+                'regra_id' => $regra->id_regra_divisao,
+                'usuario_id' => $parceiro->id_usuario,
+                'percentual' => $pctParc,
+            ]);
+        }
+
+        \App\Models\HistoricoAuditoria::registrar(
+            $user->id_usuario,
+            'lar',
+            $lar->id_lar,
+            'regra_divisao_atualizada',
+            "Regra de divisão do lar atualizada para " . ($tipo === 'customizada' ? "Personalizada ({$pctUser}% / {$pctParc}%)" : ($tipo === 'proporcional' ? "Proporcional à renda ({$pctUser}% / {$pctParc}%)" : "50% / 50%")),
+            ['tipo' => $tipo, 'pct_usuario' => $pctUser, 'pct_parceiro' => $pctParc],
+            null,
+            $lar->id_lar
+        );
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => "Divisão do Lar atualizada com sucesso para {$pctUser}% / {$pctParc}%!",
+            'regra' => [
+                'tipo' => $tipo,
+                'pct_usuario' => $pctUser,
+                'pct_parceiro' => $pctParc,
+            ]
         ]);
     }
 

@@ -123,10 +123,79 @@ class AcordoController extends Controller
             ],
         ];
 
+        // Carrega propostas criadas dinamicamente no banco
+        $dbNegociacoes = [];
+        foreach ($propostasDb->where('status', 'pendente') as $p) {
+            // Evita duplicar mock fixo se existir
+            if (in_array($p->id_proposta, [101, 102])) continue;
+            $isMeta = in_array($p->tipo, ['meta', 'poupar_juntos']);
+            $mensalCada = (float)($p->valor_mes_por_pessoa > 0 ? $p->valor_mes_por_pessoa : ($p->valor_total > 0 ? $p->valor_total / 4 : 0));
+            $dbNegociacoes[] = [
+                'id_proposta' => $p->id_proposta,
+                'titulo' => $p->titulo,
+                'tipo' => $isMeta ? 'poupar_juntos' : 'divida_dividida',
+                'tipo_label' => $isMeta ? 'Poupar juntos' : 'Dívida dividida',
+                'autor_nome' => $p->autor ? $p->autor->name : 'Você',
+                'tempo_atras' => $p->created_at ? $p->created_at->diffForHumans() : 'recente',
+                'link' => $p->link ?? '',
+                'imagem' => $p->imagem ?? ($isMeta ? 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=200&auto=format&fit=crop&q=80' : 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=200&auto=format&fit=crop&q=80'),
+                'valor_total' => (float)$p->valor_total,
+                'valor_mensal_cada' => $mensalCada,
+                'prazo_texto' => '~4 meses para juntar',
+                'mensagem' => $p->descricao ?: ($p->mensagem ?: "Proposta: {$p->titulo}"),
+                'ian_proposta' => 'R$ ' . number_format($mensalCada > 0 ? $mensalCada : $p->valor_total / 2, 2, ',', '.') . '/mês',
+                'divisao' => $p->divisao ?: '50/50',
+                'status' => 'pendente',
+            ];
+        }
+
+        // Filtra propostas fixas caso tenham sido aceitas ou recusadas no banco
+        $negociacoesFinais = array_merge($dbNegociacoes, array_filter($negociacoesEmAberto, function($item) use ($propostasDb) {
+            $votada = $propostasDb->where('titulo', $item['titulo'])->whereIn('status', ['aceita', 'recusada'])->first();
+            return !$votada;
+        }));
+
+        // Adiciona acordos ativos do banco
+        foreach ($acordosDb->where('status', 'ativo') as $ac) {
+            if (in_array($ac->id_acordo, [301, 302, 401])) continue;
+            $isMeta = in_array($ac->tipo, ['meta', 'poupar_juntos']);
+            if ($isMeta) {
+                $poupandoJuntos[] = [
+                    'id_acordo' => $ac->id_acordo,
+                    'titulo' => $ac->titulo,
+                    'imagem' => $ac->imagem ?: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=80',
+                    'valor_total' => (float)$ac->valor_total,
+                    'valor_mensal_juntos' => (float)($ac->valor_mensal ?: 400),
+                    'valor_guardado' => (float)$ac->valor_arrecadado,
+                    'progresso_pct' => $ac->progresso,
+                    'maria_mes' => (float)($ac->valor_mensal ? $ac->valor_mensal / 2 : 200),
+                    'ian_mes' => (float)($ac->valor_mensal ? $ac->valor_mensal / 2 : 200),
+                    'divisao_rotulo' => "Divisão " . ($ac->divisao ?: '50/50'),
+                    'lembrete_rotulo' => 'Lembrete flexível · todo dia 10',
+                    'destino_rotulo' => $ac->conta_destino ?: 'Poupança Caixa (conjunta)',
+                    'banner_info' => 'Meta compartilhada acordada na Mesa de Acordos.',
+                    'cobrador_rotulo' => 'Lembrete gentil todo mês.',
+                    'badge' => 'Acordo ativo',
+                    'expandido' => false,
+                ];
+            } else {
+                $dividasDivididas[] = [
+                    'id_acordo' => $ac->id_acordo,
+                    'titulo' => $ac->titulo,
+                    'valor_total' => (float)$ac->valor_total,
+                    'valor_mensal_juntos' => (float)($ac->valor_mensal ?: 500),
+                    'parcelas_pagas' => $ac->parcelas_pagas ?: 0,
+                    'parcelas_total' => $ac->parcelas_total ?: 8,
+                    'parcelas_rotulo' => ($ac->parcelas_pagas ?: 0) . '/' . ($ac->parcelas_total ?: 8) . ' pagas',
+                    'status' => 'ativo',
+                ];
+            }
+        }
+
         return response()->json([
             'acordos' => $acordosDb,
             'propostas' => $propostasDb,
-            'negociacoes_em_aberto' => $negociacoesEmAberto,
+            'negociacoes_em_aberto' => array_values($negociacoesFinais),
             'poupando_juntos' => $poupandoJuntos,
             'dividas_divididas' => $dividasDivididas,
         ]);
@@ -175,11 +244,13 @@ class AcordoController extends Controller
             'titulo' => 'required|string|max:255',
             'valor' => 'nullable|numeric',
             'valor_total' => 'nullable|numeric',
+            'valor_mensal' => 'nullable|numeric',
             'tipo' => 'nullable|string',
             'proposta_texto' => 'nullable|string',
             'descricao' => 'nullable|string',
             'divisao' => 'nullable|string',
             'divisao_sugerida' => 'nullable|string',
+            'link_produto' => 'nullable|string',
         ]);
 
         $user = Auth::user();
@@ -189,6 +260,8 @@ class AcordoController extends Controller
         $descricao = $request->descricao ?? $request->proposta_texto ?? '';
         $divisao = $request->divisao ?? $request->divisao_sugerida ?? '50/50';
         $tipo = in_array($request->tipo, ['poupar_juntos', 'meta']) ? 'meta' : 'divida';
+        $valorMensal = $request->valor_mensal ?? ($valorTotal > 0 ? $valorTotal / 4 : 0);
+        $link = $request->link_produto ?? $request->link;
 
         $proposta = Proposta::create([
             'lar_id' => $lar->id_lar,
@@ -199,8 +272,24 @@ class AcordoController extends Controller
             'mensagem' => $descricao,
             'valor_total' => $valorTotal,
             'divisao' => $divisao,
+            'valor_mes_por_pessoa' => $valorMensal,
+            'link' => $link,
             'status' => 'pendente',
         ]);
+
+        // Gera notificação diplomática para o parceiro no lar
+        $parceiro = $lar->membros()->where('usuarios.id_usuario', '!=', $user->id_usuario)->first();
+        if ($parceiro) {
+            \App\Models\Notificacao::create([
+                'usuario_id' => $parceiro->id_usuario,
+                'lar_id' => $lar->id_lar,
+                'titulo' => 'Nova proposta na Mesa de Acordos',
+                'mensagem' => "{$user->nome} propôs: {$request->titulo} (Divisão {$divisao})",
+                'tipo' => 'lar',
+                'lida' => false,
+                'tempo' => 'Agora',
+            ]);
+        }
 
         return response()->json([
             'sucesso' => true,

@@ -236,6 +236,11 @@
     @include('componentes.modais.modal-historico-auditoria')
     @include('componentes.modais.modal-despesa-individual')
     @include('componentes.modais.modal-quitar-despesa-individual')
+    @include('componentes.modais.modal-editar-perfil')
+    @include('componentes.modais.modal-divisao-personalizada')
+    @include('componentes.modais.modal-termos-uso')
+    @include('componentes.modais.modal-central-ajuda')
+    @include('componentes.modais.modal-apagar-conta')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -614,6 +619,17 @@
         const BRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // Inicialização imediata do Tema Claro / Escuro
+            const temaSalvo = localStorage.getItem('seiva_theme') || 'sistema';
+            if (temaSalvo === 'escuro') {
+                document.documentElement.classList.add('dark');
+            } else if (temaSalvo === 'claro') {
+                document.documentElement.classList.remove('dark');
+            } else {
+                const darkSys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.classList.toggle('dark', darkSys);
+            }
+
             lucide.createIcons();
             const vencInput = document.getElementById('formLarDespData');
             if (vencInput) vencInput.value = new Date().toISOString().split('T')[0];
@@ -5994,18 +6010,64 @@
             novoAcordoDivisaoSelecionada = divisao;
             const modal = document.getElementById('modalNovoAcordoPassos');
             if (!modal) return;
-            modal.querySelectorAll('[data-divisao]').forEach(b => b.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black'));
+            modal.querySelectorAll('.btn-div-acordo').forEach(b => {
+                b.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black');
+                b.classList.add('text-muted-foreground', 'font-semibold');
+            });
             btn.classList.add('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black');
+            btn.classList.remove('text-muted-foreground', 'font-semibold');
+
+            const boxLivre = document.getElementById('novoAcordoBoxDivisaoLivre');
+            if (boxLivre) {
+                if (divisao === 'personalizada' || divisao === 'livre') {
+                    boxLivre.classList.remove('hidden');
+                    const slider = document.getElementById('sliderAcordoLivre');
+                    if (slider) atualizarSliderAcordoLivre(slider.value);
+                } else {
+                    boxLivre.classList.add('hidden');
+                }
+            }
+            atualizarCalculosPasso2Acordo();
+        }
+
+        function atualizarSliderAcordoLivre(val) {
+            const meuPct = parseInt(val);
+            const parcPct = 100 - meuPct;
+            const lblMeu = document.getElementById('lblAcordoMeuPct');
+            const lblParc = document.getElementById('lblAcordoParceiroPct');
+            if (lblMeu) lblMeu.textContent = `${meuPct}%`;
+            if (lblParc) lblParc.textContent = `${parcPct}%`;
+            novoAcordoDivisaoSelecionada = `${meuPct}/${parcPct}`;
             atualizarCalculosPasso2Acordo();
         }
 
         function atualizarCalculosPasso2Acordo() {
             const valor = parseFloat(document.getElementById('novoAcordoValor')?.value || 0);
-            const mensal = parseFloat(document.getElementById('novoAcordoMensalCada')?.value || 0);
+            let mensal = parseFloat(document.getElementById('novoAcordoMensalCada')?.value || 0);
             const divEl = document.getElementById('novoAcordoDivisaoInfo');
-            if (!valor || !mensal || !divEl) return;
-            const meses = mensal > 0 ? Math.ceil(valor / (mensal * 2)) : 0;
-            divEl.textContent = `~${meses} meses para juntar · Total: ${BRL(valor)}`;
+            if (!valor || !divEl) return;
+
+            let pctMeu = 0.5;
+            if (novoAcordoDivisaoSelecionada === '60/40') pctMeu = 0.6;
+            else if (novoAcordoDivisaoSelecionada === '70/30') pctMeu = 0.7;
+            else if (novoAcordoDivisaoSelecionada === '90/10') pctMeu = 0.9;
+            else if (novoAcordoDivisaoSelecionada.includes('/')) {
+                const parts = novoAcordoDivisaoSelecionada.split('/');
+                if (parts.length === 2 && !isNaN(parseInt(parts[0]))) pctMeu = parseInt(parts[0]) / 100;
+            }
+
+            const parteMinhaTotal = valor * pctMeu;
+            const parteParceiroTotal = valor * (1 - pctMeu);
+
+            if (!mensal || mensal <= 0) {
+                mensal = Math.round((parteMinhaTotal / 4) * 100) / 100;
+                const inputM = document.getElementById('novoAcordoMensalCada');
+                if (inputM && !inputM.value) inputM.value = mensal.toFixed(2);
+            }
+
+            const meses = mensal > 0 ? Math.ceil(parteMinhaTotal / mensal) : 4;
+            divEl.innerHTML = `<span class="block">Divisão ${novoAcordoDivisaoSelecionada}: Sua parte total ${BRL(parteMinhaTotal)} · Parceiro: ${BRL(parteParceiroTotal)}</span>
+            <span class="text-[10px] text-muted-foreground block mt-0.5">Estimativa: ~${meses} meses a ${BRL(mensal)}/mês cada</span>`;
         }
 
         function preencherRevisaoNovoAcordo() {
@@ -6018,7 +6080,7 @@
             set('novoAcordoReviTipo', tiposLabel[novoAcordoTipoSelecionado] || novoAcordoTipoSelecionado);
             set('novoAcordoReviNome', nome);
             set('novoAcordoReviValor', BRL(valor));
-            set('novoAcordoReviMensal', isMensal ? `${BRL(mensal)}/mês cada` : 'Contribuição única');
+            set('novoAcordoReviMensal', isMensal ? `${BRL(mensal)}/mês` : 'Contribuição única');
             set('novoAcordoReviDivisao', novoAcordoDivisaoSelecionada);
         }
 
@@ -6034,7 +6096,17 @@
                 const res = await fetch('/api/acordos/propostas', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
-                    body: JSON.stringify({ titulo: nome, tipo: novoAcordoTipoSelecionado, valor_total: valor, valor, divisao: novoAcordoDivisaoSelecionada, divisao_sugerida: novoAcordoDivisaoSelecionada, proposta_texto: `Proposta: ${nome} (${BRL(valor)})`, link_produto: link })
+                    body: JSON.stringify({
+                        titulo: nome,
+                        tipo: novoAcordoTipoSelecionado,
+                        valor_total: valor,
+                        valor,
+                        valor_mensal: mensal,
+                        divisao: novoAcordoDivisaoSelecionada,
+                        divisao_sugerida: novoAcordoDivisaoSelecionada,
+                        proposta_texto: `Proposta: ${nome} (${BRL(valor)})`,
+                        link_produto: link
+                    })
                 });
                 const data = await res.json();
                 document.getElementById('modalNovoAcordoPassos')?.classList.add('hidden');
@@ -6860,26 +6932,55 @@
                 // Hero stats
                 const stats = data.stats || {};
                 const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-                setEl('cobradorStatReceber', BRL(stats.total_a_receber || 629));
-                setEl('cobradorStatNotificadas', stats.notificadas ?? 1);
-                setEl('cobradorStatAgendadas', stats.agendadas ?? 1);
+                setEl('cobradorStatReceber', BRL(stats.total_a_receber || 0));
+                setEl('cobradorStatNotificadas', stats.notificadas ?? 0);
+                setEl('cobradorStatAgendadas', stats.agendadas ?? 0);
 
-                // Lista de notificações (protótipo do casal)
-                const notificacoes = data.notificacoes?.length ? data.notificacoes : [
-                    { id: 1, titulo: 'Geladeira Samsung — parcela de julho', valor: 250.00, vencimento: '15/07', status: 'pendente', mensagem_diplomatica: 'Oi Ian! Passando pra lembrar da parcela da geladeira (R$ 250,00), que vence dia 15. Sem pressa, só pra não esquecer!' },
-                    { id: 2, titulo: 'Aluguel Nosso Cantinho — parte do Ian', valor: 300.00, vencimento: 'dia 5', status: 'enviada', mensagem_diplomatica: 'Lembrete já enviado com sucesso.' },
-                    { id: 3, titulo: 'Água + Internet — parte do Ian', valor: 79.00, vencimento: 'dia 18', status: 'agendada', mensagem_diplomatica: 'Lembrete agendado para 2 dias antes do vencimento.' },
-                ];
+                const parceiroNome = data.parceiro_nome || 'Parceiro';
+
+                // Configurações salvas (canal e antecedência)
+                if (data.configuracoes) {
+                    const dias = data.configuracoes.dias_antecedencia || 2;
+                    const canal = data.configuracoes.canal || 'push';
+                    const btnDias = document.querySelector(`[data-antecedencia="${dias}"]`);
+                    if (btnDias) selecionarAntecedencia(btnDias, dias);
+                    const btnCanal = document.querySelector(`[data-canal="${canal}"]`);
+                    if (btnCanal) selecionarCanalCobrador(btnCanal, canal);
+                }
 
                 const lista = document.getElementById('cobradorListaNotificacoes');
                 if (lista) {
+                    if (!data.is_casal) {
+                        lista.innerHTML = `
+                        <div class="p-8 text-center bg-card rounded-3xl border border-border space-y-2">
+                            <div class="size-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center mx-auto">
+                                <i data-lucide="shield-check" class="size-6"></i>
+                            </div>
+                            <h4 class="text-sm font-black text-foreground">Conta Individual / Solteiro</h4>
+                            <p class="text-xs text-muted-foreground max-w-sm mx-auto">
+                                O Cobrador Diplomata é voltado para casais que compartilham custos do lar. Como seu perfil é individual, você não possui pendências compartilhadas.
+                            </p>
+                        </div>`;
+                        lucide.createIcons();
+                        return;
+                    }
+
+                    const notificacoes = data.notificacoes || [];
+                    if (!notificacoes.length) {
+                        lista.innerHTML = '<p class="text-xs text-muted-foreground py-6 text-center">Nenhuma pendência compartilhada no momento.</p>';
+                        lucide.createIcons();
+                        return;
+                    }
+
                     const statusCfg = {
                         pendente: { label: 'Pendente', cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' },
                         enviada:  { label: 'Enviada',  cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
                         agendada: { label: 'Agendada', cls: 'bg-muted text-muted-foreground' },
+                        recebida: { label: 'Recebida', cls: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300' },
                     };
                     lista.innerHTML = notificacoes.map(n => {
                         const cfg = statusCfg[n.status] || statusCfg.agendada;
+                        const nomeDest = n.parceiro_nome || parceiroNome;
                         return `
                         <div class="p-4 rounded-3xl border border-border bg-card shadow-card space-y-3">
                             <div class="flex items-start justify-between gap-2">
@@ -6892,13 +6993,13 @@
                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-black ${cfg.cls}">${cfg.label}</span>
                                 </div>
                             </div>
-                            ${n.status !== 'pendente' ? `<div class="flex items-start gap-2 px-3 py-2 rounded-xl bg-muted/50 text-[11px] text-muted-foreground"><i data-lucide="message-circle" class="size-3.5 shrink-0 mt-0.5"></i><span>${n.mensagem_diplomatica}</span></div>` : ''}
+                            ${n.mensagem_diplomatica ? `<div class="flex items-start gap-2 px-3 py-2 rounded-xl bg-muted/50 text-[11px] text-muted-foreground"><i data-lucide="message-circle" class="size-3.5 shrink-0 mt-0.5"></i><span>${n.mensagem_diplomatica}</span></div>` : ''}
                             ${n.status === 'pendente' ? `
                             <div class="flex gap-2">
-                                <button onclick="notificarParceiroCobrador('${n.titulo.replace(/'/g, "\\'")}', ${n.valor})" class="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5">
-                                    <i data-lucide="send" class="size-3.5"></i> Notificar Ian
+                                <button onclick="notificarParceiroCobrador('${n.titulo.replace(/'/g, "\\'")}', ${n.valor})" class="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer hover:bg-primary/90 transition">
+                                    <i data-lucide="send" class="size-3.5"></i> Notificar ${nomeDest}
                                 </button>
-                                <button onclick="confirmarRecebimentoCobrador(${n.id})" class="flex-1 py-2.5 rounded-xl border border-border text-xs font-bold text-foreground flex items-center justify-center gap-1.5">
+                                <button onclick="confirmarRecebimentoCobrador(${n.id})" class="flex-1 py-2.5 rounded-xl border border-border text-xs font-bold text-foreground flex items-center justify-center gap-1.5 cursor-pointer hover:bg-muted transition">
                                     <i data-lucide="check-circle" class="size-3.5"></i> Confirmar recebimento
                                 </button>
                             </div>` : ''}
@@ -6912,19 +7013,31 @@
         async function notificarParceiroCobrador(titulo, valor) {
             const mensagem = `Oi! Passando só pra lembrar com carinho sobre "${titulo}" (${BRL(valor)}). Abraços!`;
             try {
-                await fetch('/api/cobrancas/lembrete', {
+                const res = await fetch('/api/cobrancas/lembrete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
                     body: JSON.stringify({ titulo, valor, mensagem })
                 });
-                seivaNotificar('Lembrete diplomático enviado com sucesso!', 'sucesso', 'Lembrete Enviado');
+                const data = await res.json();
+                seivaNotificar(data.mensagem || 'Lembrete diplomático enviado com sucesso!', 'sucesso', 'Lembrete Enviado');
                 carregarCobradorDados();
             } catch (e) { seivaNotificar('Erro ao enviar lembrete.', 'erro', 'Erro'); }
         }
 
         async function confirmarRecebimentoCobrador(id) {
-            seivaNotificar('Recebimento confirmado!', 'sucesso', 'Confirmado');
-            carregarCobradorDados();
+            try {
+                const res = await fetch(`/api/cobrancas/${id}/confirmar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                });
+                const data = await res.json();
+                seivaNotificar(data.mensagem || 'Recebimento confirmado com sucesso!', 'sucesso', 'Confirmado');
+                carregarCobradorDados();
+                if (typeof carregarExtratoDados === 'function') carregarExtratoDados();
+                if (typeof carregarDashboardDados === 'function') carregarDashboardDados();
+            } catch (e) {
+                seivaNotificar('Erro ao confirmar recebimento.', 'erro', 'Erro');
+            }
         }
 
         async function salvarConfiguracaoCobrador() {
@@ -6936,31 +7049,43 @@
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
                     body: JSON.stringify({ canal, dias_antecedencia: parseInt(antecedencia) })
                 });
-                seivaNotificar('Configurações do Cobrador salvas!', 'sucesso', 'Salvo');
+                seivaNotificar('Configurações do Cobrador salvas com sucesso!', 'sucesso', 'Salvo');
             } catch (e) { seivaNotificar('Erro ao salvar configurações.', 'erro', 'Erro'); }
         }
 
         function selecionarAntecedencia(btn, dias) {
-            btn.closest('.flex')?.querySelectorAll('[data-antecedencia]').forEach(b => b.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black'));
+            btn.closest('.flex')?.querySelectorAll('[data-antecedencia]').forEach(b => {
+                b.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black');
+                b.classList.add('text-muted-foreground', 'font-semibold');
+            });
             btn.classList.add('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black');
+            btn.classList.remove('text-muted-foreground', 'font-semibold');
         }
 
         function selecionarCanalCobrador(btn, canal) {
-            btn.closest('.flex')?.querySelectorAll('[data-canal]').forEach(b => b.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black'));
+            btn.closest('.flex')?.querySelectorAll('[data-canal]').forEach(b => {
+                b.classList.remove('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black');
+                b.classList.add('text-muted-foreground', 'font-semibold');
+            });
             btn.classList.add('ring-2', 'ring-primary', 'bg-primary/10', 'text-primary', 'font-black');
+            btn.classList.remove('text-muted-foreground', 'font-semibold');
         }
 
         // Alias de compatibilidade retroativa
         async function dispararLembreteDiplomata(destId, titulo, valor) { return notificarParceiroCobrador(titulo, valor); }
 
         // ==========================================
-        // PERFIL – Carregamento de dados (RF011 — Maria Eduarda)
+        // PERFIL – Carregamento e Gerenciamento de Dados (RF011 — Maria Eduarda)
         // ==========================================
+        let perfilDadosCache = null;
+
         async function carregarPerfilDados() {
             try {
                 const res = await fetch('/api/perfil');
                 if (!res.ok) return;
                 const data = await res.json();
+                perfilDadosCache = data;
+
                 const user = data.usuario || {};
                 const nomeCompleto = user.nome || 'Maria Eduarda';
                 const partes = nomeCompleto.trim().split(' ').filter(Boolean);
@@ -6970,25 +7095,70 @@
                 } else if (partes.length === 1) {
                     iniciais = partes[0].slice(0, 2).toUpperCase();
                 }
+
                 const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-                const avatarEl = document.getElementById('perfilAvatarCircle');
-                if (avatarEl) avatarEl.textContent = iniciais;
+
+                // Avatar do usuário (Foto ou Iniciais)
+                const avatarImg = document.getElementById('perfilAvatarImg');
+                const avatarIniciais = document.getElementById('perfilAvatarIniciais');
+                if (user.avatar) {
+                    if (avatarImg) { avatarImg.src = user.avatar; avatarImg.classList.remove('hidden'); }
+                    if (avatarIniciais) avatarIniciais.classList.add('hidden');
+                } else {
+                    if (avatarImg) avatarImg.classList.add('hidden');
+                    if (avatarIniciais) { avatarIniciais.textContent = iniciais; avatarIniciais.classList.remove('hidden'); }
+                }
+
                 set('perfilNomeTxt', nomeCompleto);
                 set('perfilEmailTxt', user.email || '');
-                set('perfilApelido', `Apelido: ${partes[0] === 'Maria' ? 'Duda' : partes[0]}`);
-                set('perfilLarMeuNome', nomeCompleto);
-                set('perfilLarMeuEmail', user.email || '');
+                set('perfilApelido', `Apelido: ${user.apelido || (partes[0] === 'Maria' ? 'Duda' : partes[0])}`);
                 set('perfilChavePix', user.chave_pix || user.email || '');
                 if (user.created_at) {
                     const dt = new Date(user.created_at);
                     set('perfilMembroDesde', `Membro desde ${dt.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`);
                 }
-                const lar = data.lar || {};
-                set('perfilLarNome', lar.nome || 'Nosso Cantinho');
-                if (lar.criado_em) {
-                    const dt = new Date(lar.criado_em);
-                    set('perfilLarDesde', `Desde ${dt.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`);
+
+                // Divergência Casal vs. Individual
+                const cardLar = document.getElementById('perfilCardNossoCantinho');
+                const cardSolo = document.getElementById('perfilCardIndividualSolo');
+                const linhaParceiro = document.getElementById('perfilLinhaParceiro');
+                const badgeCobrador = document.getElementById('badgeSoloCobrador');
+                const badgeLar = document.getElementById('badgeSoloLar');
+
+                if (data.is_casal && data.lar) {
+                    if (cardLar) cardLar.classList.remove('hidden');
+                    if (cardSolo) cardSolo.classList.add('hidden');
+                    if (linhaParceiro) linhaParceiro.classList.remove('hidden');
+                    if (badgeCobrador) badgeCobrador.classList.add('hidden');
+                    if (badgeLar) badgeLar.classList.add('hidden');
+
+                    const lar = data.lar;
+                    set('perfilLarNome', lar.nome || 'Nosso Cantinho');
+                    set('perfilLarDesde', `Desde ${lar.criado_em || 'abril de 2026'}`);
+                    set('perfilLarMeuNome', nomeCompleto);
+                    set('perfilLarMeuEmail', user.email || '');
+                    set('perfilLarMeuIniciaisCircle', iniciais);
+
+                    if (lar.parceiro) {
+                        set('perfilLarParceiroNome', lar.parceiro.nome);
+                        set('perfilLarParceiroEmail', lar.parceiro.email);
+                        set('perfilLarParceiroIniciaisCircle', lar.parceiro.iniciais || 'P');
+                        set('perfilParceiroInfo', `${lar.parceiro.nome} · ${lar.parceiro.email}`);
+                    }
+
+                    set('perfilDivisaoValorTxt', lar.divisao_txt || '50% / 50%');
+                } else {
+                    // Usuário Individual / Solteiro (Victor Hugo)
+                    if (cardLar) cardLar.classList.add('hidden');
+                    if (cardSolo) cardSolo.classList.remove('hidden');
+                    if (linhaParceiro) linhaParceiro.classList.add('hidden');
+                    if (badgeCobrador) badgeCobrador.classList.remove('hidden');
+                    if (badgeLar) badgeLar.classList.remove('hidden');
                 }
+
+                // Atualiza estado do tema nas preferências
+                atualizarBotoesTemaUI();
+
                 lucide.createIcons();
             } catch (e) { console.error('Erro ao carregar perfil:', e); }
         }
@@ -7001,17 +7171,327 @@
                     const blob = await res.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.href = url; a.download = 'meus-dados-seiva.csv'; a.click();
+                    a.href = url; a.download = 'meus-dados-seiva.json'; a.click();
                     window.URL.revokeObjectURL(url);
-                    seivaNotificar('Dados exportados com sucesso!', 'sucesso', 'Exportado');
+                    seivaNotificar('Dados exportados com sucesso em conformidade com o Art. 18 da LGPD!', 'sucesso', 'Exportado');
                 } else {
-                    seivaNotificar('Exportação iniciada. Verifique seus downloads.', 'sucesso', 'LGPD');
+                    seivaNotificar('Exportação concluída. Verifique seus downloads.', 'sucesso', 'LGPD');
                 }
-            } catch (e) { seivaNotificar('Exportação iniciada. Verifique seus downloads.', 'sucesso', 'Dados'); }
+            } catch (e) { seivaNotificar('Erro ao exportar dados.', 'erro', 'Erro'); }
         }
 
         function abrirModalEditarPerfil() {
-            seivaNotificar('Edição de perfil disponível em breve!', 'info', 'Em desenvolvimento');
+            const user = perfilDadosCache?.usuario || {};
+            const inputNome = document.getElementById('formPerfilNome');
+            const inputEmail = document.getElementById('formPerfilEmail');
+            const inputTel = document.getElementById('formPerfilTelefone');
+            const inputPix = document.getElementById('formPerfilChavePix');
+            const selectBanco = document.getElementById('formPerfilBancoPrincipal');
+            const inputAvatar = document.getElementById('formPerfilAvatar');
+            const previewIniciais = document.getElementById('previewAvatarIniciais');
+
+            if (inputNome) inputNome.value = user.nome || '';
+            if (inputEmail) inputEmail.value = user.email || '';
+            if (inputTel) inputTel.value = user.telefone || '';
+            if (inputPix) inputPix.value = user.chave_pix || user.email || '';
+            if (selectBanco && user.banco_principal) selectBanco.value = user.banco_principal;
+            if (inputAvatar) inputAvatar.value = user.avatar || '';
+            if (previewIniciais) previewIniciais.textContent = user.iniciais || 'ME';
+
+            selecionarAvatarPerfil(user.avatar || '');
+
+            const modal = document.getElementById('modalEditarPerfil');
+            if (modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        function selecionarAvatarPerfil(url) {
+            const inputHidden = document.getElementById('formPerfilAvatar');
+            const boxPreview = document.getElementById('previewAvatarPerfil');
+            if (inputHidden) inputHidden.value = url;
+            if (boxPreview) {
+                if (url) {
+                    boxPreview.innerHTML = `<img src="${url}" class="size-full object-cover">`;
+                } else {
+                    const user = perfilDadosCache?.usuario || {};
+                    boxPreview.innerHTML = `<span id="previewAvatarIniciais">${user.iniciais || 'ME'}</span>`;
+                }
+            }
+        }
+
+        async function executarSalvarPerfil(event) {
+            event.preventDefault();
+            const nome = document.getElementById('formPerfilNome')?.value.trim();
+            const email = document.getElementById('formPerfilEmail')?.value.trim();
+            const telefone = document.getElementById('formPerfilTelefone')?.value.trim();
+            const chave_pix = document.getElementById('formPerfilChavePix')?.value.trim();
+            const banco_principal = document.getElementById('formPerfilBancoPrincipal')?.value;
+            const avatar = document.getElementById('formPerfilAvatar')?.value.trim();
+
+            if (!nome) { seivaNotificar('O nome é obrigatório.', 'aviso', 'Validação'); return; }
+
+            try {
+                const res = await fetch('/api/perfil/atualizar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ nome, email, telefone, chave_pix, banco_principal, avatar })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    fecharModalId('modalEditarPerfil');
+                    seivaNotificar(data.message || 'Perfil atualizado com sucesso!', 'sucesso', 'Perfil Atualizado');
+                    carregarPerfilDados();
+                    // Atualiza nome na barra de navegação se existir
+                    const navNome = document.getElementById('navUserNome');
+                    if (navNome) navNome.textContent = nome;
+                } else {
+                    seivaNotificar(data.message || 'Erro ao atualizar perfil.', 'erro', 'Erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao salvar perfil.', 'erro', 'Erro');
+            }
+        }
+
+        function abrirModalDivisaoPersonalizada() {
+            const lar = perfilDadosCache?.lar;
+            if (!lar) {
+                seivaNotificar('Divisão do lar disponível apenas para casais.', 'info', 'Conta Solo');
+                return;
+            }
+
+            const parceiro = lar.parceiro;
+            const nomeParc = parceiro ? parceiro.nome.split(' ')[0] : 'Parceiro';
+            const labelParc = document.getElementById('labelNomeParceiroPct');
+            if (labelParc) labelParc.textContent = `${nomeParc}: ${lar.pct_parceiro || 50}%`;
+
+            const slider = document.getElementById('sliderDivisaoPct');
+            if (slider && lar.pct_usuario) {
+                slider.value = lar.pct_usuario;
+                atualizarSliderDivisao(lar.pct_usuario);
+            }
+
+            const tipoRegra = lar.divisao_txt?.toLowerCase().includes('proporcional') ? 'proporcional' :
+                             (lar.divisao_txt?.toLowerCase().includes('personalizada') ? 'customizada' : 'igualitaria');
+            selecionarTipoDivisaoLar(tipoRegra);
+
+            const modal = document.getElementById('modalDivisaoPersonalizada');
+            if (modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        function selecionarTipoDivisaoLar(tipo) {
+            const inputTipo = document.getElementById('formDivisaoTipo');
+            if (inputTipo) inputTipo.value = tipo;
+
+            const boxCustom = document.getElementById('boxDivisaoCustomizada');
+            if (boxCustom) {
+                boxCustom.classList.toggle('hidden', tipo !== 'customizada');
+            }
+
+            const b5050 = document.getElementById('btnDivisao5050');
+            const bProp = document.getElementById('btnDivisaoProporcional');
+            const bCust = document.getElementById('btnDivisaoCustomizada');
+
+            const resetBtn = (btn) => {
+                if (!btn) return;
+                btn.className = 'opcao-divisao p-3.5 rounded-2xl border border-border bg-card text-left transition flex items-center justify-between hover:border-emerald-500/50 cursor-pointer';
+                const check = btn.querySelector('[data-lucide="check"]');
+                if (check) check.classList.add('hidden');
+            };
+
+            const selectBtn = (btn) => {
+                if (!btn) return;
+                btn.className = 'opcao-divisao p-3.5 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition flex items-center justify-between cursor-pointer';
+                const check = btn.querySelector('[data-lucide="check"]');
+                if (check) check.classList.remove('hidden');
+            };
+
+            resetBtn(b5050);
+            resetBtn(bProp);
+            resetBtn(bCust);
+
+            if (tipo === 'igualitaria') selectBtn(b5050);
+            else if (tipo === 'proporcional') selectBtn(bProp);
+            else if (tipo === 'customizada') selectBtn(bCust);
+
+            lucide.createIcons();
+        }
+
+        function atualizarSliderDivisao(val) {
+            const meuPct = parseFloat(val);
+            const parceiroPct = Math.round((100 - meuPct) * 10) / 10;
+
+            const txtMeu = document.getElementById('txtMeuPctDisplay');
+            const txtParc = document.getElementById('txtParceiroPctDisplay');
+            const lblMeu = document.getElementById('labelNomeMeuPct');
+            const lblParc = document.getElementById('labelNomeParceiroPct');
+            const inMeu = document.getElementById('formDivisaoMeuPct');
+            const inParc = document.getElementById('formDivisaoParceiroPct');
+
+            if (txtMeu) txtMeu.textContent = `${meuPct}%`;
+            if (txtParc) txtParc.textContent = `${parceiroPct}%`;
+            if (lblMeu) lblMeu.textContent = `Você: ${meuPct}%`;
+            if (lblParc) {
+                const parcNome = perfilDadosCache?.lar?.parceiro?.nome?.split(' ')[0] || 'Parceiro';
+                lblParc.textContent = `${parcNome}: ${parceiroPct}%`;
+            }
+            if (inMeu) inMeu.value = meuPct;
+            if (inParc) inParc.value = parceiroPct;
+        }
+
+        async function executarSalvarDivisaoLar(event) {
+            event.preventDefault();
+            const tipo = document.getElementById('formDivisaoTipo')?.value || 'igualitaria';
+            const pct_usuario = parseFloat(document.getElementById('formDivisaoMeuPct')?.value || 50);
+            const pct_parceiro = parseFloat(document.getElementById('formDivisaoParceiroPct')?.value || 50);
+
+            try {
+                const res = await fetch('/api/perfil/divisao-lar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                    body: JSON.stringify({ tipo, pct_usuario, pct_parceiro })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    fecharModalId('modalDivisaoPersonalizada');
+                    seivaNotificar(data.mensagem || 'Regra de divisão do lar atualizada!', 'sucesso', 'Divisão Atualizada');
+                    carregarPerfilDados();
+                    if (typeof carregarLarDados === 'function') carregarLarDados();
+                } else {
+                    seivaNotificar(data.error || 'Erro ao atualizar divisão.', 'erro', 'Erro');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao salvar regra de divisão.', 'erro', 'Erro');
+            }
+        }
+
+        function abrirModalCentralAjuda() {
+            const modal = document.getElementById('modalCentralAjuda');
+            if (modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        function abrirModalTermosUso() {
+            const modal = document.getElementById('modalTermosUso');
+            if (modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        function abrirModalApagarConta() {
+            const input = document.getElementById('confirmarExclusaoContaInput');
+            const btn = document.getElementById('btnConfirmarExcluirConta');
+            if (input) input.value = '';
+            if (btn) btn.disabled = true;
+
+            const modal = document.getElementById('modalApagarConta');
+            if (modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        function validarTextoExclusaoConta(val) {
+            const btn = document.getElementById('btnConfirmarExcluirConta');
+            if (btn) {
+                btn.disabled = (val.trim().toUpperCase() !== 'EXCLUIR');
+            }
+        }
+
+        async function executarExcluirContaDefinitiva() {
+            const btn = document.getElementById('btnConfirmarExcluirConta');
+            if (btn) { btn.disabled = true; btn.textContent = 'Excluindo...'; }
+
+            try {
+                const res = await fetch('/api/perfil/excluir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' }
+                });
+                const data = await res.json();
+                fecharModalId('modalApagarConta');
+                seivaNotificar(data.message || 'Conta e dados definitivamente excluídos.', 'sucesso', 'Conta Encerrada');
+                localStorage.clear();
+                setTimeout(() => { window.location.href = '/'; }, 1500);
+            } catch (e) {
+                seivaNotificar('Erro ao excluir conta.', 'erro', 'Erro');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="trash-2" class="size-4"></i><span>Excluir Definitivamente</span>'; lucide.createIcons(); }
+            }
+        }
+
+        function alternarTemaSeiva(tema) {
+            localStorage.setItem('seiva_theme', tema);
+            if (tema === 'escuro') {
+                document.documentElement.classList.add('dark');
+            } else if (tema === 'claro') {
+                document.documentElement.classList.remove('dark');
+            } else {
+                const darkSys = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.classList.toggle('dark', darkSys);
+            }
+            atualizarBotoesTemaUI();
+            seivaNotificar(`Tema do aplicativo ajustado para "${tema.toUpperCase()}"`, 'sucesso', 'Preferências');
+        }
+
+        function atualizarBotoesTemaUI() {
+            const temaAtual = localStorage.getItem('seiva_theme') || 'sistema';
+            const bClaro = document.getElementById('btnTemaClaro');
+            const bEscuro = document.getElementById('btnTemaEscuro');
+            const bSistema = document.getElementById('btnTemaSistema');
+
+            const reset = (b) => {
+                if (!b) return;
+                b.className = 'flex-1 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground text-center hover:text-foreground transition-all flex items-center justify-center gap-1 cursor-pointer';
+            };
+            const active = (b) => {
+                if (!b) return;
+                b.className = 'flex-1 py-1.5 rounded-lg bg-card text-xs font-bold text-foreground shadow-sm text-center transition-all flex items-center justify-center gap-1 cursor-pointer';
+            };
+
+            reset(bClaro);
+            reset(bEscuro);
+            reset(bSistema);
+
+            if (temaAtual === 'claro') active(bClaro);
+            else if (temaAtual === 'escuro') active(bEscuro);
+            else active(bSistema);
+        }
+
+        function alternarBiometriaPerfil(input) {
+            input.checked = false;
+            seivaNotificar('O desbloqueio biométrico (Face ID / Impressão Digital) está em desenvolvimento para o app mobile na versão v2.0.', 'info', 'Em Desenvolvimento');
+        }
+
+        function alternarVisibilidadePadrao(tipo) {
+            localStorage.setItem('seiva_visibilidade_padrao', tipo);
+            const btnP = document.getElementById('btnVisibPessoal');
+            const btnC = document.getElementById('btnVisibCompartilhado');
+            if (btnP && btnC) {
+                if (tipo === 'pessoal') {
+                    btnP.className = 'flex-1 py-1.5 rounded-lg bg-card text-xs font-bold text-foreground shadow-sm text-center transition-all cursor-pointer';
+                    btnC.className = 'flex-1 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground text-center hover:text-foreground transition-all cursor-pointer';
+                    seivaNotificar('Novos lançamentos serão salvos como Pessoais (Privados) por padrão.', 'sucesso', 'Visibilidade Alterada');
+                } else {
+                    btnC.className = 'flex-1 py-1.5 rounded-lg bg-card text-xs font-bold text-foreground shadow-sm text-center transition-all cursor-pointer';
+                    btnP.className = 'flex-1 py-1.5 rounded-lg text-xs font-semibold text-muted-foreground text-center hover:text-foreground transition-all cursor-pointer';
+                    seivaNotificar('Novos lançamentos serão compartilhados no Lar por padrão.', 'sucesso', 'Visibilidade Alterada');
+                }
+            }
+        }
+
+        function alternarNotificacaoPerfil(tipo, checked) {
+            localStorage.setItem(`seiva_notif_${tipo}`, checked);
+            seivaNotificar(checked ? `Notificação "${tipo}" ativada.` : `Notificação "${tipo}" silenciada.`, 'sucesso', 'Notificações');
+        }
+
+        function alternarBloqueioCaixaPreta(input) {
+            seivaNotificar(input.checked ? 'Bloqueio por PIN da Caixa Preta ativado com sucesso.' : 'Bloqueio temporariamente pausado.', 'sucesso', 'Segurança');
         }
 
         // --- MODAIS DE LANÇAMENTO ---

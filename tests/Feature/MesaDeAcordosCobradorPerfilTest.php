@@ -168,6 +168,106 @@ class MesaDeAcordosCobradorPerfilTest extends TestCase
         $res->assertStatus(200);
         $res->assertJsonPath('usuario.nome', 'Maria Eduarda');
         $res->assertJsonPath('usuario.email', 'duda@seiva.com');
+        $res->assertJsonPath('is_casal', true);
         $res->assertJsonPath('lar.nome', 'Nosso Cantinho');
+    }
+
+    public function test_usuario_individual_nao_eh_casal_no_perfil(): void
+    {
+        $victor = Usuario::create([
+            'nome' => 'Victor Hugo',
+            'email' => 'victor@seiva.com',
+            'senha_hash' => bcrypt('123456'),
+            'renda_mensal' => 5200.00,
+        ]);
+
+        $res = $this->actingAs($victor)->getJson('/api/perfil');
+        $res->assertStatus(200);
+        $res->assertJsonPath('is_casal', false);
+        $res->assertJsonPath('lar', null);
+    }
+
+    public function test_criar_proposta_acordo_gera_notificacao_ao_parceiro(): void
+    {
+        [$duda, $ian, $lar] = $this->criarCasalComLar();
+
+        $res = $this->actingAs($ian)->postJson('/api/acordos/propostas', [
+            'titulo' => 'Sofá Retrátil Novo',
+            'tipo' => 'poupar_juntos',
+            'valor_total' => 2400.00,
+            'valor_mensal' => 300.00,
+            'divisao' => '90/10',
+            'link_produto' => 'https://mercadolivre.com.br/sofa',
+        ]);
+
+        $res->assertStatus(201);
+        $this->assertDatabaseHas('propostas', [
+            'lar_id' => $lar->id_lar,
+            'titulo' => 'Sofá Retrátil Novo',
+            'divisao' => '90/10',
+            'status' => 'pendente',
+        ]);
+
+        // Parceira Maria Eduarda recebe notificação no sino
+        $this->assertDatabaseHas('notificacoes', [
+            'usuario_id' => $duda->id_usuario,
+            'tipo' => 'lar',
+        ]);
+    }
+
+    public function test_confirmar_recebimento_cobrador_liquida_pendencia_e_notifica(): void
+    {
+        [$duda, $ian, $lar] = $this->criarCasalComLar();
+
+        $cobranca = \App\Models\Cobranca::create([
+            'lar_id' => $lar->id_lar,
+            'criada_por' => $duda->id_usuario,
+            'destinatario_id' => $ian->id_usuario,
+            'titulo' => 'Reembolso Mercado Semanal',
+            'valor' => 150.00,
+            'estado' => 'pendente',
+        ]);
+
+        $res = $this->actingAs($duda)->postJson("/api/cobrancas/{$cobranca->id_cobranca}/confirmar");
+        $res->assertStatus(200);
+        $res->assertJsonPath('sucesso', true);
+
+        $this->assertEquals('confirmada', $cobranca->fresh()->estado);
+
+        // Gera notificação de agradecimento para o Ian
+        $this->assertDatabaseHas('notificacoes', [
+            'usuario_id' => $ian->id_usuario,
+            'tipo' => 'lar',
+        ]);
+    }
+
+    public function test_atualizar_perfil_e_divisao_customizada_lar(): void
+    {
+        [$duda, $ian, $lar] = $this->criarCasalComLar();
+
+        // 1. Atualizar perfil
+        $resPerfil = $this->actingAs($duda)->postJson('/api/perfil/atualizar', [
+            'nome' => 'Maria Eduarda Silva',
+            'telefone' => '(11) 99999-8888',
+            'chave_pix' => 'duda.pix@seiva.app',
+            'banco_principal' => 'Inter',
+        ]);
+        $resPerfil->assertStatus(200);
+        $this->assertDatabaseHas('usuarios', [
+            'id_usuario' => $duda->id_usuario,
+            'nome' => 'Maria Eduarda Silva',
+            'chave_pix' => 'duda.pix@seiva.app',
+            'banco_principal' => 'Inter',
+        ]);
+
+        // 2. Divisão personalizada 90%/10%
+        $resDiv = $this->actingAs($duda)->postJson('/api/perfil/divisao-lar', [
+            'tipo' => 'customizada',
+            'pct_usuario' => 90,
+            'pct_parceiro' => 10,
+        ]);
+        $resDiv->assertStatus(200);
+        $resDiv->assertJsonPath('regra.pct_usuario', 90);
+        $resDiv->assertJsonPath('regra.pct_parceiro', 10);
     }
 }

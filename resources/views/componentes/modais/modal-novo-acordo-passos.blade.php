@@ -122,33 +122,19 @@
                     </div>
                 </div>
 
-                <!-- De quem é essa meta? -->
+                <!-- Finalidade na Mesa de Acordos -->
                 <div class="space-y-2">
-                    <label class="text-xs font-black text-foreground">De quem é essa meta?</label>
+                    <label class="text-xs font-black text-foreground">Finalidade da proposta</label>
                     <div class="space-y-2">
-                        <label class="flex items-center gap-3 p-3.5 rounded-2xl border border-primary bg-primary/5 cursor-pointer">
-                            <div class="size-5 rounded-full border-2 border-primary bg-primary flex items-center justify-center shrink-0">
-                                <i data-lucide="check" class="size-3 text-primary-foreground"></i>
+                        <div class="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20">
+                            <div class="size-5 rounded-full border-2 border-emerald-600 bg-emerald-600 flex items-center justify-center shrink-0">
+                                <i data-lucide="check" class="size-3 text-white"></i>
                             </div>
                             <div>
-                                <p class="text-xs font-black text-foreground">Só minha</p>
-                                <p class="text-[10px] text-muted-foreground">Objetivo pessoal, eu banco sozinha</p>
+                                <p class="text-xs font-black text-foreground">Compartilhada com o parceiro</p>
+                                <p class="text-[10px] text-muted-foreground">Objetivo mútuo construído a dois na Mesa de Acordos</p>
                             </div>
-                        </label>
-                        <label class="flex items-center gap-3 p-3.5 rounded-2xl border border-border cursor-pointer hover:border-primary/40 transition-colors">
-                            <div class="size-5 rounded-full border-2 border-border shrink-0"></div>
-                            <div>
-                                <p class="text-xs font-black text-foreground">Do Lar, pago sozinha</p>
-                                <p class="text-[10px] text-muted-foreground">É para a casa, mas eu assumo o valor</p>
-                            </div>
-                        </label>
-                        <label class="flex items-center gap-3 p-3.5 rounded-2xl border border-border cursor-pointer hover:border-primary/40 transition-colors">
-                            <div class="size-5 rounded-full border-2 border-border shrink-0"></div>
-                            <div>
-                                <p class="text-xs font-black text-foreground">Compartilhada</p>
-                                <p class="text-[10px] text-muted-foreground">Para atingir juntos — cada um contribui</p>
-                            </div>
-                        </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -159,39 +145,59 @@
                 <!-- Como dividir -->
                 <div class="space-y-2">
                     <label class="text-xs font-black text-foreground">Como dividir?</label>
-                    <div class="flex gap-2 flex-wrap">
+                    <div class="grid grid-cols-3 gap-2">
                         <button type="button" data-divisao="50/50"
                                 onclick="selecionarDivisaoNovoAcordo('50/50', this)"
-                                class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground transition-all ring-2 ring-primary bg-primary/10 text-primary font-black">
+                                class="btn-div-acordo px-2.5 py-2 rounded-xl border border-border text-xs font-black transition-all ring-2 ring-primary bg-primary/10 text-primary">
                             50/50
+                        </button>
+                        <button type="button" data-divisao="proporcional"
+                                onclick="selecionarDivisaoNovoAcordo('proporcional', this)"
+                                class="btn-div-acordo px-2.5 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground transition-all hover:border-primary/40">
+                            Proporcional
                         </button>
                         <button type="button" data-divisao="60/40"
                                 onclick="selecionarDivisaoNovoAcordo('60/40', this)"
-                                class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground transition-all">
+                                class="btn-div-acordo px-2.5 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground transition-all hover:border-primary/40">
                             60/40
                         </button>
                         <button type="button" data-divisao="70/30"
                                 onclick="selecionarDivisaoNovoAcordo('70/30', this)"
-                                class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground transition-all">
+                                class="btn-div-acordo px-2.5 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground transition-all hover:border-primary/40">
                             70/30
                         </button>
-                        <button type="button" data-divisao="livre"
-                                onclick="selecionarDivisaoNovoAcordo('livre', this)"
-                                class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground transition-all">
-                            Livre
+                        <button type="button" data-divisao="90/10"
+                                onclick="selecionarDivisaoNovoAcordo('90/10', this)"
+                                class="btn-div-acordo px-2.5 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground transition-all hover:border-primary/40">
+                            90/10
+                        </button>
+                        <button type="button" data-divisao="personalizada"
+                                onclick="selecionarDivisaoNovoAcordo('personalizada', this)"
+                                class="btn-div-acordo px-2.5 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground transition-all hover:border-primary/40">
+                            Livre (%)
                         </button>
                     </div>
                 </div>
 
+                <!-- Painel de Porcentagem Customizada Livre (se selecionada) -->
+                <div id="novoAcordoBoxDivisaoLivre" class="hidden p-3.5 rounded-2xl border border-emerald-300/80 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-2">
+                    <div class="flex items-center justify-between text-xs font-bold text-foreground">
+                        <span>Sua parte: <strong id="lblAcordoMeuPct">50%</strong></span>
+                        <span>Parceiro: <strong id="lblAcordoParceiroPct">50%</strong></span>
+                    </div>
+                    <input type="range" min="5" max="95" step="5" value="50" id="sliderAcordoLivre" oninput="atualizarSliderAcordoLivre(this.value)"
+                           class="w-full accent-emerald-600 cursor-pointer">
+                </div>
+
                 <!-- Valor mensal de cada um -->
                 <div class="space-y-1.5">
-                    <label class="text-xs font-black text-foreground">Valor mensal de cada um</label>
+                    <label class="text-xs font-black text-foreground">Valor mensal sugerido</label>
                     <div class="flex items-center gap-2 h-12 rounded-xl border border-border bg-muted/50 px-4 focus-within:ring-2 focus-within:ring-primary/30 transition-all">
                         <span class="text-sm font-bold text-muted-foreground">R$</span>
                         <input id="novoAcordoMensalCada" type="number" step="0.01" min="0" placeholder="0,00"
                                oninput="atualizarCalculosPasso2Acordo()"
                                class="flex-1 bg-transparent text-lg font-black text-foreground placeholder:text-muted-foreground/60 outline-none">
-                        <span class="text-xs text-muted-foreground shrink-0">/mês cada</span>
+                        <span class="text-xs text-muted-foreground shrink-0">/mês sua parte</span>
                     </div>
                 </div>
 
