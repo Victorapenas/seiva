@@ -20,25 +20,25 @@
 <div id="pane-dashboard" class="sub-screen space-y-6 max-w-6xl mx-auto pb-12">
 
     <!-- BARRA DISCRETA DE ALTERNÂNCIA RÁPIDA DE PERFIS (DUDA, IAN, VICTOR HUGO) -->
-    <div class="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-emerald-500/20 bg-emerald-50/70 dark:bg-emerald-950/30 px-3.5 py-2 text-xs">
-        <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-medium">
-            <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Perfil Ativo:</span>
-            <strong id="dashBadgePerfilAtivo" class="font-bold underline decoration-emerald-500/40">Carregando...</strong>
+    <div class="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-border bg-card px-4 py-2.5 text-xs shadow-2xs">
+        <div class="flex items-center gap-2 font-medium">
+            <span class="size-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
+            <span class="text-muted-foreground font-semibold">Perfil Ativo:</span>
+            <strong id="dashBadgePerfilAtivo" class="font-extrabold text-foreground bg-muted/60 px-2 py-0.5 rounded-lg border border-border/60">Carregando...</strong>
         </div>
         <div class="flex flex-wrap items-center gap-1.5">
-            <span class="text-muted-foreground text-[11px] mr-1 hidden sm:inline">Testar persona:</span>
+            <span class="text-muted-foreground text-[11px] mr-1 hidden sm:inline font-semibold">Testar persona:</span>
             <button type="button" onclick="trocarUsuarioRapido('duda@seiva.com')" 
-                    class="btn-perfil-switch px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-semibold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1">
-                <i data-lucide="user" class="size-3"></i> Duda (Casal · 40%)
+                    class="btn-perfil-switch px-3 py-1 rounded-xl border border-border bg-background hover:bg-muted font-bold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1.5">
+                <i data-lucide="user" class="size-3 text-emerald-600"></i> Duda (Casal · 40%)
             </button>
             <button type="button" onclick="trocarUsuarioRapido('ian@seiva.com')" 
-                    class="btn-perfil-switch px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-semibold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1">
-                <i data-lucide="user" class="size-3"></i> Ian (Casal · 60%)
+                    class="btn-perfil-switch px-3 py-1 rounded-xl border border-border bg-background hover:bg-muted font-bold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1.5">
+                <i data-lucide="user" class="size-3 text-emerald-600"></i> Ian (Casal · 60%)
             </button>
             <button type="button" onclick="trocarUsuarioRapido('victor@seiva.com')" 
-                    class="btn-perfil-switch px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-semibold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1">
-                <i data-lucide="user-check" class="size-3"></i> Victor Hugo (Individual)
+                    class="btn-perfil-switch px-3 py-1 rounded-xl border border-border bg-background hover:bg-muted font-bold text-[11px] text-foreground transition shadow-2xs inline-flex items-center gap-1.5">
+                <i data-lucide="user-check" class="size-3 text-emerald-600"></i> Victor Hugo (Individual)
             </button>
         </div>
     </div>
@@ -66,47 +66,51 @@
                 <span>Atualizar saldo</span>
             </button>
 
-            <!-- Badge "Você registra, o SEIVA organiza" -->
-            <div class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/40 px-3.5 py-1.5 text-xs font-semibold shadow-2xs">
-                <i data-lucide="info" class="size-3.5 text-emerald-600"></i>
-                <span>Você registra, o SEIVA organiza</span>
+            <!-- Badge "Você registra, o SEIVA organiza" (Contraste Máximo & Tooltip Informativo) -->
+            <div class="inline-flex items-center gap-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 px-3.5 py-1.5 text-xs font-bold shadow-2xs cursor-help transition hover:bg-zinc-200/80" 
+                 title="No SEIVA suas finanças são seguras e sem invasão de conta: você tem o controle dos registros e a inteligência do sistema organiza tudo automaticamente.">
+                <span class="size-2 rounded-full bg-emerald-600"></span>
+                <i data-lucide="shield-check" class="size-3.5 text-emerald-700 dark:text-emerald-400"></i>
+                <span class="text-zinc-900 dark:text-zinc-100 font-extrabold">Você registra, o SEIVA organiza</span>
             </div>
         </div>
     </header>
 
-    <!-- 2. BANNER DE PEDIDO DE AJUDA (IMAGE 2 & 3) -->
-    <div id="bannerPedidoAjuda" class="rounded-3xl border border-emerald-500/30 bg-[#eef7f0] dark:bg-emerald-950/20 p-5 shadow-soft transition-all">
-        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+    <!-- 2. BANNER DE PEDIDO DE AJUDA DO PARCEIRO (CARD FINTECH HARMONIOSO & NÍTIDO) -->
+    <div id="bannerPedidoAjuda" class="hidden rounded-3xl border border-emerald-600/30 bg-card p-5 shadow-card transition-all">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="flex items-start gap-3.5">
-                <div class="size-11 rounded-2xl bg-[#1b4d37] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                    <i data-lucide="printer" class="size-5"></i>
+                <div id="pedidoAjudaAvatarWrapper" class="size-12 rounded-2xl bg-[#1b4d37] text-white flex items-center justify-center shrink-0 shadow-soft">
+                    <i data-lucide="hand-heart" class="size-6 text-emerald-300"></i>
                 </div>
-                <div class="space-y-1">
-                    <div class="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider">
-                        <i data-lucide="sprout" class="size-3.5 text-emerald-600"></i>
-                        <span>Pedido de ajuda</span>
-                    </div>
-                    <h3 id="pedidoAjudaTitulo" class="text-sm sm:text-base font-extrabold text-foreground">
-                        Ian pediu uma ajuda de <span class="text-emerald-800 dark:text-emerald-400 font-black">R$ 50,00</span>
-                    </h3>
-                    <p id="pedidoAjudaDesc" class="text-xs text-muted-foreground">
-                        Comprar filamento pra fechar o freela da impressora 3D
-                    </p>
-                    <div class="pt-1">
-                        <span id="pedidoAjudaTag" class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 text-[11px] font-semibold px-2.5 py-0.5 border border-emerald-200/50">
-                            <span class="font-bold">IM</span> Filamento da Impressora 3D · há 20 min
+                <div class="space-y-1.5 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span id="pedidoAjudaTipoBadge" class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 border border-emerald-300/40">
+                            <i data-lucide="heart" class="size-3 text-emerald-700"></i>
+                            <span id="pedidoAjudaBadgeTexto">Pedido de ajuda do parceiro</span>
                         </span>
+                        <span id="pedidoAjudaTagTempo" class="text-[11px] text-muted-foreground font-medium">há pouco</span>
+                    </div>
+                    
+                    <h3 id="pedidoAjudaTitulo" class="text-base font-extrabold text-foreground">
+                        Ian pediu uma ajuda de <span class="text-emerald-800 dark:text-emerald-400 font-black text-lg">R$ 50,00</span>
+                    </h3>
+                    
+                    <div class="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 p-2.5 rounded-xl border border-border/60">
+                        <i data-lucide="message-square" class="size-3.5 text-emerald-700 shrink-0"></i>
+                        <span id="pedidoAjudaDesc" class="text-foreground font-medium">Comprar filamento pra fechar o freela da impressora 3D</span>
                     </div>
                 </div>
             </div>
 
             <!-- Botões de Ação do Pedido -->
-            <div class="flex items-center gap-2.5 self-end sm:self-center shrink-0">
+            <div id="pedidoAjudaAcoesContainer" class="flex items-center gap-2.5 self-end md:self-center shrink-0">
                 <button type="button" onclick="recusarPedidoAjuda()" class="px-4 py-2 rounded-xl border border-border bg-card hover:bg-muted font-bold text-xs text-foreground transition shadow-2xs">
                     ✕ Agora não
                 </button>
-                <button type="button" onclick="aceitarPedidoAjuda()" class="px-5 py-2 rounded-xl bg-[#1b4d37] hover:bg-[#153f2c] text-white font-bold text-xs transition shadow-soft flex items-center gap-1.5">
-                    <i data-lucide="check" class="size-4"></i> Ajudar
+                <button type="button" onclick="aceitarPedidoAjuda()" id="btnAjudarParceiro" class="px-5 py-2.5 rounded-xl bg-[#1b4d37] hover:bg-[#153f2c] text-white font-black text-xs transition shadow-soft flex items-center gap-2">
+                    <i data-lucide="check" class="size-4"></i>
+                    <span id="btnAjudarTexto">Ajudar com R$ 50,00</span>
                 </button>
             </div>
         </div>
@@ -368,7 +372,7 @@
         </button>
 
         <!-- Ação 4: Relatórios / Gastos por Categoria -->
-        <button type="button" onclick="alternarModoGrafico('donut')" 
+        <button type="button" onclick="abrirRelatoriosRapido()" 
                 class="flex items-center justify-center gap-2.5 p-3.5 rounded-2xl border border-border bg-card hover:bg-emerald-50/30 dark:hover:bg-emerald-950/20 hover:border-emerald-500/30 shadow-soft transition group">
             <span class="size-7 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
                 <i data-lucide="pie-chart" class="size-3.5"></i>
@@ -485,16 +489,32 @@
         </div>
     </section>
 
-    <!-- 7. SEÇÃO: "PRA REGISTRAR HOJE" (IMAGE 5) -->
-    <section class="rounded-3xl border border-rose-200/80 bg-[#fff5f5] dark:bg-rose-950/20 p-5 shadow-soft space-y-3.5">
-        <div class="flex items-center gap-2 text-rose-800 dark:text-rose-300">
-            <i data-lucide="alert-triangle" class="size-4"></i>
-            <h3 class="text-xs font-bold uppercase tracking-wider">Pra registrar hoje</h3>
+    <!-- 7. SEÇÃO: "PRA REGISTRAR HOJE" (PENDÊNCIAS DO DIA COM MÁXIMA NITIDEZ & CONTRASTE) -->
+    <section class="rounded-3xl border border-border bg-card p-6 shadow-card space-y-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <span class="size-8 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center font-bold">
+                    <i data-lucide="calendar-clock" class="size-4"></i>
+                </span>
+                <div>
+                    <h3 class="text-xs font-black uppercase tracking-wider text-foreground">Pra registrar hoje</h3>
+                    <p class="text-[11px] text-muted-foreground">Contas e pagamentos com vencimento ou baixa para hoje</p>
+                </div>
+            </div>
+            <span class="text-[11px] font-black text-amber-900 dark:text-amber-200 bg-amber-100 dark:bg-amber-950/60 px-3 py-1 rounded-full border border-amber-300/40">
+                Pendências
+            </span>
         </div>
 
-        <p class="text-xs text-muted-foreground">
-            O SEIVA não paga por você — ele só organiza. Ao tocar em <strong>Registrar</strong>, você confirma que pagou e escolhe de qual conta o valor saiu.
-        </p>
+        <!-- Caixinha de Observação Educativa SEIVA (Intuitiva, Bonita e Dinâmica) -->
+        <div class="flex items-start gap-3 p-3.5 rounded-2xl bg-muted/40 border border-border/70 text-xs">
+            <div class="size-6 rounded-lg bg-[#1b4d37] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                <i data-lucide="info" class="size-3.5"></i>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">
+                <strong class="text-foreground font-bold">Como funciona?</strong> O SEIVA não movimenta sua conta bancária sozinho. Ao clicar em <strong class="text-emerald-800 dark:text-emerald-400 font-bold">Registrar</strong>, você confirma que pagou a conta e escolhe de onde o dinheiro saiu para manter seu saldo 100% atualizado.
+            </p>
+        </div>
 
         <!-- Itens de Registro Rápido -->
         <div id="dashPraRegistrarHojeList" class="space-y-2.5 pt-1">
@@ -576,7 +596,7 @@
     </div>
 
     <!-- 10. SEÇÃO: "FLUXO DOS 2 MESES / GASTOS POR CATEGORIA" (IMAGES 6, 7 & 8) -->
-    <section class="rounded-3xl border border-border bg-card p-6 shadow-card space-y-4">
+    <section id="secaoRelatoriosFluxo" class="rounded-3xl border border-border bg-card p-6 shadow-card space-y-4 transition-all duration-500">
         <div class="flex items-center justify-between">
             <div>
                 <h3 id="tituloGraficoDashboard" class="text-sm font-bold text-foreground">Fluxo dos 2 meses no SEIVA</h3>
@@ -670,16 +690,31 @@
 
     <!-- 11. SEÇÃO: "DESPESAS FIXAS DO MÊS" (IMAGE 7) -->
     <section class="space-y-3.5">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Despesas fixas do mês
-        </h3>
+        <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <i data-lucide="layers" class="size-4 text-emerald-700"></i>
+                <span>Despesas fixas do mês</span>
+            </h3>
+            <!-- Controles do carrossel: botões anterior/próximo e dica de scroll -->
+            <div class="flex items-center gap-1.5">
+                <span class="text-[11px] text-muted-foreground mr-1 hidden sm:inline flex items-center gap-1">
+                    <i data-lucide="move-horizontal" class="size-3"></i> Arraste para o lado
+                </span>
+                <button type="button" onclick="scrollCarrossel('dashDespesasFixasGrid', -280)" class="p-1.5 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition shadow-2xs" title="Anterior">
+                    <i data-lucide="chevron-left" class="size-4"></i>
+                </button>
+                <button type="button" onclick="scrollCarrossel('dashDespesasFixasGrid', 280)" class="p-1.5 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition shadow-2xs" title="Próximo">
+                    <i data-lucide="chevron-right" class="size-4"></i>
+                </button>
+            </div>
+        </div>
 
-        <div id="dashDespesasFixasGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2 animate-pulse">
+        <div id="dashDespesasFixasGrid" class="flex items-stretch gap-3 overflow-x-auto pb-2 scroll-smooth cursor-grab active:cursor-grabbing select-none snap-x" style="scrollbar-width: thin;">
+            <div class="w-[240px] sm:w-[260px] shrink-0 snap-start rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2 animate-pulse">
                 <div class="h-3 bg-muted rounded w-1/2"></div>
                 <div class="h-5 bg-muted rounded w-3/4"></div>
             </div>
-            <div class="rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2 animate-pulse">
+            <div class="w-[240px] sm:w-[260px] shrink-0 snap-start rounded-2xl border border-border bg-card p-4 shadow-soft space-y-2 animate-pulse">
                 <div class="h-3 bg-muted rounded w-1/2"></div>
                 <div class="h-5 bg-muted rounded w-3/4"></div>
             </div>

@@ -253,4 +253,49 @@ class TransacaoController extends Controller
             'transacoes'       => $todasTransacoes,
         ]);
     }
+
+    /**
+     * Permite ao usuário escolher e alterar o ícone e categoria de uma transação (RF003, UX)
+     */
+    public function atualizarIcone(Request $request, $id)
+    {
+        $request->validate([
+            'icone' => 'nullable|string|max:50',
+            'categoria_nome' => 'nullable|string|max:100',
+            'categoria_id' => 'nullable',
+        ]);
+
+        $userId = Auth::id();
+        $transacao = Transacao::where('usuario_id', $userId)->where('id_transacao', $id)->first();
+        if (!$transacao) {
+            $transacao = Transacao::find($id);
+        }
+
+        if (!$transacao) {
+            return response()->json(['erro' => 'Transação não encontrada.'], 404);
+        }
+
+        $dados = [];
+        if ($request->filled('icone')) {
+            $dados['emoji'] = $request->icone;
+        }
+
+        if ($request->filled('categoria_id') && is_numeric($request->categoria_id)) {
+            $dados['categoria_id'] = $request->categoria_id;
+        } elseif ($request->filled('categoria_nome')) {
+            $cat = Categoria::firstOrCreate(
+                ['nome' => $request->categoria_nome],
+                ['emoji' => $request->icone ?: 'tag', 'cor' => '#10b981', 'sistema' => true]
+            );
+            $dados['categoria_id'] = $cat->id_categoria;
+        }
+
+        $transacao->update($dados);
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => 'Ícone e categoria atualizados com sucesso!',
+            'transacao' => $transacao->load('categoria'),
+        ]);
+    }
 }

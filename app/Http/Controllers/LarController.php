@@ -204,7 +204,7 @@ class LarController extends Controller
                     'progresso' => 31,
                     'valor_atual' => 1000.00,
                     'valor_alvo' => 3200.00,
-                    'icone' => 'snowflake',
+                    'icone' => 'shopping-bag',
                     'em_negociacao' => false,
                     'responsavel' => 'Maria Eduarda',
                     'conta_destino' => 'Nubank Maria Eduarda',

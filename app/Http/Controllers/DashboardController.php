@@ -145,23 +145,48 @@ class DashboardController extends Controller
             ];
 
             // Cobrança real / Pedido de ajuda pendente do parceiro no banco de dados
-            $cobrancaPendente = Cobranca::where('destinatario_id', $userId)
+            $cobrancaRecebida = Cobranca::where('destinatario_id', $userId)
                 ->where('lar_id', $lar->id_lar)
                 ->where('estado', 'pendente')
                 ->latest()
                 ->first();
 
-            if ($cobrancaPendente) {
-                $solicitante = \App\Models\Usuario::find($cobrancaPendente->criada_por);
+            if ($cobrancaRecebida) {
+                $solicitante = \App\Models\Usuario::find($cobrancaRecebida->criada_por);
                 $pedidoAjuda = [
-                    'id_cobranca' => $cobrancaPendente->id_cobranca,
+                    'id_cobranca' => $cobrancaRecebida->id_cobranca,
                     'tem_pedido' => true,
+                    'sou_autor' => false,
                     'solicitante' => $solicitante ? explode(' ', $solicitante->nome)[0] : 'Parceiro(a)',
+                    'solicitante_nome_completo' => $solicitante ? $solicitante->nome : 'Parceiro(a)',
                     'solicitante_iniciais' => $solicitante ? $solicitante->iniciais : 'IM',
-                    'valor' => (float)$cobrancaPendente->valor,
-                    'motivo' => $cobrancaPendente->mensagem ?: $cobrancaPendente->titulo,
-                    'tag' => ($solicitante ? $solicitante->iniciais : 'IM') . ' ' . $cobrancaPendente->titulo . ' · há 20 min',
+                    'valor' => (float)$cobrancaRecebida->valor,
+                    'titulo' => $cobrancaRecebida->titulo,
+                    'motivo' => $cobrancaRecebida->mensagem ?: $cobrancaRecebida->titulo,
+                    'tempo' => $cobrancaRecebida->created_at ? Carbon::parse($cobrancaRecebida->created_at)->diffForHumans() : 'há 20 min',
                 ];
+            } else {
+                // Verificar se o próprio usuário enviou um pedido que aguarda resposta
+                $cobrancaEnviada = Cobranca::where('criada_por', $userId)
+                    ->where('lar_id', $lar->id_lar)
+                    ->where('estado', 'pendente')
+                    ->latest()
+                    ->first();
+
+                if ($cobrancaEnviada) {
+                    $destinatario = \App\Models\Usuario::find($cobrancaEnviada->destinatario_id);
+                    $pedidoAjuda = [
+                        'id_cobranca' => $cobrancaEnviada->id_cobranca,
+                        'tem_pedido' => true,
+                        'sou_autor' => true,
+                        'destinatario' => $destinatario ? explode(' ', $destinatario->nome)[0] : 'Parceiro(a)',
+                        'destinatario_iniciais' => $destinatario ? $destinatario->iniciais : 'P',
+                        'valor' => (float)$cobrancaEnviada->valor,
+                        'titulo' => $cobrancaEnviada->titulo,
+                        'motivo' => $cobrancaEnviada->mensagem ?: $cobrancaEnviada->titulo,
+                        'tempo' => $cobrancaEnviada->created_at ? Carbon::parse($cobrancaEnviada->created_at)->diffForHumans() : 'há pouco',
+                    ];
+                }
             }
         }
 
@@ -270,12 +295,28 @@ class DashboardController extends Controller
         if ($isCasal && isset($participacoesUsuario)) {
             $pendentesLar = $participacoesUsuario->where('pago', false);
             foreach ($pendentesLar as $pl) {
+                $tLower = mb_strtolower($pl->despesa_titulo);
+                $ico = 'home';
+                if (str_contains($tLower, 'internet') || str_contains($tLower, 'fibra') || str_contains($tLower, 'wifi')) {
+                    $ico = 'wifi';
+                } elseif (str_contains($tLower, 'luz') || str_contains($tLower, 'energia')) {
+                    $ico = 'zap';
+                } elseif (str_contains($tLower, 'água') || str_contains($tLower, 'agua')) {
+                    $ico = 'droplet';
+                } elseif (str_contains($tLower, 'mercado') || str_contains($tLower, 'feira')) {
+                    $ico = 'shopping-cart';
+                } elseif (str_contains($tLower, 'aluguel') || str_contains($tLower, 'condomínio')) {
+                    $ico = 'home';
+                } elseif (str_contains($tLower, 'geladeira')) {
+                    $ico = 'shopping-bag';
+                }
+
                 $praRegistrarHoje[] = [
                     'id' => 'part_' . $pl->id_participacao,
                     'titulo' => $pl->despesa_titulo,
                     'valor' => (float)$pl->valor_parte,
                     'descricao' => 'Sua parte da parcela do Lar · vence ' . Carbon::parse($pl->data_vencimento)->format('d/m'),
-                    'icone' => 'snowflake',
+                    'icone' => $ico,
                     'tipo' => 'lar',
                 ];
             }
@@ -377,13 +418,43 @@ class DashboardController extends Controller
             ->map(function ($t) {
                 $val = (float)$t->valor;
                 if ($t->tipo === 'saida') $val = -$val;
+
+                // Mapeamento sem emojis: 1. $t->emoji válido, 2. $t->categoria->emoji, 3. Inferência por título, 4. Fallback credit-card
+                $icone = $t->emoji;
+                if (!$icone || preg_match('/[\x{1F300}-\x{1F9FF}]/u', $icone) || mb_strlen($icone) <= 2) {
+                    $icone = $t->categoria?->emoji;
+                }
+
+                if (!$icone) {
+                    $tLower = mb_strtolower($t->titulo);
+                    if (str_contains($tLower, 'sephora') || str_contains($tLower, 'beleza') || str_contains($tLower, 'maquiagem')) {
+                        $icone = 'sparkles';
+                    } elseif (str_contains($tLower, 'academia') || str_contains($tLower, 'saúde') || str_contains($tLower, 'bio ritmo') || str_contains($tLower, 'smart fit')) {
+                        $icone = 'activity';
+                    } elseif (str_contains($tLower, 'rappi') || str_contains($tLower, 'ifood') || str_contains($tLower, 'lanche') || str_contains($tLower, 'restaurante')) {
+                        $icone = 'utensils';
+                    } elseif (str_contains($tLower, 'mercado') || str_contains($tLower, 'feira')) {
+                        $icone = 'shopping-cart';
+                    } elseif (str_contains($tLower, 'uber') || str_contains($tLower, 'transporte') || str_contains($tLower, 'gasolina')) {
+                        $icone = 'car';
+                    } elseif (str_contains($tLower, 'freela') || str_contains($tLower, 'salário') || str_contains($tLower, 'honorários')) {
+                        $icone = 'briefcase';
+                    } elseif (str_contains($tLower, 'fatura')) {
+                        $icone = 'credit-card';
+                    } else {
+                        $icone = $t->tipo === 'entrada' ? 'trending-up' : 'credit-card';
+                    }
+                }
+
                 return [
+                    'id_transacao' => $t->id_transacao,
                     'titulo' => $t->titulo,
                     'sub' => Carbon::parse($t->data)->format('d/m') . ($t->conta ? ' · ' . $t->conta->nome : ''),
-                    'categoria' => $t->categoria ? $t->categoria->nome : null,
+                    'categoria' => $t->categoria ? $t->categoria->nome : 'Geral',
+                    'categoria_id' => $t->categoria_id,
                     'valor' => $val,
                     'tipo' => $t->tipo,
-                    'icone' => $t->emoji ?: ($t->tipo === 'entrada' ? 'trending-up' : 'credit-card'),
+                    'icone' => $icone,
                 ];
             });
 
@@ -480,7 +551,7 @@ class DashboardController extends Controller
                     elseif (str_contains($tLower, 'água') || str_contains($tLower, 'agua')) $ico = 'droplet';
                     elseif (str_contains($tLower, 'internet') || str_contains($tLower, 'fibra')) $ico = 'wifi';
                     elseif (str_contains($tLower, 'mercado')) $ico = 'shopping-cart';
-                    elseif (str_contains($tLower, 'geladeira')) $ico = 'snowflake';
+                    elseif (str_contains($tLower, 'geladeira')) $ico = 'shopping-bag';
 
                     $itensLar[] = [
                         'titulo' => $dl->titulo . ($dl->tipo === 'proporcional' ? ' (minha parte)' : ''),
@@ -497,7 +568,7 @@ class DashboardController extends Controller
                     ['titulo' => 'Conta de Água', 'valor' => 29.00, 'pago' => false, 'status_label' => 'a pagar', 'icone' => 'droplet'],
                     ['titulo' => 'Internet Vivo', 'valor' => 50.00, 'pago' => false, 'status_label' => 'a pagar', 'icone' => 'wifi'],
                     ['titulo' => 'Mercado da casa', 'valor' => 66.00, 'pago' => false, 'status_label' => 'a pagar', 'icone' => 'shopping-cart'],
-                    ['titulo' => 'Meta Geladeira Samsung', 'valor' => 80.00, 'pago' => false, 'status_label' => 'a pagar', 'icone' => 'snowflake'],
+                    ['titulo' => 'Meta Geladeira Samsung', 'valor' => 80.00, 'pago' => false, 'status_label' => 'a pagar', 'icone' => 'shopping-bag'],
                 ];
             }
 
