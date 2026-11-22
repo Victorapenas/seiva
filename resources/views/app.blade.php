@@ -230,6 +230,7 @@
     @include('componentes.modais.modal-solicitar-resgate-emergencia-lar')
     @include('componentes.modais.modal-contestar-envio-lar')
     @include('componentes.modais.modal-editar-lar')
+    @include('componentes.modais.modal-editar-despesa-lar')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -1914,7 +1915,7 @@
 
         // Formatador Universal de Datas do SEIVA (Impedir "Invalid Date")
         function formatarDataTransacaoBR(dataRaw, formato = 'curto') {
-            if (!dataRaw) return '';
+            if (!dataRaw) return 'Hoje';
             let ano, mes, dia;
             if (typeof dataRaw === 'string') {
                 const m = dataRaw.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -1922,6 +1923,13 @@
                     ano = parseInt(m[1], 10);
                     mes = parseInt(m[2], 10) - 1;
                     dia = parseInt(m[3], 10);
+                } else if (dataRaw.includes('/')) {
+                    const partes = dataRaw.split('/');
+                    if (partes.length === 3) {
+                        dia = parseInt(partes[0], 10);
+                        mes = parseInt(partes[1], 10) - 1;
+                        ano = parseInt(partes[2], 10);
+                    }
                 }
             } else if (dataRaw instanceof Date && !isNaN(dataRaw.getTime())) {
                 ano = dataRaw.getFullYear();
@@ -1930,7 +1938,7 @@
             }
 
             const d = (ano !== undefined) ? new Date(ano, mes, dia, 12, 0, 0) : new Date(dataRaw);
-            if (isNaN(d.getTime())) return '';
+            if (isNaN(d.getTime())) return 'Hoje';
 
             const hoje = new Date(); hoje.setHours(0,0,0,0);
             const ontem = new Date(hoje); ontem.setDate(ontem.getDate() - 1);
@@ -2411,6 +2419,7 @@
                     gridVenc.innerHTML = data.proximos_vencimentos.map(v => {
                         const ehPagar = v.acao === 'pagar';
                         const corBolinha = v.cor || (ehPagar ? '#ef4444' : '#10b981');
+                        const vJsonStr = JSON.stringify(v).replace(/"/g, '&quot;');
                         return `
                             <div class="p-3.5 sm:p-4 rounded-2xl border border-border bg-card flex items-center justify-between gap-3 shadow-2xs">
                                 <div class="flex items-center gap-3 min-w-0">
@@ -2420,7 +2429,12 @@
                                         <span class="text-[11px] text-muted-foreground">${v.data_fmt} · ${BRL(v.valor)}</span>
                                     </div>
                                 </div>
-                                <div class="shrink-0">
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button type="button" onclick="abrirModalEditarDespesaLar(${vJsonStr})" 
+                                            title="Editar valor ou vencimento da conta"
+                                            class="size-8 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs">
+                                        <i data-lucide="edit-3" class="size-3.5"></i>
+                                    </button>
                                     ${ehPagar ? `
                                         <button type="button" onclick="abrirModalPagamentoDespesaFixaLar('${v.titulo}', ${v.valor}, ${v.id})" 
                                                 class="px-3.5 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-black text-xs shadow-soft transition">
@@ -2441,7 +2455,9 @@
                 // 5. Dívidas Fixas (Aba Despesas)
                 const gridFixas = document.getElementById('larListaDividasFixas');
                 if (gridFixas && data.despesas_fixas) {
-                    gridFixas.innerHTML = data.despesas_fixas.map(d => `
+                    gridFixas.innerHTML = data.despesas_fixas.map(d => {
+                        const dJsonStr = JSON.stringify(d).replace(/"/g, '&quot;');
+                        return `
                         <div class="p-4 rounded-2xl border border-border bg-card flex items-center justify-between gap-3 shadow-2xs">
                             <div class="flex items-center gap-3 min-w-0">
                                 <span class="size-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-500/20">
@@ -2452,8 +2468,13 @@
                                     <span class="text-[11px] text-muted-foreground">${d.divisao} · ${d.vencimento}</span>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3 shrink-0">
+                            <div class="flex items-center gap-2.5 shrink-0">
                                 <strong class="text-xs font-black text-foreground">${BRL(d.valor_total)}</strong>
+                                <button type="button" onclick="abrirModalEditarDespesaLar(${dJsonStr})" 
+                                        title="Reajustar valor ou regra de divisão"
+                                        class="size-8 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs">
+                                    <i data-lucide="edit-3" class="size-3.5"></i>
+                                </button>
                                 ${d.pago ? `
                                     <span class="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-extrabold text-[11px] flex items-center gap-1 border border-emerald-500/20">
                                         <i data-lucide="check" class="size-3"></i>
@@ -2468,13 +2489,16 @@
                                 `}
                             </div>
                         </div>
-                    `).join('');
+                    `;
+                    }).join('');
                 }
 
                 // 6. Dívidas Variáveis (Aba Despesas)
                 const gridVar = document.getElementById('larListaDividasVariaveis');
                 if (gridVar && data.despesas_variaveis) {
-                    gridVar.innerHTML = data.despesas_variaveis.map(dv => `
+                    gridVar.innerHTML = data.despesas_variaveis.map(dv => {
+                        const dvJsonStr = JSON.stringify(dv).replace(/"/g, '&quot;');
+                        return `
                         <div class="p-4 rounded-2xl border border-border bg-card flex items-center justify-between gap-3 shadow-2xs">
                             <div class="flex items-center gap-3 min-w-0">
                                 <span class="size-9 rounded-xl bg-muted/60 text-muted-foreground flex items-center justify-center shrink-0">
@@ -2485,9 +2509,17 @@
                                     <span class="text-[11px] text-muted-foreground">${dv.detalhe}</span>
                                 </div>
                             </div>
-                            <strong class="text-xs font-black text-foreground shrink-0">${BRL(dv.valor_total)}</strong>
+                            <div class="flex items-center gap-2.5 shrink-0">
+                                <strong class="text-xs font-black text-foreground">${BRL(dv.valor_total)}</strong>
+                                <button type="button" onclick="abrirModalEditarDespesaLar(${dvJsonStr})" 
+                                        title="Editar gasto variável"
+                                        class="size-8 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs">
+                                    <i data-lucide="edit-3" class="size-3.5"></i>
+                                </button>
+                            </div>
                         </div>
-                    `).join('');
+                    `;
+                    }).join('');
                 }
 
                 // 7. Metas do Lar (Aba Metas com fotos reais de alta resolução e previsão em dias)
@@ -2621,40 +2653,130 @@
                     }).join('');
                 }
 
-                // 8. Mesa de Acordos (Aba Acordos)
+                // 8. Mesa de Acordos (Aba Acordos - Design Fintech Premium com Fotos Reais e Votação Bilateral)
                 const gridAcordos = document.getElementById('larListaAcordosItens');
                 if (gridAcordos) {
                     gridAcordos.innerHTML = `
-                        <div class="p-4 rounded-2xl border border-border bg-card flex items-center justify-between gap-3 shadow-2xs">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <span class="size-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                                    <i data-lucide="snowflake" class="size-4"></i>
-                                </span>
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-2">
-                                        <h5 class="text-xs font-extrabold text-foreground truncate">Geladeira Samsung</h5>
-                                        <span class="px-2 py-0.5 rounded-md bg-muted text-[10px] font-extrabold text-muted-foreground">Dívida</span>
+                        <!-- Card 1: Geladeira Samsung (Acordo Ativo Quitando) -->
+                        <div class="rounded-3xl border border-border bg-card p-4 sm:p-5 space-y-3.5 shadow-card">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-3.5 min-w-0">
+                                    <div class="size-14 rounded-2xl overflow-hidden border border-border bg-muted/30 shrink-0 shadow-2xs">
+                                        <img src="/produtos/geladeira-samsung.png" alt="Geladeira Samsung" class="size-full object-cover object-center">
                                     </div>
-                                    <span class="text-[11px] text-muted-foreground">Acordo 50/50 · parcela mensal R$ 250 cada</span>
+                                    <div class="min-w-0 space-y-0.5">
+                                        <div class="flex items-center gap-2">
+                                            <h5 class="text-sm font-black text-foreground truncate">Geladeira Samsung Frost Free 460L</h5>
+                                            <span class="px-2 py-0.5 rounded-md bg-muted text-[10px] font-black text-muted-foreground">Dívida do Lar</span>
+                                        </div>
+                                        <p class="text-xs text-muted-foreground">Divisão 50% / 50% · Parcela 5 de 10 · R$ 250,00/mês cada</p>
+                                    </div>
+                                </div>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black shrink-0 shadow-2xs"
+                                      style="background-color: #ecfdf5 !important; border: 1.5px solid #10b981 !important; color: #064e3b !important;">
+                                    <i data-lucide="check-circle-2" class="size-3 text-emerald-600"></i>
+                                    <span>Acordo Ativo (100% Consenso)</span>
+                                </span>
+                            </div>
+
+                            <!-- Barra de Quitação da Parcela -->
+                            <div class="space-y-1">
+                                <div class="h-2 w-full rounded-full bg-muted overflow-hidden">
+                                    <div class="h-full bg-emerald-600 rounded-full" style="width: 50%"></div>
+                                </div>
+                                <div class="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+                                    <span class="font-bold text-foreground">R$ 1.000,00 quitados (50%)</span>
+                                    <span>Faltam 5 parcelas de R$ 500,00</span>
                                 </div>
                             </div>
-                            <span class="text-xs font-extrabold text-emerald-700 dark:text-emerald-400">Ativo</span>
+
+                            <!-- Participação do Casal e Ações -->
+                            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-border/60">
+                                <div class="flex items-center gap-3 text-xs">
+                                    <div class="flex items-center gap-1.5 font-bold text-foreground">
+                                        <span class="size-5 rounded-full bg-pink-100 text-pink-700 text-[10px] font-black flex items-center justify-center">ME</span>
+                                        <span>Você: R$ 250 em dia</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 font-bold text-foreground">
+                                        <span class="size-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black flex items-center justify-center">IM</span>
+                                        <span>Ian: R$ 250 em dia</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" onclick="renegociarAcordoCasal(1, 'Geladeira Samsung Frost Free')" 
+                                            class="px-3 py-1.5 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-bold transition shadow-2xs">
+                                        Renegociar Parcelas
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="p-4 rounded-2xl border border-border bg-card flex items-center justify-between gap-3 shadow-2xs">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <span class="size-9 rounded-xl bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0">
-                                    <i data-lucide="waves" class="size-4"></i>
-                                </span>
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-2">
-                                        <h5 class="text-xs font-extrabold text-foreground truncate">Viagem Praia do Forte</h5>
-                                        <span class="px-2 py-0.5 rounded-md bg-muted text-[10px] font-extrabold text-muted-foreground">Meta</span>
+                        <!-- Card 2: Viagem Praia do Forte (Em Negociação - Aguardando Consenso) -->
+                        <div class="rounded-3xl p-4 sm:p-5 space-y-3.5 shadow-card"
+                             style="background-color: #fffbeb !important; border: 1.5px solid #f59e0b !important;">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center gap-3.5 min-w-0">
+                                    <div class="size-14 rounded-2xl overflow-hidden border border-amber-300 bg-amber-100/40 shrink-0 shadow-2xs">
+                                        <img src="/produtos/praia-forte.png" alt="Praia do Forte" class="size-full object-cover object-center">
                                     </div>
-                                    <span class="text-[11px] text-muted-foreground">Proposta: R$ 100/mês cada até janeiro</span>
+                                    <div class="min-w-0 space-y-0.5">
+                                        <div class="flex items-center gap-2">
+                                            <h5 class="text-sm font-black text-foreground truncate" style="color: #451a03 !important;">Viagem Praia do Forte no Verão</h5>
+                                            <span class="px-2 py-0.5 rounded-md bg-amber-200 text-[10px] font-black" style="color: #78350f !important;">Meta Conjunta</span>
+                                        </div>
+                                        <p class="text-xs" style="color: #78350f !important; font-weight: 700 !important;">Proposta de Ian: guardar R$ 100,00/mês cada até janeiro (Meta: R$ 3.000,00)</p>
+                                    </div>
                                 </div>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black shrink-0 shadow-2xs"
+                                      style="background-color: #fef3c7 !important; border: 1.5px solid #f59e0b !important; color: #78350f !important;">
+                                    <i data-lucide="scale" class="size-3 text-amber-600"></i>
+                                    <span>Em Negociação (Aguardando Você)</span>
+                                </span>
                             </div>
-                            <span class="text-xs font-extrabold text-amber-700 dark:text-amber-400">Em negociação</span>
+
+                            <!-- Bilhete carinhoso da proposta -->
+                            <div class="p-3 rounded-2xl shadow-2xs text-xs font-semibold leading-relaxed"
+                                 style="background-color: #ffffff !important; border: 1px solid #fde68a !important; color: #451a03 !important;">
+                                <strong style="color: #78350f !important;">Recado do Ian:</strong> "Amor, se guardarmos R$ 100 cada todo mês, conseguimos alugar uma casa na praia no réveillon sem apertar o nosso orçamento!"
+                            </div>
+
+                            <!-- Botões de Ação Imediata com Alto Contraste -->
+                            <div class="flex flex-wrap items-center gap-2 pt-1">
+                                <button type="button" onclick="aprovarPropostaAcordoLar(2, 'Viagem Praia do Forte')" 
+                                        class="flex-1 py-2.5 px-4 rounded-xl text-xs font-black shadow-soft transition flex items-center justify-center gap-2 hover:opacity-95"
+                                        style="background-color: #047857 !important; color: #ffffff !important;">
+                                    <i data-lucide="check" class="size-4 text-emerald-200"></i>
+                                    <span>Aprovar Proposta de Acordo</span>
+                                </button>
+                                <button type="button" onclick="contraproporAcordoLar(2, 'Viagem Praia do Forte')" 
+                                        class="py-2.5 px-4 rounded-xl text-xs font-black shadow-2xs transition flex items-center justify-center gap-1.5 hover:opacity-95"
+                                        style="background-color: #d97706 !important; color: #ffffff !important;">
+                                    <i data-lucide="shield" class="size-4 text-amber-100"></i>
+                                    <span>Contrapropor Valor</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Regra de Consenso do Fundo de Emergência -->
+                        <div class="rounded-3xl border border-border bg-card p-4 sm:p-5 space-y-2.5 shadow-2xs">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <span class="size-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                                        <i data-lucide="shield-check" class="size-5"></i>
+                                    </span>
+                                    <div>
+                                        <h5 class="text-xs font-black text-foreground">Regra Bilateral: Fundo de Emergência do Lar</h5>
+                                        <p class="text-[11px] text-muted-foreground">Consenso mútuo obrigatório para qualquer saque</p>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-black"
+                                      style="background-color: #ecfdf5 !important; border: 1.5px solid #10b981 !important; color: #064e3b !important;">
+                                    Regra Ativa
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-muted-foreground leading-relaxed">
+                                Nenhum dos dois consegue retirar dinheiro da conta conjunta Poupança Caixa sem que o parceiro valide a solicitação no app.
+                            </p>
                         </div>
                     `;
                 }
@@ -2991,6 +3113,203 @@
             const input = document.getElementById('formLarDespDivisao');
             if (input) input.value = regra;
             atualizarSimulacaoRateioLar();
+        }
+
+        // --- 1.1 MODAL: EDITAR DESPESA DO LAR & REAJUSTE (RF004/RF010 - Jhon Abner) ---
+        function abrirModalEditarDespesaLar(d) {
+            if (!d) return;
+            const id = typeof d === 'object' ? (d.id || d.id_despesa_lar) : d;
+            const titulo = typeof d === 'object' ? (d.titulo || '') : '';
+            const valor = typeof d === 'object' ? (d.valor_total || d.valor || 0) : 0;
+            const tipo = typeof d === 'object' ? (d.tipo || 'fixa') : 'fixa';
+            const divisao = (typeof d === 'object' && d.divisao && (d.divisao.includes('50') || d.divisao === '50/50')) ? '50/50' : 'proporcional';
+            const dataVenc = typeof d === 'object' ? (d.data_vencimento || '2026-07-05') : '2026-07-05';
+
+            const inId = document.getElementById('editLarDespId');
+            if (inId) inId.value = id;
+            const inTit = document.getElementById('editLarDespTitulo');
+            if (inTit) inTit.value = titulo;
+            const inVal = document.getElementById('editLarDespValor');
+            if (inVal) inVal.value = valor;
+            const inData = document.getElementById('editLarDespData');
+            if (inData) inData.value = dataVenc;
+            const inTipo = document.getElementById('editLarDespTipo');
+            if (inTipo) inTipo.value = tipo;
+            const inDiv = document.getElementById('editLarDespDivisao');
+            if (inDiv) inDiv.value = divisao;
+
+            // Sincroniza chips de tipo
+            document.querySelectorAll('.chip-edit-tipo-lar').forEach(b => {
+                b.className = 'chip-edit-tipo-lar p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30 flex items-center gap-2.5';
+            });
+            const btnTipoAlvo = document.querySelector(`.chip-edit-tipo-lar[onclick*="${tipo}"]`);
+            if (btnTipoAlvo) {
+                btnTipoAlvo.className = 'chip-edit-tipo-lar active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition flex items-center gap-2.5';
+            }
+
+            // Sincroniza chips de divisão
+            document.querySelectorAll('.chip-edit-regra-divisao').forEach(b => {
+                b.className = 'chip-edit-regra-divisao p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30';
+            });
+            const btnDivAlvo = document.querySelector(`.chip-edit-regra-divisao[onclick*="${divisao}"]`);
+            if (btnDivAlvo) {
+                btnDivAlvo.className = 'chip-edit-regra-divisao active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition';
+            }
+
+            atualizarSimulacaoEdicaoRateioLar();
+            abrirModalId('modalEditarDespesaLar');
+            lucide.createIcons();
+        }
+
+        function selecionarEditTipoDespesaLar(btn, tipo) {
+            document.querySelectorAll('.chip-edit-tipo-lar').forEach(b => {
+                b.className = 'chip-edit-tipo-lar p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30 flex items-center gap-2.5';
+            });
+            if (btn) {
+                btn.className = 'chip-edit-tipo-lar active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition flex items-center gap-2.5';
+            }
+            const inTipo = document.getElementById('editLarDespTipo');
+            if (inTipo) inTipo.value = tipo;
+        }
+
+        function selecionarEditRegraDivisaoLar(btn, regra) {
+            document.querySelectorAll('.chip-edit-regra-divisao').forEach(b => {
+                b.className = 'chip-edit-regra-divisao p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30';
+            });
+            if (btn) {
+                btn.className = 'chip-edit-regra-divisao active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition';
+            }
+            const inDiv = document.getElementById('editLarDespDivisao');
+            if (inDiv) inDiv.value = regra;
+            atualizarSimulacaoEdicaoRateioLar();
+        }
+
+        function atualizarSimulacaoEdicaoRateioLar() {
+            const inputValor = document.getElementById('editLarDespValor');
+            const total = parseFloat(inputValor?.value || 0) || 0;
+            const regra = document.getElementById('editLarDespDivisao')?.value || 'proporcional';
+
+            let parteDuda = 0;
+            let parteIan = 0;
+            let pctDudaTxt = '(40% do total)';
+            let pctIanTxt = '(60% do total)';
+
+            if (regra === '50/50') {
+                parteDuda = total * 0.5;
+                parteIan = total * 0.5;
+                pctDudaTxt = '(50% do total)';
+                pctIanTxt = '(50% do total)';
+            } else {
+                parteDuda = total * 0.4;
+                parteIan = total * 0.6;
+            }
+
+            const elDuda = document.getElementById('editSimulacaoParteDuda');
+            if (elDuda) elDuda.innerText = BRL(parteDuda);
+            const elPctDuda = document.getElementById('editSimulacaoPctDuda');
+            if (elPctDuda) elPctDuda.innerText = pctDudaTxt;
+
+            const elIan = document.getElementById('editSimulacaoParteIan');
+            if (elIan) elIan.innerText = BRL(parteIan);
+            const elPctIan = document.getElementById('editSimulacaoPctIan');
+            if (elPctIan) elPctIan.innerText = pctIanTxt;
+        }
+
+        async function executarSalvarEdicaoDespesaLar(event) {
+            if (event) event.preventDefault();
+            const id = document.getElementById('editLarDespId')?.value;
+            const titulo = document.getElementById('editLarDespTitulo')?.value?.trim();
+            const valor_total = parseFloat(document.getElementById('editLarDespValor')?.value || 0);
+            const data_vencimento = document.getElementById('editLarDespData')?.value;
+            const tipo = document.getElementById('editLarDespTipo')?.value || 'fixa';
+            const divisao = document.getElementById('editLarDespDivisao')?.value || 'proporcional';
+
+            if (!titulo || !valor_total || valor_total <= 0) {
+                return seivaNotificar('Informe um título e um valor válido para a despesa.', 'aviso');
+            }
+
+            try {
+                const res = await fetch(`/lar/despesas/${id}/atualizar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        titulo,
+                        valor_total,
+                        tipo,
+                        divisao,
+                        data_vencimento
+                    })
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalEditarDespesaLar');
+                    seivaNotificar(`Despesa "${titulo}" atualizada para ${BRL(valor_total)}! O rateio do casal foi recalculado.`, 'sucesso', 'Despesa Reajustada');
+                    carregarLarDados();
+                } else {
+                    const err = await res.json();
+                    seivaNotificar(err.message || 'Erro ao salvar reajuste da despesa.', 'aviso');
+                }
+            } catch (e) {
+                console.error(e);
+                seivaNotificar('Erro ao conectar com o servidor.', 'erro');
+            }
+        }
+
+        async function executarExcluirDespesaLar() {
+            const id = document.getElementById('editLarDespId')?.value;
+            if (!id) return fecharModalId('modalEditarDespesaLar');
+
+            if (!confirm('Deseja realmente remover esta despesa do Lar e recalcular o rateio?')) return;
+
+            try {
+                const res = await fetch(`/lar/despesas/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalEditarDespesaLar');
+                    seivaNotificar('Despesa removida do Lar com sucesso!', 'info', 'Despesa Excluída');
+                    carregarLarDados();
+                } else {
+                    seivaNotificar('Não foi possível remover a despesa.', 'aviso');
+                }
+            } catch (e) {
+                console.error(e);
+                seivaNotificar('Erro de conexão ao excluir.', 'erro');
+            }
+        }
+
+        // --- AÇÕES DA MESA DE ACORDOS DO LAR (RF006 - Ian Marcos) ---
+        function aprovarPropostaAcordoLar(id, titulo) {
+            seivaNotificar(`Proposta de acordo "${titulo}" aprovada com sucesso! O combinado agora está ativo.`, 'sucesso', 'Acordo Bilateral Selado');
+            const contadorAtivos = document.getElementById('larAcordosAtivosContador');
+            if (contadorAtivos) contadorAtivos.textContent = '3';
+            const contadorNegoc = document.getElementById('larAcordosNegociacaoContador');
+            if (contadorNegoc) contadorNegoc.textContent = '1';
+            carregarLarDados();
+        }
+
+        function contraproporAcordoLar(id, titulo) {
+            const novoValor = prompt(`Quanto você sugere guardar ou pagar por mês para "${titulo}"?`, '80,00');
+            if (novoValor) {
+                seivaNotificar(`Contraproposta de R$ ${novoValor}/mês para "${titulo}" enviada delicadamente para Ian!`, 'sucesso', 'Contraproposta Enviada');
+            }
+        }
+
+        function renegociarAcordoCasal(id, titulo) {
+            const opt = confirm(`Deseja propor uma pausa amigável de 1 mês ou reajustar a parcela de "${titulo}"?`);
+            if (opt) {
+                seivaNotificar(`Solicitação de renegociação para "${titulo}" aberta na Mesa de Acordos sem multas ou atrito!`, 'info', 'Renegociação Solicitada');
+            }
         }
 
         // --- 2. MODAL: REGISTRAR PAGAMENTO DE DESPESA FIXA DO LAR ---
@@ -4209,6 +4528,24 @@
             });
             btn.className = 'chip-cat-meta active flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-emerald-600 bg-emerald-800 text-white font-bold text-xs transition';
             document.getElementById('novaMetaCategoria').value = tipo;
+
+            const boxOutros = document.getElementById('boxMetaOutrosEspecificacao');
+            if (boxOutros) {
+                if (tipo === 'outros') {
+                    boxOutros.classList.remove('hidden');
+                    const inpDesc = document.getElementById('novaMetaOutrosDesc');
+                    if (inpDesc) inpDesc.focus();
+                } else {
+                    boxOutros.classList.add('hidden');
+                }
+            }
+        }
+
+        function aoDigitarConquistaOutros(valor) {
+            const inpNome = document.getElementById('novaMetaNome');
+            if (inpNome && valor) {
+                inpNome.value = valor;
+            }
         }
 
         async function buscarDadosLinkProduto() {

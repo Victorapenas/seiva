@@ -47,8 +47,27 @@
                         <i data-lucide="graduation-cap" class="size-3.5"></i>
                         <span>Curso</span>
                     </button>
+                    <button type="button" onclick="selecionarTipoMeta(this, 'outros', 'sparkles')" class="chip-cat-meta flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition">
+                        <i data-lucide="sparkles" class="size-3.5 text-amber-500"></i>
+                        <span>Outros</span>
+                    </button>
                 </div>
                 <input type="hidden" id="novaMetaCategoria" value="produto">
+            </div>
+
+            <!-- Campo Especial: Especificação livre para a categoria "Outros" -->
+            <div id="boxMetaOutrosEspecificacao" class="hidden space-y-1.5 p-3.5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-800">
+                <label class="text-xs font-bold text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="size-3.5 text-amber-600"></i>
+                    <span>O que você vai conquistar? (Descreva sua conquista)</span>
+                </label>
+                <input type="text" id="novaMetaOutrosDesc" 
+                       placeholder="Ex: Casamento no civil, Reforma do quarto, Festa de 30 anos, Novo pet, Tratamento dental..."
+                       oninput="aoDigitarConquistaOutros(this.value)"
+                       class="w-full rounded-2xl border border-amber-300 dark:border-amber-800 bg-background px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-emerald-600 focus:outline-none shadow-2xs">
+                <span class="text-[10px] text-amber-900/80 dark:text-amber-300/80 block mt-1 leading-relaxed">
+                    💡 Diga o que essa conquista representa para você ou para o casal para receber metas de economia sugeridas.
+                </span>
             </div>
 
             <!-- Link do Produto (Wishlist scraper) -->
