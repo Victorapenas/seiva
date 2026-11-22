@@ -182,9 +182,29 @@
             <div class="space-y-0.5 text-xs">
                 <strong class="font-extrabold text-white block">Como funciona o Radar de Desejos?</strong>
                 <p class="text-[11px] text-emerald-200/80 leading-relaxed">
-                    Você cola o link do item (Amazon, Mercado Livre, Magalu...). O SEIVA monitora o valor e calcula em <strong>quantos dias</strong> você conquista o produto no seu ritmo atual. Quando quiser, você transforma o item em meta com 1 clique!
+                    Você pode colocar na mira produtos <strong>individuais só para você</strong> (ex: notebook, fones) ou produtos <strong>para nossa casa</strong> (ex: geladeira, eletrodomésticos do casal). O SEIVA calcula o prazo e você transforma em meta com 1 clique!
                 </p>
             </div>
+        </div>
+
+        <!-- Filtros de Destino: Para mim (Pessoal) | Para nossa casa (Casal) -->
+        <div class="flex items-center gap-2 relative z-10 pt-1">
+            <button id="btnFiltroProdOlhoIndiv" 
+                    type="button" 
+                    onclick="filtrarProdutosOlho('individual')"
+                    class="chip-filtro-prod-olho active px-3.5 py-1.5 rounded-xl text-xs font-black transition bg-emerald-700 text-white flex items-center gap-1.5 shadow-2xs border border-emerald-500/40">
+                <i data-lucide="user" class="size-3.5"></i>
+                <span>Para mim</span>
+                <span id="badgeCountProdIndiv" class="ml-1 text-[10px] font-black px-1.5 py-0.2 rounded-full bg-emerald-900/80 text-emerald-200">0</span>
+            </button>
+            <button id="btnFiltroProdOlhoLar" 
+                    type="button" 
+                    onclick="filtrarProdutosOlho('lar')"
+                    class="chip-filtro-prod-olho px-3.5 py-1.5 rounded-xl text-xs font-bold transition bg-white/10 hover:bg-white/15 text-emerald-200 hover:text-white flex items-center gap-1.5 border border-white/10">
+                <i data-lucide="home" class="size-3.5"></i>
+                <span>Para nossa casa</span>
+                <span id="badgeCountProdLar" class="ml-1 text-[10px] font-black px-1.5 py-0.2 rounded-full bg-white/15 text-white">0</span>
+            </button>
         </div>
 
         <!-- Grid de Produtos de Olho -->

@@ -3875,7 +3875,7 @@
             }
         }
 
-        function abrirModalCriarMetaComDados(nome, preco, loja = '', link = '', imagem = '') {
+        function abrirModalCriarMetaComDados(nome, preco, loja = '', link = '', imagem = '', posse = 'so_minha') {
             abrirModalCriarMeta();
             const nomeEl = document.getElementById('novaMetaNome');
             const valEl = document.getElementById('novaMetaValor');
@@ -3896,6 +3896,15 @@
                 if (previewTit) previewTit.innerText = nome || 'Foto do produto';
                 if (previewCont) previewCont.classList.remove('hidden');
                 if (boxUpload) boxUpload.classList.add('hidden');
+            }
+            if (posse) {
+                const botoesPosse = document.querySelectorAll('.chip-posse-meta');
+                if (posse === 'compartilhada' || posse === 'lar') {
+                    if (botoesPosse.length >= 3) selecionarPosseMeta(botoesPosse[2], 'compartilhada');
+                    else if (botoesPosse.length >= 2) selecionarPosseMeta(botoesPosse[1], 'lar');
+                } else {
+                    if (botoesPosse.length >= 1) selecionarPosseMeta(botoesPosse[0], 'so_minha');
+                }
             }
         }
 
@@ -4574,6 +4583,8 @@
         // METAS — Objetivos Individuais e do Lar
         // ==========================================
         let metasAbaAtiva = 'individual';
+        let produtosOlhoCache = { individual: [], lar: [] };
+        let filtroProdOlhoAtivo = 'individual';
 
         function alternarAbaMetas(aba) {
             metasAbaAtiva = aba;
@@ -4596,6 +4607,9 @@
                 if (tabInd)    tabInd.className = inativoClass;
                 if (tabLar)    tabLar.className = ativoClass;
             }
+
+            // Sincroniza a vitrine de produtos de olho com o contexto da aba
+            filtrarProdutosOlho(aba === 'lar' ? 'lar' : 'individual');
             lucide.createIcons();
         }
 
@@ -4624,7 +4638,7 @@
                 if (heroPctEl)   heroPctEl.innerText   = `${pct}%`;
                 if (heroMensEl)  heroMensEl.innerText  = BRL(mensal);
 
-                // Contadores nas Abas
+                // Contadores nas Abas de Metas
                 const badgeInd = document.getElementById('badgeCountMetasIndiv');
                 const badgeLar = document.getElementById('badgeCountMetasLar');
                 if (badgeInd) badgeInd.innerText = String(individuais.length);
@@ -4636,8 +4650,18 @@
                 // Renderizar metas do lar
                 _renderizarCardsMetasNovo(metasLar, '#metasListaPlanoLar', true);
 
-                // Renderizar radar de produtos de olho
-                _renderizarGridProdutosOlho(data.produtos_de_olho || []);
+                // Cache de produtos de olho (Individual vs Casal/Lar)
+                produtosOlhoCache.individual = data.produtos_de_olho_individuais || data.produtos_de_olho || [];
+                produtosOlhoCache.lar = data.produtos_de_olho_lar || [];
+
+                // Atualizar contadores numéricos dos filtros de produtos
+                const badgeProdInd = document.getElementById('badgeCountProdIndiv');
+                const badgeProdLar = document.getElementById('badgeCountProdLar');
+                if (badgeProdInd) badgeProdInd.innerText = String(produtosOlhoCache.individual.length);
+                if (badgeProdLar) badgeProdLar.innerText = String(produtosOlhoCache.lar.length);
+
+                // Renderizar radar de produtos conforme a aba ativa
+                filtrarProdutosOlho(metasAbaAtiva === 'lar' ? 'lar' : 'individual');
 
             } catch(e) { console.error('Erro metas:', e); }
         }
@@ -4880,20 +4904,49 @@
             lucide.createIcons();
         }
 
-        // --- RADAR DE PRODUTOS DE OLHO (WISHLIST DE METAS) ---
-        function _renderizarGridProdutosOlho(produtos) {
+        // --- RADAR DE PRODUTOS DE OLHO (WISHLIST INDIVIDUAL E DO CASAL) ---
+        function filtrarProdutosOlho(tipo) {
+            filtroProdOlhoAtivo = tipo;
+            const btnInd = document.getElementById('btnFiltroProdOlhoIndiv');
+            const btnLar = document.getElementById('btnFiltroProdOlhoLar');
+
+            const ativoClass = 'chip-filtro-prod-olho active px-3.5 py-1.5 rounded-xl text-xs font-black transition bg-emerald-700 text-white flex items-center gap-1.5 shadow-2xs border border-emerald-500/40';
+            const inativoClass = 'chip-filtro-prod-olho px-3.5 py-1.5 rounded-xl text-xs font-bold transition bg-white/10 hover:bg-white/15 text-emerald-200 hover:text-white flex items-center gap-1.5 border border-white/10';
+
+            if (tipo === 'lar') {
+                if (btnInd) btnInd.className = inativoClass;
+                if (btnLar) btnLar.className = ativoClass;
+                _renderizarGridProdutosOlho(produtosOlhoCache.lar, true);
+            } else {
+                if (btnInd) btnInd.className = ativoClass;
+                if (btnLar) btnLar.className = inativoClass;
+                _renderizarGridProdutosOlho(produtosOlhoCache.individual, false);
+            }
+            lucide.createIcons();
+        }
+
+        function _renderizarGridProdutosOlho(produtos, isLar = false) {
             const cont = document.getElementById('metasGridProdutosOlho');
             if (!cont) return;
 
             if (!produtos || !produtos.length) {
+                const tituloVazio = isLar 
+                    ? 'Nenhum produto monitorado para nossa casa ainda.' 
+                    : 'Nenhum produto pessoal na mira ainda.';
+                const subtituloVazio = isLar
+                    ? 'Cole o link de uma geladeira, air fryer ou móvel para o casal orçar e planejar juntos!'
+                    : 'Cole o link de um notebook, tênis ou item pessoal para comprar sem culpa no seu ritmo!';
+                const botaoTexto = isLar ? 'Colocar produto para nossa casa' : 'Colocar produto para mim';
+
                 cont.innerHTML = `
-                    <div class="col-span-full rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center space-y-2">
-                        <i data-lucide="shopping-bag" class="size-8 text-emerald-400/50 mx-auto"></i>
-                        <p class="text-xs font-bold text-white">Nenhum produto sendo monitorado ainda.</p>
-                        <p class="text-[11px] text-emerald-200/70 max-w-sm mx-auto">Cole um link da Amazon ou Mercado Livre para monitorar promoções e planejar compras com meta!</p>
-                        <button type="button" onclick="abrirModalAdicionarProdutoOlho()" class="mt-2 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition inline-flex items-center gap-1 shadow-2xs">
+                    <div class="col-span-full rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center space-y-2.5">
+                        <i data-lucide="${isLar ? 'home' : 'shopping-bag'}" class="size-8 text-emerald-400/60 mx-auto"></i>
+                        <p class="text-xs font-extrabold text-white">${tituloVazio}</p>
+                        <p class="text-[11px] text-emerald-200/70 max-w-md mx-auto leading-relaxed">${subtituloVazio}</p>
+                        <button type="button" onclick="abrirModalAdicionarProdutoOlho('${isLar ? 'lar' : 'individual'}')" 
+                                class="mt-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition inline-flex items-center gap-1.5 shadow-2xs">
                             <i data-lucide="plus" class="size-3.5"></i>
-                            <span>Adicionar primeiro produto</span>
+                            <span>${botaoTexto}</span>
                         </button>
                     </div>
                 `;
@@ -4912,16 +4965,30 @@
                 const linkEscaped = link.replace(/'/g, "\\'");
                 const imgEscaped = img.replace(/'/g, "\\'");
                 const idProd = p.id_produto || '';
+                const ehLarItem = isLar || p.tipo === 'lar' || p.lar_id !== null;
+
+                const badgeDestino = ehLarItem
+                    ? `<span class="inline-flex items-center gap-1 text-[9px] font-black text-emerald-950 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-400 dark:border-emerald-700/60">
+                         <i data-lucide="home" class="size-2.5 text-emerald-700 dark:text-emerald-400"></i>
+                         Para nossa casa
+                       </span>`
+                    : `<span class="inline-flex items-center gap-1 text-[9px] font-black text-emerald-950 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-400 dark:border-emerald-700/60">
+                         <i data-lucide="user" class="size-2.5 text-emerald-700 dark:text-emerald-400"></i>
+                         Para mim
+                       </span>`;
 
                 return `
                 <div class="rounded-2xl border border-emerald-500/20 bg-[#0d2015] hover:border-emerald-500/40 p-3.5 transition flex flex-col justify-between space-y-3 shadow-2xs group">
                     <div class="flex items-start gap-3">
                         <img src="${img}" alt="${p.nome}" class="size-16 rounded-xl object-cover shrink-0 border border-emerald-500/30 bg-black/40 shadow-2xs" onerror="this.src='/icon.svg'">
                         <div class="min-w-0 flex-1">
-                            <span class="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                                <i data-lucide="bell" class="size-2.5 text-emerald-400"></i>
-                                Monitorando
-                            </span>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                ${badgeDestino}
+                                <span class="inline-flex items-center gap-1 text-[9px] font-semibold text-emerald-300">
+                                    <i data-lucide="bell" class="size-2 text-emerald-400"></i>
+                                    Radar
+                                </span>
+                            </div>
                             <h4 class="text-xs font-bold text-white truncate mt-1 group-hover:text-emerald-300 transition" title="${p.nome}">${p.nome}</h4>
                             <div class="flex items-center gap-2 mt-0.5">
                                 <span class="text-[10px] text-gray-400 truncate">${loja}</span>
@@ -4932,10 +4999,10 @@
                     </div>
 
                     <div class="pt-2 border-t border-emerald-900/40 flex items-center justify-between gap-2">
-                        <button type="button" onclick="abrirModalCriarMetaComDados('${nomeEscaped}', ${precoVal}, '${lojaEscaped}', '${linkEscaped}', '${imgEscaped}')"
+                        <button type="button" onclick="abrirModalCriarMetaComDados('${nomeEscaped}', ${precoVal}, '${lojaEscaped}', '${linkEscaped}', '${imgEscaped}', '${ehLarItem ? 'compartilhada' : 'so_minha'}')"
                                 class="flex-1 py-2 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-extrabold transition flex items-center justify-center gap-1.5 shadow-2xs">
                             <i data-lucide="target" class="size-3.5"></i>
-                            <span>Transformar em Meta</span>
+                            <span>${ehLarItem ? 'Meta do Lar' : 'Minha Meta'}</span>
                         </button>
                         ${idProd ? `
                             <button type="button" onclick="removerProdutoOlho(${idProd})" title="Remover dos produtos de olho"
@@ -4949,7 +5016,20 @@
             lucide.createIcons();
         }
 
-        function abrirModalAdicionarProdutoOlho() {
+        function selecionarDestinoProdOlho(btn, tipo) {
+            document.querySelectorAll('.chip-destino-prod').forEach(b => {
+                b.className = 'chip-destino-prod p-3 rounded-2xl border border-border bg-card text-left transition flex items-center gap-2.5 hover:bg-muted/20';
+                const iconSpan = b.querySelector('span');
+                if (iconSpan) iconSpan.className = 'size-7 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0';
+            });
+            btn.className = 'chip-destino-prod active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 text-left transition flex items-center gap-2.5';
+            const activeSpan = btn.querySelector('span');
+            if (activeSpan) activeSpan.className = 'size-7 rounded-xl bg-emerald-800 text-white flex items-center justify-center shrink-0 shadow-2xs';
+            const tipoInput = document.getElementById('modalProdOlhoTipo');
+            if (tipoInput) tipoInput.value = tipo;
+        }
+
+        function abrirModalAdicionarProdutoOlho(tipoPadrao = null) {
             const modal = document.getElementById('modalAdicionarProdutoOlho');
             if (!modal) return;
             ['modalProdOlhoLink', 'modalProdOlhoNome', 'modalProdOlhoPreco', 'modalProdOlhoLoja', 'modalProdOlhoFotoUrl'].forEach(id => {
@@ -4958,6 +5038,17 @@
             });
             const prev = document.getElementById('modalProdOlhoPreviewFoto');
             if (prev) prev.classList.add('hidden');
+
+            // Pré-selecionar o destino ('individual' ou 'lar')
+            const destinoDesejado = tipoPadrao || (metasAbaAtiva === 'lar' ? 'lar' : 'individual');
+            const btnInd = document.getElementById('btnDestinoProdIndividual');
+            const btnLar = document.getElementById('btnDestinoProdLar');
+            if (destinoDesejado === 'lar' && btnLar) {
+                selecionarDestinoProdOlho(btnLar, 'lar');
+            } else if (btnInd) {
+                selecionarDestinoProdOlho(btnInd, 'individual');
+            }
+
             modal.classList.remove('hidden');
             lucide.createIcons();
         }
@@ -5023,6 +5114,7 @@
             const loja = document.getElementById('modalProdOlhoLoja')?.value?.trim();
             const link = document.getElementById('modalProdOlhoLink')?.value?.trim();
             const imagem = document.getElementById('modalProdOlhoFotoUrl')?.value?.trim();
+            const tipo = document.getElementById('modalProdOlhoTipo')?.value || 'individual';
 
             if (!nome || preco <= 0) {
                 return seivaNotificar('Informe o nome e um preço válido para o produto.', 'aviso');
@@ -5032,12 +5124,13 @@
                 const res = await fetch('/api/caixa-preta/produtos-watchlist', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
-                    body: JSON.stringify({ nome, preco, loja, link, imagem })
+                    body: JSON.stringify({ nome, preco, loja, link, imagem, tipo })
                 });
 
                 const data = await res.json();
                 if (res.ok) {
-                    seivaNotificar(`"${nome}" adicionado aos seus Produtos de Olho!`, 'sucesso', 'Radar de Desejos');
+                    const destinoMsg = tipo === 'lar' ? 'para nossa casa' : 'para você';
+                    seivaNotificar(`"${nome}" colocado na mira ${destinoMsg}!`, 'sucesso', 'Radar de Desejos');
                     fecharModalId('modalAdicionarProdutoOlho');
                     carregarMetasDados();
                     carregarCaixaPretaDados();

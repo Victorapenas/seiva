@@ -8,6 +8,8 @@ return new class extends Migration {
         Schema::create('produtos_watchlist', function (Blueprint $table) {
             $table->id('id_produto');
             $table->unsignedBigInteger('usuario_id');
+            $table->unsignedBigInteger('lar_id')->nullable();
+            $table->string('tipo', 50)->default('individual');
             $table->string('nome');
             $table->string('emoji', 50)->nullable();
             $table->string('link_referencia', 1000)->nullable();

@@ -55,8 +55,38 @@
             <!-- Nome do Produto -->
             <div class="space-y-1.5">
                 <label class="text-xs font-bold text-foreground">Nome do produto *</label>
-                <input type="text" id="modalProdOlhoNome" required placeholder="Ex: Câmera Sony ZV-E10, Fone Bluetooth..." 
+                <input type="text" id="modalProdOlhoNome" required placeholder="Ex: Notebook Dell, Geladeira Inox, Fone..." 
                        class="w-full px-4 py-2.5 rounded-2xl bg-background border border-border text-xs text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:outline-none shadow-2xs">
+            </div>
+
+            <!-- Destino do Produto: Para mim vs Para nossa casa -->
+            <div class="space-y-1.5">
+                <label class="text-xs font-bold text-foreground">Para quem é esse desejo?</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="selecionarDestinoProdOlho(this, 'individual')"
+                            id="btnDestinoProdIndividual"
+                            class="chip-destino-prod active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 text-left transition flex items-center gap-2.5">
+                        <span class="size-7 rounded-xl bg-emerald-800 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                            <i data-lucide="user" class="size-3.5"></i>
+                        </span>
+                        <div>
+                            <strong class="text-xs font-black text-foreground block">Para mim</strong>
+                            <span class="text-[10px] text-muted-foreground">Uso pessoal</span>
+                        </div>
+                    </button>
+                    <button type="button" onclick="selecionarDestinoProdOlho(this, 'lar')"
+                            id="btnDestinoProdLar"
+                            class="chip-destino-prod p-3 rounded-2xl border border-border bg-card text-left transition flex items-center gap-2.5 hover:bg-muted/20">
+                        <span class="size-7 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                            <i data-lucide="home" class="size-3.5"></i>
+                        </span>
+                        <div>
+                            <strong class="text-xs font-black text-foreground block">Para nossa casa</strong>
+                            <span class="text-[10px] text-muted-foreground">Casal / Lar</span>
+                        </div>
+                    </button>
+                </div>
+                <input type="hidden" id="modalProdOlhoTipo" value="individual">
             </div>
 
             <div class="grid grid-cols-2 gap-3">

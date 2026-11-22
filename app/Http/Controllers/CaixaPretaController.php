@@ -424,22 +424,31 @@ class CaixaPretaController extends Controller
             'loja' => 'nullable|string|max:100',
             'link' => 'nullable|string|max:1000',
             'imagem' => 'nullable|string|max:1000',
+            'tipo' => 'nullable|string|in:individual,lar',
         ]);
 
         $user = Auth::user();
+        $lar = $user->lares()->first();
+        $tipo = $request->tipo === 'lar' && $lar ? 'lar' : 'individual';
+        $larId = $tipo === 'lar' && $lar ? $lar->id_lar : null;
+
         $produto = ProdutoWatchlist::create([
             'usuario_id' => $user->id_usuario,
+            'lar_id' => $larId,
+            'tipo' => $tipo,
             'nome' => $request->nome,
             'preco_alvo' => $request->preco,
             'loja' => $request->loja ?: 'Loja online',
             'link_referencia' => $request->link,
             'imagem' => $request->imagem ?: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120&auto=format&fit=crop&q=60',
-            'emoji' => 'shopping-bag',
+            'emoji' => $tipo === 'lar' ? 'home' : 'shopping-bag',
         ]);
+
+        $destinatarioTexto = $tipo === 'lar' ? 'para nossa casa' : 'para você';
 
         return response()->json([
             'sucesso' => true,
-            'mensagem' => "\"{$produto->nome}\" adicionado aos seus Produtos de Olho!",
+            'mensagem' => "\"{$produto->nome}\" colocado na mira {$destinatarioTexto}!",
             'produto' => $produto,
         ], 201);
     }

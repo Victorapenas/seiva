@@ -177,14 +177,32 @@ class MetaController extends Controller
             ]);
         }
 
-        $produtosWatchlist = ProdutoWatchlist::where('usuario_id', $user->id_usuario)
+        $larIds = $user->lares()->pluck('lares.id_lar')->toArray();
+
+        // Produtos na mira individual (Só meus)
+        $produtosIndividuais = ProdutoWatchlist::where('usuario_id', $user->id_usuario)
+            ->where(function($q) {
+                $q->whereNull('lar_id')->orWhere('tipo', 'individual');
+            })
             ->orderByDesc('id_produto')
             ->get();
+
+        // Produtos na mira do Lar (Para o casal / nossa casa)
+        $produtosLar = collect([]);
+        if (!empty($larIds)) {
+            $produtosLar = ProdutoWatchlist::where(function($q) use ($larIds) {
+                $q->whereIn('lar_id', $larIds)->orWhere('tipo', 'lar');
+            })
+            ->orderByDesc('id_produto')
+            ->get();
+        }
 
         return response()->json([
             'individuais' => $metasIndividuais,
             'lar' => $metasLar,
-            'produtos_de_olho' => $produtosWatchlist,
+            'produtos_de_olho' => $produtosIndividuais,
+            'produtos_de_olho_individuais' => $produtosIndividuais,
+            'produtos_de_olho_lar' => $produtosLar,
         ]);
     }
 
