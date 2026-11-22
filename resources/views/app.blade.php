@@ -361,27 +361,66 @@
                 const msgEl = document.getElementById('seivaDialogMensagem');
                 const inputWrap = document.getElementById('seivaDialogInputWrapper');
                 const btnConf = document.getElementById('seivaDialogBtnConfirmar');
+                const btnCanc = document.getElementById('seivaDialogBtnCancelar');
                 const iconBox = document.getElementById('seivaDialogIconBox');
                 const iconEl = document.getElementById('seivaDialogIcon');
+                const badgeWrap = document.getElementById('seivaDialogBadgeWrapper');
+                const badgeEl = document.getElementById('seivaDialogBadge');
+                const impactoBox = document.getElementById('seivaDialogImpactoBox');
+                const impactoTit = document.getElementById('seivaDialogImpactoTitulo');
+                const impactoTxt = document.getElementById('seivaDialogImpactoTexto');
 
                 if (titEl) titEl.innerText = opcoes.titulo || 'Confirmação';
                 if (msgEl) msgEl.innerText = opcoes.mensagem || 'Deseja prosseguir com esta ação?';
                 if (inputWrap) inputWrap.classList.add('hidden');
 
+                // Badge Contextual
+                if (badgeWrap && badgeEl) {
+                    if (opcoes.badge) {
+                        badgeWrap.classList.remove('hidden');
+                        badgeEl.innerText = opcoes.badge.texto || opcoes.badge;
+                        const bTipo = opcoes.badge.tipo || 'alerta';
+                        if (bTipo === 'casal') {
+                            badgeEl.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black border bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700';
+                        } else if (bTipo === 'perigo' || bTipo === 'seguranca') {
+                            badgeEl.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black border bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700';
+                        } else {
+                            badgeEl.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black border bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700';
+                        }
+                    } else {
+                        badgeWrap.classList.add('hidden');
+                    }
+                }
+
+                // Box de Impacto no Histórico / Relacionamento (Anti-Discórdia)
+                if (impactoBox && impactoTxt) {
+                    if (opcoes.impacto) {
+                        impactoBox.classList.remove('hidden');
+                        if (impactoTit) impactoTit.innerText = opcoes.impacto.titulo || 'Impacto no Histórico & Casal';
+                        impactoTxt.innerText = opcoes.impacto.texto || opcoes.impacto;
+                    } else {
+                        impactoBox.classList.add('hidden');
+                    }
+                }
+
+                if (btnCanc) {
+                    btnCanc.innerText = opcoes.cancelText || 'Cancelar (Manter)';
+                }
+
                 if (btnConf) {
                     btnConf.innerText = opcoes.confirmText || 'Confirmar';
                     btnConf.className = opcoes.tipo === 'perigo' 
-                        ? 'flex-1 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs transition shadow-soft flex items-center justify-center gap-1.5'
-                        : 'flex-1 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-xs transition shadow-soft flex items-center justify-center gap-1.5';
+                        ? 'flex-1 py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs transition shadow-soft flex items-center justify-center gap-1.5'
+                        : 'flex-1 py-3.5 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs transition shadow-soft flex items-center justify-center gap-1.5';
                 }
 
                 if (iconBox && iconEl) {
                     if (opcoes.tipo === 'perigo') {
                         iconBox.className = 'size-14 mx-auto rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200/50 flex items-center justify-center';
-                        iconEl.setAttribute('data-lucide', opcoes.icone || 'alert-triangle');
+                        iconEl.setAttribute('data-lucide', opcoes.icone || 'shield-alert');
                     } else {
                         iconBox.className = 'size-14 mx-auto rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 flex items-center justify-center';
-                        iconEl.setAttribute('data-lucide', opcoes.icone || 'help-circle');
+                        iconEl.setAttribute('data-lucide', opcoes.icone || 'shield-check');
                     }
                 }
 
@@ -441,10 +480,18 @@
             }
         }
 
-        // Override definitivo de window.alert para impedir popups nativos estilo spam
+        // Override definitivo de window.alert, window.confirm e window.prompt para blindar a UX
         window.alert = function(msg) {
             if (!msg) return;
             seivaNotificar(msg, 'aviso');
+        };
+        window.confirm = function(msg) {
+            console.warn('window.confirm nativo bloqueado para prevenir quebra de UX e anti-confusão:', msg);
+            return false;
+        };
+        window.prompt = function(msg, def) {
+            console.warn('window.prompt nativo bloqueado:', msg);
+            return null;
         };
 
         // Estado Global da Aplicação
@@ -2256,11 +2303,33 @@
         }
 
         async function executarExcluirTransacaoModal() {
-            const id = document.getElementById('editTxId').value;
-            const titulo = document.getElementById('editTxTitulo').value;
+            const id = document.getElementById('editTxId')?.value;
+            const titulo = document.getElementById('editTxTitulo')?.value || 'este lançamento';
+            const visibilidade = document.getElementById('editTxVisibilidade')?.value || 'privado';
             if (!id) return fecharModalId('modalEditarTransacao');
 
-            if (!confirm(`Deseja realmente excluir a transação "${titulo}"? O saldo da conta bancária será revertido.`)) return;
+            const titLower = (titulo || '').toLowerCase();
+            const isCasal = visibilidade === 'compartilhado' || visibilidade === 'lar' || titLower.includes('ajuda') || titLower.includes('ian') || titLower.includes('duda') || titLower.includes('lar');
+
+            const confirmou = await seivaConfirm({
+                titulo: isCasal ? 'Estornar lançamento do casal?' : 'Remover lançamento?',
+                mensagem: `Deseja realmente remover o lançamento "${titulo}"?`,
+                badge: isCasal 
+                    ? { texto: 'Transação do Casal (Mútua)', tipo: 'casal' } 
+                    : { texto: 'Lançamento Pessoal', tipo: 'pessoal' },
+                impacto: isCasal ? {
+                    titulo: 'Transparência Bilateral Protegida',
+                    texto: 'Este lançamento envolve ajuda mútua ou rateio com o parceiro. Para proteger a relação e evitar conflitos, ele não sumirá no vácuo: o saldo será estornado e a auditoria ficará registrada no Histórico do Lar com data, valor e motivo.'
+                } : {
+                    titulo: 'Impacto no Saldo da Conta',
+                    texto: 'O saldo da conta bancária será revertido e a exclusão ficará gravada no seu Histórico de Auditoria.'
+                },
+                tipo: 'perigo',
+                icone: isCasal ? 'shield-alert' : 'trash-2',
+                confirmText: isCasal ? 'Estornar & Registrar Auditoria' : 'Remover & Reverter Saldo',
+                cancelText: 'Cancelar (Manter Seguro)'
+            });
+            if (!confirmou) return;
 
             try {
                 const res = await fetch(`/api/transacoes/${id}`, {
@@ -2274,20 +2343,43 @@
 
                 if (res.ok) {
                     fecharModalId('modalEditarTransacao');
-                    seivaNotificar('Transação excluída e saldo bancário restaurado!', 'sucesso', 'Transação Removida');
+                    seivaNotificar(isCasal ? 'Lançamento estornado e registrado na auditoria do casal!' : 'Transação excluída e saldo bancário restaurado!', 'sucesso', isCasal ? 'Estorno Mútuo Concluído' : 'Transação Removida');
                     carregarTransacoesDados();
                     carregarDashboardDados();
                     carregarTransacoesLar();
                 } else {
-                    seivaNotificar('Não foi possível excluir a transação.', 'aviso');
+                    const err = await res.json().catch(() => ({}));
+                    seivaNotificar(err.mensagem || err.error || 'Não foi possível excluir a transação.', 'aviso');
                 }
             } catch (e) {
                 seivaNotificar('Erro de conexão ao excluir.', 'erro');
             }
         }
 
-        async function excluirTransacaoDireto(id, titulo) {
-            if (!confirm(`Deseja realmente remover o lançamento "${titulo}"? O saldo será recalculado.`)) return;
+        async function excluirTransacaoDireto(id, titulo, visibilidade) {
+            const titLower = (titulo || '').toLowerCase();
+            const isCasal = visibilidade === 'compartilhado' || visibilidade === 'lar' || titLower.includes('ajuda') || titLower.includes('ian') || titLower.includes('duda') || titLower.includes('lar');
+
+            const confirmou = await seivaConfirm({
+                titulo: isCasal ? 'Estornar lançamento do casal?' : 'Remover lançamento?',
+                mensagem: `Deseja realmente remover o lançamento "${titulo}"?`,
+                badge: isCasal 
+                    ? { texto: 'Transação do Casal (Mútua)', tipo: 'casal' } 
+                    : { texto: 'Lançamento Pessoal', tipo: 'pessoal' },
+                impacto: isCasal ? {
+                    titulo: 'Transparência Bilateral Protegida',
+                    texto: 'Este lançamento envolve ajuda mútua ou rateio com o parceiro. Para proteger a relação e evitar conflitos, ele não sumirá no vácuo: o saldo será estornado e a auditoria ficará registrada no Histórico do Lar com data, valor e motivo.'
+                } : {
+                    titulo: 'Impacto no Saldo da Conta',
+                    texto: 'O saldo da conta bancária será revertido e a exclusão ficará gravada no seu Histórico de Auditoria.'
+                },
+                tipo: 'perigo',
+                icone: isCasal ? 'shield-alert' : 'trash-2',
+                confirmText: isCasal ? 'Estornar & Registrar Auditoria' : 'Remover & Reverter Saldo',
+                cancelText: 'Cancelar (Manter Seguro)'
+            });
+            if (!confirmou) return;
+
             try {
                 const res = await fetch(`/api/transacoes/${id}`, {
                     method: 'DELETE',
@@ -2298,12 +2390,13 @@
                     }
                 });
                 if (res.ok) {
-                    seivaNotificar(`Lançamento "${titulo}" removido!`, 'info', 'Transação Excluída');
+                    seivaNotificar(isCasal ? `Lançamento "${titulo}" estornado e registrado na auditoria!` : `Lançamento "${titulo}" removido!`, 'sucesso', isCasal ? 'Estorno Auditado' : 'Transação Excluída');
                     carregarTransacoesDados();
                     carregarDashboardDados();
                     carregarTransacoesLar();
                 } else {
-                    seivaNotificar('Erro ao remover transação.', 'aviso');
+                    const err = await res.json().catch(() => ({}));
+                    seivaNotificar(err.mensagem || err.error || 'Erro ao remover transação.', 'aviso');
                 }
             } catch (e) {
                 seivaNotificar('Erro de conexão.', 'erro');
@@ -3534,9 +3627,23 @@
 
         async function executarExcluirDespesaLar() {
             const id = document.getElementById('editLarDespId')?.value;
+            const titulo = document.getElementById('editLarDespTitulo')?.value || 'esta despesa';
             if (!id) return fecharModalId('modalEditarDespesaLar');
 
-            if (!confirm('Deseja realmente remover esta despesa do Lar e recalcular o rateio?')) return;
+            const confirmou = await seivaConfirm({
+                titulo: 'Remover despesa do Lar?',
+                mensagem: `Deseja realmente remover a despesa "${titulo}" do Lar?`,
+                badge: { texto: 'Despesa Compartilhada do Lar', tipo: 'casal' },
+                impacto: {
+                    titulo: 'Recálculo Imediato do Rateio',
+                    texto: 'As cotas mensais de Ian e Duda serão recalculadas imediatamente. Para proteger a confiança, a alteração ficará registrada no Histórico de Auditoria do Lar.'
+                },
+                tipo: 'perigo',
+                icone: 'shield-alert',
+                confirmText: 'Remover & Recalcular Rateio',
+                cancelText: 'Cancelar (Manter Despesa)'
+            });
+            if (!confirmou) return;
 
             try {
                 const res = await fetch(`/lar/despesas/${id}`, {
@@ -3550,10 +3657,11 @@
 
                 if (res.ok) {
                     fecharModalId('modalEditarDespesaLar');
-                    seivaNotificar('Despesa removida do Lar com sucesso!', 'info', 'Despesa Excluída');
+                    seivaNotificar(`Despesa "${titulo}" removida do Lar e rateio recalculado!`, 'info', 'Despesa Excluída');
                     carregarLarDados();
                 } else {
-                    seivaNotificar('Não foi possível remover a despesa.', 'aviso');
+                    const err = await res.json().catch(() => ({}));
+                    seivaNotificar(err.mensagem || err.error || 'Não foi possível remover a despesa.', 'aviso');
                 }
             } catch (e) {
                 console.error(e);
@@ -3571,16 +3679,35 @@
             carregarLarDados();
         }
 
-        function contraproporAcordoLar(id, titulo) {
-            const novoValor = prompt(`Quanto você sugere guardar ou pagar por mês para "${titulo}"?`, '80,00');
+        async function contraproporAcordoLar(id, titulo) {
+            const novoValor = await seivaPrompt({
+                titulo: 'Propor novo valor',
+                mensagem: `Quanto você sugere guardar ou pagar por mês para "${titulo}"?`,
+                label: 'Sua sugestão mensal (R$)',
+                defaultValue: '80,00',
+                placeholder: 'Ex: 80,00',
+                confirmText: 'Enviar Proposta Delicada'
+            });
             if (novoValor) {
                 seivaNotificar(`Contraproposta de R$ ${novoValor}/mês para "${titulo}" enviada delicadamente para Ian!`, 'sucesso', 'Contraproposta Enviada');
             }
         }
 
-        function renegociarAcordoCasal(id, titulo) {
-            const opt = confirm(`Deseja propor uma pausa amigável de 1 mês ou reajustar a parcela de "${titulo}"?`);
-            if (opt) {
+        async function renegociarAcordoCasal(id, titulo) {
+            const confirmou = await seivaConfirm({
+                titulo: 'Renegociação Delicada',
+                mensagem: `Deseja propor uma pausa amigável de 1 mês ou reajustar a parcela de "${titulo}"?`,
+                badge: { texto: 'Mesa de Acordos Diplomática', tipo: 'casal' },
+                impacto: {
+                    titulo: 'Sem Multas ou Atrito',
+                    texto: 'A proposta será levada à Mesa de Acordos para que o casal decida em harmonia, sem juros ou cobranças constrangedoras.'
+                },
+                tipo: 'info',
+                icone: 'handshake',
+                confirmText: 'Abrir Renegociação',
+                cancelText: 'Manter como Está'
+            });
+            if (confirmou) {
                 seivaNotificar(`Solicitação de renegociação para "${titulo}" aberta na Mesa de Acordos sem multas ou atrito!`, 'info', 'Renegociação Solicitada');
             }
         }
@@ -7341,7 +7468,20 @@
             const titulo = document.getElementById('editMetaNome')?.value || 'este objetivo';
             if (!id) return fecharModalId('modalEditarMeta');
 
-            if (!confirm(`Deseja realmente excluir o objetivo "${titulo}"?`)) return;
+            const confirmou = await seivaConfirm({
+                titulo: 'Excluir objetivo?',
+                mensagem: `Deseja realmente excluir o objetivo "${titulo}"?`,
+                badge: { texto: 'Objetivo & Poupança', tipo: 'seguranca' },
+                impacto: {
+                    titulo: 'Estorno do Saldo Guardado',
+                    texto: 'Se esta meta tiver valor já acumulado, o montante total será devolvido automaticamente para a sua conta bancária de origem com registro formal de estorno.'
+                },
+                tipo: 'perigo',
+                icone: 'trash-2',
+                confirmText: 'Excluir Objetivo & Estornar',
+                cancelText: 'Cancelar (Manter Objetivo)'
+            });
+            if (!confirmou) return;
 
             try {
                 const res = await fetch(`/api/metas/${id}`, {
@@ -7354,13 +7494,14 @@
                 });
 
                 if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
                     fecharModalId('modalEditarMeta');
-                    seivaNotificar(`Objetivo "${titulo}" excluído com sucesso!`, 'sucesso', 'Meta Removida');
+                    seivaNotificar(data.mensagem || `Objetivo "${titulo}" excluído com sucesso!`, 'sucesso', 'Meta Removida');
                     carregarMetasDados();
                     carregarDashboardDados();
                 } else {
                     const err = await res.json().catch(() => ({}));
-                    seivaNotificar(err.mensagem || 'Não foi possível excluir o objetivo.', 'aviso');
+                    seivaNotificar(err.mensagem || err.error || 'Não foi possível excluir o objetivo.', 'aviso');
                 }
             } catch (e) {
                 console.error(e);
@@ -7369,7 +7510,21 @@
         }
 
         async function excluirMetaDireto(id, titulo) {
-            if (!confirm(`Deseja realmente excluir o objetivo "${titulo}"?`)) return;
+            const confirmou = await seivaConfirm({
+                titulo: 'Excluir objetivo?',
+                mensagem: `Deseja realmente excluir o objetivo "${titulo}"?`,
+                badge: { texto: 'Objetivo & Poupança', tipo: 'seguranca' },
+                impacto: {
+                    titulo: 'Estorno do Saldo Guardado',
+                    texto: 'Se esta meta tiver valor já acumulado, o montante total será devolvido automaticamente para sua conta bancária com rastro de estorno.'
+                },
+                tipo: 'perigo',
+                icone: 'trash-2',
+                confirmText: 'Excluir & Estornar',
+                cancelText: 'Cancelar (Manter)'
+            });
+            if (!confirmou) return;
+
             try {
                 const res = await fetch(`/api/metas/${id}`, {
                     method: 'DELETE',
@@ -7380,11 +7535,13 @@
                     }
                 });
                 if (res.ok) {
-                    seivaNotificar(`Objetivo "${titulo}" excluído!`, 'sucesso', 'Meta Removida');
+                    const data = await res.json().catch(() => ({}));
+                    seivaNotificar(data.mensagem || `Objetivo "${titulo}" excluído!`, 'sucesso', 'Meta Removida');
                     carregarMetasDados();
                     carregarDashboardDados();
                 } else {
-                    seivaNotificar('Erro ao excluir objetivo.', 'aviso');
+                    const err = await res.json().catch(() => ({}));
+                    seivaNotificar(err.mensagem || err.error || 'Erro ao excluir objetivo.', 'aviso');
                 }
             } catch (e) {
                 seivaNotificar('Erro de conexão ao excluir.', 'erro');
@@ -7469,11 +7626,24 @@
         }
 
         async function executarExcluirContaModal() {
-            const id = document.getElementById('editContaId').value;
-            const nome = document.getElementById('editContaNome').value;
+            const id = document.getElementById('editContaId')?.value;
+            const nome = document.getElementById('editContaNome')?.value || 'esta instituição';
             if (!id) return fecharModalId('modalEditarConta');
 
-            if (!confirm(`Deseja realmente remover a conta "${nome}"? Atenção: Isso removerá os registros vinculados a ela.`)) return;
+            const confirmou = await seivaConfirm({
+                titulo: 'Remover ou arquivar conta?',
+                mensagem: `Deseja remover a conta "${nome}"?`,
+                badge: { texto: 'Conta Bancária & Integridade', tipo: 'seguranca' },
+                impacto: {
+                    titulo: 'Proteção de Extratos Passados',
+                    texto: 'Se esta conta tiver lançamentos vinculados, ela não será apagada fisicamente para não quebrar seus relatórios: será arquivada com segurança e ocultada para novos gastos.'
+                },
+                tipo: 'perigo',
+                icone: 'shield-alert',
+                confirmText: 'Prosseguir com Remoção',
+                cancelText: 'Cancelar (Manter Conta)'
+            });
+            if (!confirmou) return;
 
             try {
                 const res = await fetch(`/api/contas/${id}`, {
@@ -7486,12 +7656,14 @@
                 });
 
                 if (res.ok) {
+                    const data = await res.json().catch(() => ({}));
                     fecharModalId('modalEditarConta');
-                    seivaNotificar(`Conta "${nome}" removida com sucesso!`, 'sucesso', 'Conta Excluída');
+                    seivaNotificar(data.mensagem || `Conta "${nome}" processada com sucesso!`, 'sucesso', 'Conta Processada');
                     carregarDashboardDados();
                     carregarCaixaPretaDados();
                 } else {
-                    seivaNotificar('Não foi possível remover a conta.', 'aviso');
+                    const err = await res.json().catch(() => ({}));
+                    seivaNotificar(err.mensagem || err.error || 'Não foi possível remover a conta.', 'aviso');
                 }
             } catch (e) {
                 seivaNotificar('Erro de conexão ao remover conta.', 'erro');
@@ -7499,7 +7671,21 @@
         }
 
         async function excluirContaDireto(id, nome) {
-            if (!confirm(`Deseja realmente remover a conta "${nome}"?`)) return;
+            const confirmou = await seivaConfirm({
+                titulo: 'Remover ou arquivar conta?',
+                mensagem: `Deseja realmente remover a conta "${nome}"?`,
+                badge: { texto: 'Conta Bancária & Integridade', tipo: 'seguranca' },
+                impacto: {
+                    titulo: 'Proteção de Extratos Passados',
+                    texto: 'Se a conta já tiver transações registradas, ela será arquivada com segurança para preservar todo o histórico financeiro.'
+                },
+                tipo: 'perigo',
+                icone: 'shield-alert',
+                confirmText: 'Prosseguir',
+                cancelText: 'Cancelar'
+            });
+            if (!confirmou) return;
+
             try {
                 const res = await fetch(`/api/contas/${id}`, {
                     method: 'DELETE',
@@ -7510,11 +7696,13 @@
                     }
                 });
                 if (res.ok) {
-                    seivaNotificar(`Conta "${nome}" removida!`, 'sucesso', 'Conta Excluída');
+                    const data = await res.json().catch(() => ({}));
+                    seivaNotificar(data.mensagem || `Conta "${nome}" processada com sucesso!`, 'sucesso', 'Conta Atualizada');
                     carregarDashboardDados();
                     carregarCaixaPretaDados();
                 } else {
-                    seivaNotificar('Erro ao remover conta.', 'aviso');
+                    const err = await res.json().catch(() => ({}));
+                    seivaNotificar(err.mensagem || err.error || 'Erro ao remover conta.', 'aviso');
                 }
             } catch (e) {
                 seivaNotificar('Erro de conexão.', 'erro');
@@ -7522,7 +7710,21 @@
         }
 
         async function excluirDespesaLarDireto(id, titulo) {
-            if (!confirm(`Deseja realmente excluir a despesa "${titulo}" e recalcular as cotas do Lar?`)) return;
+            const confirmou = await seivaConfirm({
+                titulo: 'Remover despesa do Lar?',
+                mensagem: `Deseja realmente excluir a despesa "${titulo}" e recalcular as cotas do Lar?`,
+                badge: { texto: 'Despesa Compartilhada do Lar', tipo: 'casal' },
+                impacto: {
+                    titulo: 'Recálculo Imediato do Rateio',
+                    texto: 'As cotas mensais do casal serão recalculadas e esta exclusão será gravada no Histórico de Auditoria para comprovação mútua.'
+                },
+                tipo: 'perigo',
+                icone: 'shield-alert',
+                confirmText: 'Remover & Recalcular',
+                cancelText: 'Cancelar (Manter)'
+            });
+            if (!confirmou) return;
+
             try {
                 const res = await fetch(`/lar/despesas/${id}`, {
                     method: 'DELETE',
