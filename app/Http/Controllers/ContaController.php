@@ -76,14 +76,34 @@ class ContaController extends Controller
     public function update(Request $request, $id)
     {
         $conta = Conta::where('usuario_id', Auth::id())->where('id_conta', $id)->firstOrFail();
-        $conta->update($request->only(['nome', 'saldo', 'comprometido', 'cor', 'chave_pix', 'limite']));
-        return response()->json($conta);
+        
+        $request->validate([
+            'nome' => 'nullable|string|max:255',
+            'tipo' => 'nullable|string|max:50',
+            'saldo' => 'nullable|numeric',
+            'cor' => 'nullable|string|max:50',
+            'limite' => 'nullable|numeric',
+            'comprometido' => 'nullable|numeric',
+        ]);
+
+        $conta->update($request->only(['nome', 'tipo', 'saldo', 'comprometido', 'cor', 'chave_pix', 'limite']));
+        
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => "Conta \"{$conta->nome}\" atualizada com sucesso!",
+            'conta' => $conta
+        ]);
     }
 
     public function destroy($id)
     {
         $conta = Conta::where('usuario_id', Auth::id())->where('id_conta', $id)->firstOrFail();
+        $nome = $conta->nome;
         $conta->delete();
-        return response()->json(['message' => 'Conta removida com sucesso.']);
+        
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => "Conta \"{$nome}\" removida com sucesso."
+        ]);
     }
 }

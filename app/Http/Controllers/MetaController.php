@@ -458,4 +458,25 @@ class MetaController extends Controller
             'mensagem' => 'Meta desfeita e saldo redistribuído com sucesso!',
         ]);
     }
+
+    public function destroy($id)
+    {
+        $user = Auth::user();
+        $larIds = $user->lares()->pluck('lares.id_lar')->toArray();
+
+        $meta = Meta::where(function ($q) use ($user, $larIds) {
+            $q->where('usuario_id', $user->id_usuario);
+            if (!empty($larIds)) {
+                $q->orWhereIn('lar_id', $larIds);
+            }
+        })->where('id_meta', $id)->firstOrFail();
+
+        $titulo = $meta->titulo;
+        $meta->delete();
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => "Objetivo \"{$titulo}\" removido com sucesso!",
+        ]);
+    }
 }

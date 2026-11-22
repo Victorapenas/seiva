@@ -52,13 +52,15 @@ Route::prefix('api')->group(function () {
         Route::get('/contas', [ContaController::class, 'index']);
         Route::post('/contas', [ContaController::class, 'store']);
         Route::put('/contas/{id}', [ContaController::class, 'update']);
+        Route::post('/contas/{id}/atualizar', [ContaController::class, 'update']);
         Route::post('/contas/{id}/saldo', [DashboardController::class, 'ajustarSaldoConta']);
         Route::delete('/contas/{id}', [ContaController::class, 'destroy']);
 
         Route::get('/transacoes', [TransacaoController::class, 'index']);
         Route::post('/transacoes', [TransacaoController::class, 'store']);
+        Route::put('/transacoes/{id}', [TransacaoController::class, 'update']);
+        Route::post('/transacoes/{id}/atualizar', [TransacaoController::class, 'update']);
         Route::post('/transacoes/{id}/icone', [TransacaoController::class, 'atualizarIcone']);
-        Route::match(['put', 'post'], '/transacoes/{id}', [TransacaoController::class, 'atualizarIcone']);
         Route::delete('/transacoes/{id}', [TransacaoController::class, 'destroy']);
 
         // RF002: Caixa Preta
@@ -105,6 +107,8 @@ Route::prefix('api')->group(function () {
         Route::post('/metas/{id}/guardar', [MetaController::class, 'contribuir']);
         Route::match(['put', 'post'], '/metas/{id}', [MetaController::class, 'atualizarMeta']);
         Route::post('/metas/{id}/atualizar', [MetaController::class, 'atualizarMeta']);
+        Route::delete('/metas/{id}', [MetaController::class, 'destroy']);
+        Route::post('/metas/{id}/excluir', [MetaController::class, 'destroy']);
         Route::post('/metas/{id}/desfazer', [MetaController::class, 'desfazerMeta']);
         Route::post('/metas/consultar-link', [MetaController::class, 'consultarLinkProduto']);
 
@@ -137,9 +141,21 @@ Route::prefix('api')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/transacoes/{id}/icone', [TransacaoController::class, 'atualizarIcone']);
-    Route::match(['put', 'post'], '/transacoes/{id}', [TransacaoController::class, 'atualizarIcone']);
+    Route::put('/transacoes/{id}', [TransacaoController::class, 'update']);
+    Route::post('/transacoes/{id}/atualizar', [TransacaoController::class, 'update']);
+    Route::delete('/transacoes/{id}', [TransacaoController::class, 'destroy']);
 
-    // Aliases sem prefixo /api para compatibilidade total do frontend
+    // Aliases de Metas sem /api
+    Route::delete('/metas/{id}', [MetaController::class, 'destroy']);
+    Route::post('/metas/{id}/excluir', [MetaController::class, 'destroy']);
+    Route::post('/metas/{id}/atualizar', [MetaController::class, 'atualizarMeta']);
+
+    // Aliases de Contas sem /api
+    Route::put('/contas/{id}', [ContaController::class, 'update']);
+    Route::post('/contas/{id}/atualizar', [ContaController::class, 'update']);
+    Route::delete('/contas/{id}', [ContaController::class, 'destroy']);
+
+    // Aliases de Lar sem prefixo /api para compatibilidade total do frontend
     Route::post('/lar/despesas', [LarController::class, 'storeDespesa']);
     Route::post('/lar/despesas/{id}/atualizar', [LarController::class, 'updateDespesa']);
     Route::put('/lar/despesas/{id}', [LarController::class, 'updateDespesa']);

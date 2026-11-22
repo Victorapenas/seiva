@@ -147,6 +147,99 @@ class TransacaoController extends Controller
         });
     }
 
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'titulo' => 'required|string|max:255',
+            'valor' => 'required|numeric|min:0.01',
+            'tipo' => 'required|in:entrada,saida',
+            'conta_id' => 'required|exists:contas,id_conta',
+            'categoria_id' => 'nullable|exists:categorias,id_categoria',
+            'categoria_nome' => 'nullable|string',
+            'is_imprevisto' => 'nullable|boolean',
+            'data' => 'nullable|date',
+            'emoji' => 'nullable|string',
+            'visibilidade' => 'nullable|in:pessoal,compartilhado,lar',
+        ]);
+
+        $userId = Auth::id();
+        $transacao = Transacao::where('usuario_id', $userId)->where('id_transacao', $id)->firstOrFail();
+
+        $novaConta = Conta::where('usuario_id', $userId)->where('id_conta', $request->conta_id)->first();
+        if (!$novaConta) {
+            return response()->json(['error' => 'A conta informada não pertence ao usuário.'], 403);
+        }
+
+        // Resolução de Categoria
+        $categoriaId = $request->categoria_id;
+        $iconeSugerido = null;
+        if (!$categoriaId && $request->filled('categoria_nome')) {
+            $mapaIcones = [
+                'Moradia' => 'home',
+                'Alimentação' => 'utensils',
+                'Transporte' => 'car',
+                'Saúde' => 'pill',
+                'Lazer' => 'film',
+                'Mercado' => 'shopping-cart',
+                'Beleza' => 'sparkles',
+                'Presente' => 'gift',
+            ];
+            $catNome = trim($request->categoria_nome);
+            $iconeSugerido = $mapaIcones[$catNome] ?? 'tag';
+
+            $categoria = \App\Models\Categoria::firstOrCreate(
+                ['nome' => $catNome],
+                [
+                    'emoji' => $iconeSugerido,
+                    'cor' => '#10b981',
+                    'sistema' => true,
+                ]
+            );
+            $categoriaId = $categoria->id_categoria;
+        }
+
+        $visibilidade = $request->visibilidade ?: ($transacao->visibilidade ?: 'pessoal');
+
+        return DB::transaction(function () use ($request, $userId, $transacao, $novaConta, $categoriaId, $iconeSugerido, $visibilidade) {
+            // 1. Reverter saldo antigo na conta antiga
+            $contaAntiga = Conta::where('usuario_id', $userId)->where('id_conta', $transacao->conta_id)->first();
+            if ($contaAntiga) {
+                if ($transacao->tipo === 'entrada') {
+                    $contaAntiga->decrement('saldo', $transacao->valor);
+                } else {
+                    $contaAntiga->increment('saldo', $transacao->valor);
+                }
+            }
+
+            // 2. Aplicar novo saldo na nova conta
+            if ($request->tipo === 'entrada') {
+                $novaConta->increment('saldo', $request->valor);
+            } else {
+                $novaConta->decrement('saldo', $request->valor);
+            }
+
+            $iconeFinal = $request->emoji ?: ($iconeSugerido ?: $transacao->emoji ?: ($request->tipo === 'entrada' ? 'trending-up' : 'credit-card'));
+
+            // 3. Atualizar campos da transação
+            $transacao->update([
+                'titulo' => $request->titulo,
+                'valor' => $request->valor,
+                'tipo' => $request->tipo,
+                'conta_id' => $request->conta_id,
+                'categoria_id' => $categoriaId ?: $transacao->categoria_id,
+                'data' => $request->data ?? $transacao->data,
+                'visibilidade' => $visibilidade,
+                'emoji' => $iconeFinal,
+            ]);
+
+            return response()->json([
+                'sucesso' => true,
+                'mensagem' => 'Transação atualizada com sucesso!',
+                'transacao' => $transacao->load(['conta', 'categoria'])
+            ]);
+        });
+    }
+
     public function destroy($id)
     {
         $userId = Auth::id();

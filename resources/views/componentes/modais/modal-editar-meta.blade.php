@@ -56,6 +56,10 @@
                         <i data-lucide="graduation-cap" class="size-3.5"></i>
                         <span>Curso</span>
                     </button>
+                    <button type="button" onclick="selecionarTipoMetaEdicao(this, 'outros', 'sparkles')" class="chip-cat-meta-edit flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition">
+                        <i data-lucide="sparkles" class="size-3.5 text-amber-500"></i>
+                        <span>Outros</span>
+                    </button>
                 </div>
                 <input type="hidden" id="editMetaCategoria" value="produto">
             </div>
@@ -135,11 +139,15 @@
                 </div>
             </div>
 
-            <!-- Botão Salvar -->
-            <div class="pt-2">
-                <button type="submit" class="w-full py-3.5 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-sm transition shadow-soft flex items-center justify-center gap-2">
+            <!-- Botões de Ação: Salvar e Excluir -->
+            <div class="pt-2 flex flex-col sm:flex-row gap-2">
+                <button type="submit" class="flex-1 py-3.5 rounded-2xl bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs transition shadow-soft flex items-center justify-center gap-2">
                     <i data-lucide="save" class="size-4"></i>
                     <span>Salvar alterações</span>
+                </button>
+                <button type="button" onclick="executarExcluirMeta()" class="py-3.5 px-4 rounded-2xl border border-rose-300 dark:border-rose-800 bg-rose-50/50 dark:bg-rose-950/20 hover:bg-rose-100 text-rose-700 dark:text-rose-300 font-extrabold text-xs transition flex items-center justify-center gap-1.5 shadow-2xs">
+                    <i data-lucide="trash-2" class="size-4"></i>
+                    <span>Excluir</span>
                 </button>
             </div>
         </form>

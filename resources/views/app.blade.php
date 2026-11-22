@@ -231,6 +231,8 @@
     @include('componentes.modais.modal-contestar-envio-lar')
     @include('componentes.modais.modal-editar-lar')
     @include('componentes.modais.modal-editar-despesa-lar')
+    @include('componentes.modais.modal-editar-transacao')
+    @include('componentes.modais.modal-editar-conta')
 
     <!-- ============================================================== -->
     <!-- CONTAINER GLOBAL DE NOTIFICAÇÕES TOAST (FINTECH PREMIUM)       -->
@@ -1687,9 +1689,14 @@
                                 </div>
                                 <div class="flex items-center justify-between pt-1 border-t border-border/50 text-[10px] text-muted-foreground">
                                     <span>${c.atualizado || 'Atualizado hoje'}</span>
-                                    <button type="button" onclick="abrirModalAtualizarSaldo('${c.id_conta}')" class="text-emerald-700 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1">
-                                        <i data-lucide="refresh-cw" class="size-3"></i> Atualizar
-                                    </button>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" onclick="abrirModalEditarConta(${JSON.stringify(c).replace(/"/g, '&quot;')})" class="text-foreground hover:text-emerald-700 dark:hover:text-emerald-400 font-bold flex items-center gap-1 transition" title="Editar conta">
+                                            <i data-lucide="edit-3" class="size-3"></i> Editar
+                                        </button>
+                                        <button type="button" onclick="abrirModalAtualizarSaldo('${c.id_conta}')" class="text-emerald-700 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1">
+                                            <i data-lucide="refresh-cw" class="size-3"></i> Saldo
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         `).join('');
@@ -1753,6 +1760,18 @@
                                 <span class="text-xs sm:text-sm font-black ${item.valor > 0 ? 'text-emerald-600' : 'text-foreground'}">
                                     ${item.valor > 0 ? '+ ' : ''}${saldosVisiveis ? BRL(Math.abs(item.valor)) : '••••'}
                                 </span>
+                                ${txId ? `
+                                <div class="flex items-center gap-1">
+                                    <button type="button" onclick="abrirModalEditarTransacao(${JSON.stringify(item).replace(/"/g, '&quot;')})" 
+                                            class="size-6 rounded-md border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs" title="Editar transação">
+                                        <i data-lucide="edit-3" class="size-2.5"></i>
+                                    </button>
+                                    <button type="button" onclick="excluirTransacaoDireto('${txId}', '${safeTitulo}')" 
+                                            class="size-6 rounded-md border border-rose-300 dark:border-rose-900 bg-rose-50/40 dark:bg-rose-950/20 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition shadow-2xs" title="Excluir transação">
+                                        <i data-lucide="trash-2" class="size-2.5"></i>
+                                    </button>
+                                </div>
+                                ` : ''}
                             </div>
                         </div>`;
                     }).join('');
@@ -2024,6 +2043,7 @@
             const contaNome = t.conta?.nome || '';
             const catNome   = t.categoria?.nome || '';
             const dataFmt   = formatarDataTransacaoBR(t.data, 'curto');
+            const tJsonStr  = JSON.stringify(t).replace(/"/g, '&quot;');
 
             let badge = '';
             if (t.visibilidade === 'pessoal') {
@@ -2059,12 +2079,218 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex flex-col items-end shrink-0 ml-3 gap-1">
+                    <div class="flex items-center gap-2.5 shrink-0 ml-3">
                         <span class="text-xs font-black ${isEntrada ? 'text-emerald-600' : 'text-foreground'}">
                             ${isEntrada ? '+' : '-'} ${BRL(t.valor)}
                         </span>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="abrirModalEditarTransacao(${tJsonStr})" 
+                                    title="Editar transação"
+                                    class="size-7 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs">
+                                <i data-lucide="edit-3" class="size-3"></i>
+                            </button>
+                            <button type="button" onclick="excluirTransacaoDireto(${t.id_transacao}, '${(t.titulo || '').replace(/'/g, "\\'")}')" 
+                                    title="Excluir transação"
+                                    class="size-7 rounded-lg border border-rose-300 dark:border-rose-900 bg-rose-50/40 dark:bg-rose-950/20 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition shadow-2xs">
+                                <i data-lucide="trash-2" class="size-3"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>`;
+        }
+
+        // ── CRUD DE TRANSAÇÕES: EDIÇÃO E EXCLUSÃO COMPLETA (RF003) ──
+        function abrirModalEditarTransacao(t) {
+            if (!t) return;
+            const id = t.id_transacao || t.id;
+            const titulo = t.titulo || '';
+            const valor = t.valor || 0;
+            const tipo = t.tipo || 'saida';
+            const catNome = t.categoria?.nome || '';
+            const catId = t.categoria_id || '';
+            const contaId = t.conta_id || '';
+            const dataVal = t.data ? t.data.split('T')[0] : new Date().toISOString().split('T')[0];
+            const vis = t.visibilidade || 'pessoal';
+
+            document.getElementById('editTxId').value = id;
+            document.getElementById('editTxTitulo').value = titulo;
+            document.getElementById('editTxValor').value = valor;
+            document.getElementById('editTxData').value = dataVal;
+            document.getElementById('editTxTipo').value = tipo;
+            document.getElementById('editTxCategoriaNome').value = catNome;
+            document.getElementById('editTxCategoriaId').value = catId;
+            document.getElementById('editTxVisibilidade').value = vis;
+
+            // Popular select de contas bancárias
+            const selConta = document.getElementById('editTxContaId');
+            if (selConta && listaContas) {
+                selConta.innerHTML = listaContas.map(c => `
+                    <option value="${c.id_conta}" ${c.id_conta == contaId ? 'selected' : ''}>${c.nome} (${c.tipo})</option>
+                `).join('');
+            }
+
+            // Sincronizar botões de tipo
+            selecionarEditTipoTransacao(tipo);
+
+            // Sincronizar chips de categoria
+            document.querySelectorAll('.chip-edit-cat-tx').forEach(b => {
+                b.className = 'chip-edit-cat-tx flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition';
+            });
+            if (catNome) {
+                const btnCat = Array.from(document.querySelectorAll('.chip-edit-cat-tx')).find(b => b.innerText.includes(catNome));
+                if (btnCat) {
+                    btnCat.className = 'chip-edit-cat-tx active flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-emerald-600 bg-emerald-800 text-white font-bold text-xs transition';
+                }
+            }
+
+            // Sincronizar visibilidade
+            selecionarEditVisibilidadeTx(vis);
+
+            abrirModalId('modalEditarTransacao');
+            lucide.createIcons();
+        }
+
+        function selecionarEditTipoTransacao(tipo) {
+            document.getElementById('editTxTipo').value = tipo;
+            const btnSaida = document.getElementById('editTxBtnTipoSaida');
+            const btnEntrada = document.getElementById('editTxBtnTipoEntrada');
+            if (tipo === 'entrada') {
+                if (btnEntrada) btnEntrada.className = 'w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs border border-border/50';
+                if (btnSaida) btnSaida.className = 'w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+            } else {
+                if (btnSaida) btnSaida.className = 'w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs border border-border/50';
+                if (btnEntrada) btnEntrada.className = 'w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+            }
+        }
+
+        function selecionarEditCategoriaTx(btn, nome, icone) {
+            document.querySelectorAll('.chip-edit-cat-tx').forEach(b => {
+                b.className = 'chip-edit-cat-tx flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground font-bold text-xs transition';
+            });
+            if (btn) {
+                btn.className = 'chip-edit-cat-tx active flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-emerald-600 bg-emerald-800 text-white font-bold text-xs transition';
+            }
+            document.getElementById('editTxCategoriaNome').value = nome;
+        }
+
+        function selecionarEditVisibilidadeTx(vis) {
+            document.getElementById('editTxVisibilidade').value = vis;
+            const btnPriv = document.getElementById('editTxBtnPrivado');
+            const btnComp = document.getElementById('editTxBtnCompartilhado');
+            if (vis === 'compartilhado' || vis === 'lar') {
+                if (btnComp) btnComp.className = 'w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs border border-border/50';
+                if (btnPriv) btnPriv.className = 'w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+            } else {
+                if (btnPriv) btnPriv.className = 'w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all bg-card text-foreground shadow-2xs border border-border/50';
+                if (btnComp) btnComp.className = 'w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-xs transition-all text-muted-foreground hover:text-foreground';
+            }
+        }
+
+        async function executarSalvarEdicaoTransacao(event) {
+            if (event) event.preventDefault();
+            const id = document.getElementById('editTxId').value;
+            const titulo = document.getElementById('editTxTitulo').value.trim();
+            const valor = parseFloat(document.getElementById('editTxValor').value || 0);
+            const tipo = document.getElementById('editTxTipo').value;
+            const conta_id = document.getElementById('editTxContaId').value;
+            const categoria_nome = document.getElementById('editTxCategoriaNome').value;
+            const categoria_id = document.getElementById('editTxCategoriaId').value || null;
+            const dataVal = document.getElementById('editTxData').value;
+            const visibilidade = document.getElementById('editTxVisibilidade').value;
+
+            if (!titulo || !valor || valor <= 0) {
+                return seivaNotificar('Informe uma descrição e valor válido para a transação.', 'aviso');
+            }
+
+            try {
+                const res = await fetch(`/api/transacoes/${id}/atualizar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        titulo,
+                        valor,
+                        tipo,
+                        conta_id,
+                        categoria_nome,
+                        categoria_id,
+                        data: dataVal,
+                        visibilidade
+                    })
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalEditarTransacao');
+                    seivaNotificar(`Transação "${titulo}" atualizada com sucesso!`, 'sucesso', 'Transação Atualizada');
+                    carregarTransacoesDados();
+                    carregarDashboardDados();
+                    carregarTransacoesLar();
+                } else {
+                    const err = await res.json();
+                    seivaNotificar(err.message || 'Erro ao atualizar transação.', 'aviso');
+                }
+            } catch (e) {
+                console.error(e);
+                seivaNotificar('Erro de conexão ao salvar transação.', 'erro');
+            }
+        }
+
+        async function executarExcluirTransacaoModal() {
+            const id = document.getElementById('editTxId').value;
+            const titulo = document.getElementById('editTxTitulo').value;
+            if (!id) return fecharModalId('modalEditarTransacao');
+
+            if (!confirm(`Deseja realmente excluir a transação "${titulo}"? O saldo da conta bancária será revertido.`)) return;
+
+            try {
+                const res = await fetch(`/api/transacoes/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalEditarTransacao');
+                    seivaNotificar('Transação excluída e saldo bancário restaurado!', 'sucesso', 'Transação Removida');
+                    carregarTransacoesDados();
+                    carregarDashboardDados();
+                    carregarTransacoesLar();
+                } else {
+                    seivaNotificar('Não foi possível excluir a transação.', 'aviso');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao excluir.', 'erro');
+            }
+        }
+
+        async function excluirTransacaoDireto(id, titulo) {
+            if (!confirm(`Deseja realmente remover o lançamento "${titulo}"? O saldo será recalculado.`)) return;
+            try {
+                const res = await fetch(`/api/transacoes/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+                if (res.ok) {
+                    seivaNotificar(`Lançamento "${titulo}" removido!`, 'info', 'Transação Excluída');
+                    carregarTransacoesDados();
+                    carregarDashboardDados();
+                    carregarTransacoesLar();
+                } else {
+                    seivaNotificar('Erro ao remover transação.', 'aviso');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão.', 'erro');
+            }
         }
 
         function alternarAbaTransacoes(aba) {
@@ -2259,6 +2485,7 @@
                         const isEu = t.usuario_id === userId;
                         const quemNome = isEu ? 'Pago por Você' : (larSessao?.membros?.find(m => m.id_usuario !== userId)?.nome?.split(' ')[0] || 'Parceiro');
                         const metade = (parseFloat(t.valor) / 2).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                        const tJsonStr = JSON.stringify(t).replace(/"/g, '&quot;');
 
                         let badgeExtra = '';
                         if (t.is_imprevisto) {
@@ -2283,7 +2510,21 @@
                                     </span>
                                 </div>
                             </div>
-                            <span class="text-xs font-black text-foreground shrink-0 ml-3">${BRL(t.valor)}</span>
+                            <div class="flex items-center gap-2.5 shrink-0 ml-3">
+                                <span class="text-xs font-black text-foreground">${BRL(t.valor)}</span>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" onclick="abrirModalEditarTransacao(${tJsonStr})" 
+                                            title="Editar transação do Lar"
+                                            class="size-7 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs">
+                                        <i data-lucide="edit-3" class="size-3"></i>
+                                    </button>
+                                    <button type="button" onclick="excluirTransacaoDireto(${t.id_transacao}, '${(t.titulo || '').replace(/'/g, "\\'")}')" 
+                                            title="Excluir transação"
+                                            class="size-7 rounded-lg border border-rose-300 dark:border-rose-900 bg-rose-50/40 dark:bg-rose-950/20 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition shadow-2xs">
+                                        <i data-lucide="trash-2" class="size-3"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>`;
                     }).join('')}
                 </div>
@@ -2468,12 +2709,17 @@
                                     <span class="text-[11px] text-muted-foreground">${d.divisao} · ${d.vencimento}</span>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2.5 shrink-0">
-                                <strong class="text-xs font-black text-foreground">${BRL(d.valor_total)}</strong>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <strong class="text-xs font-black text-foreground mr-1">${BRL(d.valor_total)}</strong>
                                 <button type="button" onclick="abrirModalEditarDespesaLar(${dJsonStr})" 
                                         title="Reajustar valor ou regra de divisão"
                                         class="size-8 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs">
                                     <i data-lucide="edit-3" class="size-3.5"></i>
+                                </button>
+                                <button type="button" onclick="excluirDespesaLarDireto(${d.id}, '${(d.titulo||'').replace(/'/g, "\\'")}')" 
+                                        title="Excluir despesa do Lar"
+                                        class="size-8 rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50/50 dark:bg-rose-950/20 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition shadow-2xs">
+                                    <i data-lucide="trash-2" class="size-3.5"></i>
                                 </button>
                                 ${d.pago ? `
                                     <span class="px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-extrabold text-[11px] flex items-center gap-1 border border-emerald-500/20">
@@ -2509,12 +2755,17 @@
                                     <span class="text-[11px] text-muted-foreground">${dv.detalhe}</span>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2.5 shrink-0">
-                                <strong class="text-xs font-black text-foreground">${BRL(dv.valor_total)}</strong>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <strong class="text-xs font-black text-foreground mr-1">${BRL(dv.valor_total)}</strong>
                                 <button type="button" onclick="abrirModalEditarDespesaLar(${dvJsonStr})" 
                                         title="Editar gasto variável"
                                         class="size-8 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs">
                                     <i data-lucide="edit-3" class="size-3.5"></i>
+                                </button>
+                                <button type="button" onclick="excluirDespesaLarDireto(${dv.id}, '${(dv.titulo||'').replace(/'/g, "\\'")}')" 
+                                        title="Excluir gasto variável"
+                                        class="size-8 rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50/50 dark:bg-rose-950/20 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition shadow-2xs">
+                                    <i data-lucide="trash-2" class="size-3.5"></i>
                                 </button>
                             </div>
                         </div>
@@ -2645,6 +2896,11 @@
                                                 class="py-3 px-3.5 rounded-2xl border border-border bg-card hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 font-bold text-xs transition shadow-2xs flex items-center gap-1.5">
                                             <i data-lucide="undo-2" class="size-3.5"></i>
                                             <span>Desfazer</span>
+                                        </button>
+                                        <button type="button" onclick="excluirMetaDireto(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}')" 
+                                                class="py-3 px-3 rounded-2xl border border-rose-300 dark:border-rose-900 bg-rose-50/50 dark:bg-rose-950/20 hover:bg-rose-100 text-rose-600 font-bold text-xs transition shadow-2xs flex items-center gap-1"
+                                                title="Excluir meta permanentemente">
+                                            <i data-lucide="trash-2" class="size-3.5"></i>
                                         </button>
                                     `}
                                 </div>
@@ -3803,9 +4059,14 @@
                             </div>
                             <div class="flex items-center justify-between pt-1 border-t border-emerald-900/30 text-[10px] text-gray-400">
                                 <span>${c.atualizado || 'Atualizado'}</span>
-                                <button type="button" onclick="abrirModalAtualizarSaldo('${c.id_conta}')" class="text-emerald-400 font-bold hover:underline flex items-center gap-1">
-                                    <i data-lucide="refresh-cw" class="size-3"></i> Atualizar
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" onclick="abrirModalEditarConta(${JSON.stringify(c).replace(/"/g, '&quot;')})" class="text-white hover:text-emerald-300 font-bold flex items-center gap-1 transition" title="Editar conta">
+                                        <i data-lucide="edit-3" class="size-3"></i> Editar
+                                    </button>
+                                    <button type="button" onclick="abrirModalAtualizarSaldo('${c.id_conta}')" class="text-emerald-400 font-bold hover:underline flex items-center gap-1">
+                                        <i data-lucide="refresh-cw" class="size-3"></i> Saldo
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `).join('');
@@ -4997,10 +5258,10 @@
                                         <span>${a.cobrador_rotulo}</span>
                                     </div>
                                     <div class="grid grid-cols-2 border-t border-border">
-                                        <button class="py-3.5 text-xs font-bold text-muted-foreground hover:bg-muted/60 flex items-center justify-center gap-1.5 transition-colors border-r border-border">
-                                            <i data-lucide="pencil" class="size-4"></i> Editar
+                                        <button type="button" onclick="abrirModalAtualizarMetaLar(${a.id_acordo}, '${a.titulo}', ${a.valor_total}, 'nov/2026')" class="py-3.5 text-xs font-bold text-muted-foreground hover:bg-muted/60 flex items-center justify-center gap-1.5 transition-colors border-r border-border">
+                                            <i data-lucide="edit-3" class="size-4"></i> Editar
                                         </button>
-                                        <button class="py-3.5 text-xs font-bold text-primary hover:bg-primary/10 flex items-center justify-center gap-1.5 transition-colors">
+                                        <button type="button" onclick="abrirModalGuardarMetaLarPix({ id_meta: ${a.id_acordo}, titulo: '${a.titulo}', valor_alvo: ${a.valor_total}, valor_atual: ${guardado} })" class="py-3.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 flex items-center justify-center gap-1.5 transition-colors">
                                             <i data-lucide="wallet" class="size-4"></i> Guardar este mês
                                         </button>
                                     </div>
@@ -5418,11 +5679,18 @@
                                 </div>
                             </div>
 
-                            <button type="button" onclick="abrirModalEditarMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${alvo}, '${m.categoria||'produto'}', '${(m.link_referencia||'').replace(/'/g, "\\'")}', '${(m.imagem||'').replace(/'/g, "\\'")}', '${(m.loja||'').replace(/'/g, "\\'")}', ${m.monitorar_promocao !== false})"
-                                    class="size-8 rounded-xl border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shrink-0"
-                                    title="Editar meta">
-                                <i data-lucide="edit-3" class="size-4"></i>
-                            </button>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button type="button" onclick="abrirModalEditarMeta(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}', ${alvo}, '${m.categoria||'produto'}', '${(m.link_referencia||'').replace(/'/g, "\\'")}', '${(m.imagem||'').replace(/'/g, "\\'")}', '${(m.loja||'').replace(/'/g, "\\'")}', ${m.monitorar_promocao !== false})"
+                                        class="size-8 rounded-xl border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs"
+                                        title="Editar objetivo">
+                                    <i data-lucide="edit-3" class="size-3.5"></i>
+                                </button>
+                                <button type="button" onclick="excluirMetaDireto(${m.id_meta}, '${(m.titulo||'').replace(/'/g, "\\'")}')"
+                                        class="size-8 rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50/50 dark:bg-rose-950/20 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition shadow-2xs"
+                                        title="Excluir objetivo">
+                                    <i data-lucide="trash-2" class="size-3.5"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Badge de Status e Estimativa em Dias -->
@@ -5894,7 +6162,21 @@
                                     <p class="text-xs font-bold text-foreground truncate">${e.titulo}</p>
                                     <span class="text-[11px] text-muted-foreground">${e.subtitulo || ''}</span>
                                 </div>
-                                <span class="text-sm font-extrabold text-emerald-600 shrink-0">+${BRL(e.valor)}</span>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span class="text-sm font-extrabold text-emerald-600">+${BRL(e.valor)}</span>
+                                    ${e.id_transacao ? `
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" onclick="abrirModalEditarTransacao(${JSON.stringify(e).replace(/"/g, '&quot;')})" 
+                                                class="size-7 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition shadow-2xs" title="Editar recebimento">
+                                            <i data-lucide="edit-3" class="size-3"></i>
+                                        </button>
+                                        <button type="button" onclick="excluirTransacaoDireto(${e.id_transacao}, '${(e.titulo||'').replace(/'/g, "\\'")}')" 
+                                                class="size-7 rounded-lg border border-rose-300 dark:border-rose-900 bg-rose-50/40 dark:bg-rose-950/20 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition shadow-2xs" title="Excluir recebimento">
+                                            <i data-lucide="trash-2" class="size-3"></i>
+                                        </button>
+                                    </div>
+                                    ` : ''}
+                                </div>
                             </div>
                         `).join('');
                     }
@@ -7033,6 +7315,214 @@
                 }
             } catch (e) {
                 seivaNotificar('Erro de conexão ao salvar objetivo.', 'erro');
+            }
+        }
+
+        // ── CRUD DE METAS: EXCLUSÃO COMPLETA (RF007 / RF008) ──
+        async function executarExcluirMeta() {
+            const id = document.getElementById('editMetaId')?.value;
+            const titulo = document.getElementById('editMetaNome')?.value || 'este objetivo';
+            if (!id) return fecharModalId('modalEditarMeta');
+
+            if (!confirm(`Deseja realmente excluir o objetivo "${titulo}"?`)) return;
+
+            try {
+                const res = await fetch(`/api/metas/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalEditarMeta');
+                    seivaNotificar(`Objetivo "${titulo}" excluído com sucesso!`, 'sucesso', 'Meta Removida');
+                    carregarMetasDados();
+                    carregarDashboardDados();
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    seivaNotificar(err.mensagem || 'Não foi possível excluir o objetivo.', 'aviso');
+                }
+            } catch (e) {
+                console.error(e);
+                seivaNotificar('Erro de conexão ao excluir objetivo.', 'erro');
+            }
+        }
+
+        async function excluirMetaDireto(id, titulo) {
+            if (!confirm(`Deseja realmente excluir o objetivo "${titulo}"?`)) return;
+            try {
+                const res = await fetch(`/api/metas/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+                if (res.ok) {
+                    seivaNotificar(`Objetivo "${titulo}" excluído!`, 'sucesso', 'Meta Removida');
+                    carregarMetasDados();
+                    carregarDashboardDados();
+                } else {
+                    seivaNotificar('Erro ao excluir objetivo.', 'aviso');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao excluir.', 'erro');
+            }
+        }
+
+        // ── CRUD DE CONTAS BANCÁRIAS: EDIÇÃO E EXCLUSÃO (RF003) ──
+        function abrirModalEditarConta(c) {
+            if (!c) return;
+            const id = c.id_conta || c.id;
+            const nome = c.nome || '';
+            const tipo = c.tipo || 'corrente';
+            const saldo = c.saldo || 0;
+            const cor = c.cor || '#10b981';
+
+            document.getElementById('editContaId').value = id;
+            document.getElementById('editContaNome').value = nome;
+            document.getElementById('editContaTipo').value = tipo;
+            document.getElementById('editContaSaldo').value = parseFloat(saldo).toFixed(2);
+            document.getElementById('editContaCor').value = cor;
+
+            // Destaque visual da cor selecionada
+            const gridCores = document.getElementById('editContaCoresGrid');
+            if (gridCores) {
+                gridCores.querySelectorAll('button').forEach(btn => {
+                    const btnCor = btn.style.backgroundColor;
+                    btn.classList.toggle('ring-2', btnCor === cor || btnCor.toLowerCase() === cor.toLowerCase());
+                    btn.classList.toggle('ring-emerald-600', btnCor === cor || btnCor.toLowerCase() === cor.toLowerCase());
+                });
+            }
+
+            const modal = document.getElementById('modalEditarConta');
+            if (modal) modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function selecionarCorContaEdit(btn, cor) {
+            document.getElementById('editContaCor').value = cor;
+            const gridCores = document.getElementById('editContaCoresGrid');
+            if (gridCores) {
+                gridCores.querySelectorAll('button').forEach(b => {
+                    b.classList.remove('ring-2', 'ring-emerald-600', 'scale-110');
+                });
+                btn.classList.add('ring-2', 'ring-emerald-600', 'scale-110');
+            }
+        }
+
+        async function executarSalvarEdicaoConta(event) {
+            event.preventDefault();
+            const id = document.getElementById('editContaId').value;
+            const nome = document.getElementById('editContaNome').value.trim();
+            const tipo = document.getElementById('editContaTipo').value;
+            const saldo = parseFloat(document.getElementById('editContaSaldo').value || 0);
+            const cor = document.getElementById('editContaCor').value;
+
+            if (!nome) return seivaNotificar('Informe o nome da instituição ou conta.', 'aviso');
+
+            try {
+                const res = await fetch(`/api/contas/${id}/atualizar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({ nome, tipo, saldo, cor })
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalEditarConta');
+                    seivaNotificar(`Conta "${nome}" atualizada com sucesso!`, 'sucesso', 'Conta Atualizada');
+                    carregarDashboardDados();
+                    carregarCaixaPretaDados();
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    seivaNotificar(err.mensagem || err.error || 'Erro ao atualizar conta.', 'aviso');
+                }
+            } catch (e) {
+                console.error(e);
+                seivaNotificar('Erro de conexão ao salvar conta.', 'erro');
+            }
+        }
+
+        async function executarExcluirContaModal() {
+            const id = document.getElementById('editContaId').value;
+            const nome = document.getElementById('editContaNome').value;
+            if (!id) return fecharModalId('modalEditarConta');
+
+            if (!confirm(`Deseja realmente remover a conta "${nome}"? Atenção: Isso removerá os registros vinculados a ela.`)) return;
+
+            try {
+                const res = await fetch(`/api/contas/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+
+                if (res.ok) {
+                    fecharModalId('modalEditarConta');
+                    seivaNotificar(`Conta "${nome}" removida com sucesso!`, 'sucesso', 'Conta Excluída');
+                    carregarDashboardDados();
+                    carregarCaixaPretaDados();
+                } else {
+                    seivaNotificar('Não foi possível remover a conta.', 'aviso');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão ao remover conta.', 'erro');
+            }
+        }
+
+        async function excluirContaDireto(id, nome) {
+            if (!confirm(`Deseja realmente remover a conta "${nome}"?`)) return;
+            try {
+                const res = await fetch(`/api/contas/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+                if (res.ok) {
+                    seivaNotificar(`Conta "${nome}" removida!`, 'sucesso', 'Conta Excluída');
+                    carregarDashboardDados();
+                    carregarCaixaPretaDados();
+                } else {
+                    seivaNotificar('Erro ao remover conta.', 'aviso');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão.', 'erro');
+            }
+        }
+
+        async function excluirDespesaLarDireto(id, titulo) {
+            if (!confirm(`Deseja realmente excluir a despesa "${titulo}" e recalcular as cotas do Lar?`)) return;
+            try {
+                const res = await fetch(`/lar/despesas/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+                if (res.ok) {
+                    seivaNotificar(`Despesa "${titulo}" excluída com sucesso!`, 'sucesso', 'Despesa Removida');
+                    carregarLarDados();
+                } else {
+                    seivaNotificar('Erro ao excluir despesa do Lar.', 'aviso');
+                }
+            } catch (e) {
+                seivaNotificar('Erro de conexão.', 'erro');
             }
         }
 
