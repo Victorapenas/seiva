@@ -102,7 +102,7 @@
             </button>
 
             <!-- Opção: Usar outra conta Google (Primeira vez -> Passo a Passo do Lar) -->
-            <button type="button" onclick="solicitarOutraConta()"
+            <button type="button" onclick="mostrarFormOutraConta()" id="btnMostrarOutraConta"
                     class="w-full flex items-center gap-3.5 p-3 rounded-lg hover:bg-[#2d2e30] transition text-left group border-t border-[#444746]/50">
                 <div class="size-9 rounded-full bg-[#303134] text-[#c4c7c5] flex items-center justify-center shrink-0">
                     <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2">
@@ -114,6 +114,17 @@
                     <p class="text-xs text-[#c4c7c5]">Configurar novo Lar no passo a passo</p>
                 </div>
             </button>
+
+            <!-- Form inline sem prompt nativo -->
+            <div id="formOutraContaGoogle" class="hidden p-3 rounded-lg bg-[#282a2c] border border-[#444746] space-y-2 mt-2">
+                <label class="text-xs text-[#c4c7c5] block">Digite seu e-mail do Google</label>
+                <input type="email" id="inputOutroEmailGoogle" placeholder="exemplo@gmail.com" 
+                       class="w-full px-3 py-2 rounded-lg bg-[#1f1f1f] border border-[#444746] text-white text-xs placeholder:text-gray-500 focus:border-[#a8c7fa] focus:outline-none">
+                <div class="flex gap-2 pt-1">
+                    <button type="button" onclick="confirmarOutraConta()" class="flex-1 py-1.5 rounded-lg bg-[#a8c7fa] hover:bg-[#8ab4f8] text-[#041e49] font-medium text-xs">Continuar</button>
+                    <button type="button" onclick="mostrarFormOutraConta()" class="px-3 py-1.5 rounded-lg border border-[#444746] text-[#c4c7c5] text-xs">Cancelar</button>
+                </div>
+            </div>
 
         </div>
     </div>
@@ -146,9 +157,28 @@
             window.close();
         }
 
-        function solicitarOutraConta() {
-            const email = prompt('Digite o e-mail da sua Conta Google:');
-            if (!email) return;
+        function mostrarFormOutraConta() {
+            const form = document.getElementById('formOutraContaGoogle');
+            const btn = document.getElementById('btnMostrarOutraConta');
+            if (form) {
+                const hidden = form.classList.toggle('hidden');
+                if (!hidden) {
+                    const input = document.getElementById('inputOutroEmailGoogle');
+                    if (input) input.focus();
+                }
+            }
+        }
+
+        function confirmarOutraConta() {
+            const input = document.getElementById('inputOutroEmailGoogle');
+            const email = (input && input.value) ? input.value.trim() : '';
+            if (!email || !email.includes('@')) {
+                if (input) {
+                    input.focus();
+                    input.classList.add('border-red-500');
+                }
+                return;
+            }
             const nome = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             selecionarConta(nome, email, 'google_novo_' + Date.now());
         }
