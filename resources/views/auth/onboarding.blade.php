@@ -115,7 +115,7 @@
                 <div class="space-y-3">
                     <div>
                         <label class="text-xs font-medium text-foreground">Nome completo</label>
-                        <input type="text" id="regNome" placeholder="Ex: Maria Eduarda Lima" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-primary">
+                        <input type="text" id="regNome" placeholder="Seu nome completo" class="mt-1 h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-primary">
                         <p id="err_regNome" class="hidden text-xs text-rose-500 font-medium mt-1"></p>
                     </div>
                     <div>

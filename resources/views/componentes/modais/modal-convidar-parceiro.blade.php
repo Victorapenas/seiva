@@ -15,7 +15,7 @@
         <!-- Header -->
         <div class="px-6 pt-3 pb-4 border-b border-border/60 flex items-start justify-between gap-3">
             <div class="flex items-center gap-2.5">
-                <span class="size-9 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                <span class="size-9 rounded-2xl bg-emerald-800 text-white flex items-center justify-center shrink-0 shadow-2xs">
                     <i data-lucide="heart-handshake" class="size-5"></i>
                 </span>
                 <div>
@@ -29,14 +29,29 @@
         </div>
 
         <form id="formConvidarParceiro" onsubmit="executarEnviarConviteLar(event)" class="p-6 space-y-4 overflow-y-auto no-scrollbar">
-            <!-- Box Explicativo de Privacidade & Blindagem -->
-            <div class="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800/60 space-y-2">
-                <div class="flex items-center gap-2 text-emerald-900 dark:text-emerald-200">
-                    <i data-lucide="shield-check" class="size-4 text-emerald-600 shrink-0"></i>
-                    <strong class="text-xs font-bold">Privacidade 100% Garantida</strong>
+            <!-- Box Explicativo de Privacidade & Blindagem (ALTO CONTRASTE E MÁXIMA LEGIBILIDADE) -->
+            <div class="p-4 rounded-2xl bg-[#092015] text-white border border-emerald-700/80 shadow-soft space-y-2">
+                <div class="flex items-center gap-2">
+                    <span class="size-6 rounded-lg bg-emerald-800 text-emerald-200 flex items-center justify-center shrink-0">
+                        <i data-lucide="shield-check" class="size-3.5"></i>
+                    </span>
+                    <strong class="text-xs font-black text-white tracking-wide">Privacidade 100% Garantida</strong>
                 </div>
-                <p class="text-[11px] text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
-                    Ao convidar seu parceiro(a), cada um mantém suas contas e sua <strong>Caixa Preta individual</strong> totalmente privativas. Vocês compartilham apenas as despesas do Lar e metas combinadas na Mesa de Acordos!
+                <p class="text-[11px] text-gray-200 font-normal leading-relaxed">
+                    Ao convidar seu parceiro(a), cada um mantém suas contas e sua <strong class="text-emerald-300 font-bold">Caixa Preta individual</strong> totalmente privativas. Vocês compartilham apenas as despesas do Lar e metas combinadas na Mesa de Acordos!
+                </p>
+            </div>
+
+            <!-- Como Funciona o Convite -->
+            <div class="p-3.5 rounded-2xl bg-muted/60 border border-border space-y-1.5 text-xs">
+                <span class="font-bold text-foreground flex items-center gap-1.5">
+                    <i data-lucide="help-circle" class="size-3.5 text-emerald-600"></i>
+                    <span>Como o parceiro(a) recebe o acesso?</span>
+                </span>
+                <p class="text-[11px] text-muted-foreground leading-relaxed">
+                    1. Geramos um <strong>link seguro de convite</strong> válido por 7 dias.<br>
+                    2. Você pode copiar e enviar pelo WhatsApp, Telegram ou e-mail.<br>
+                    3. Ao acessar, a pessoa entra diretamente no Lar (se já tiver conta ou ao se cadastrar)!
                 </p>
             </div>
 
@@ -46,7 +61,7 @@
                     <i data-lucide="user" class="size-3.5 text-muted-foreground"></i>
                     <span>Nome do Parceiro(a) (opcional)</span>
                 </label>
-                <input type="text" id="conviteNomeParceiro" placeholder="Ex: Ana Luísa"
+                <input type="text" id="conviteNomeParceiro" placeholder="Nome do parceiro(a)"
                        class="w-full rounded-2xl border border-border bg-background px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-emerald-600 focus:outline-none shadow-2xs">
             </div>
 
@@ -56,10 +71,10 @@
                     <i data-lucide="mail" class="size-3.5 text-muted-foreground"></i>
                     <span>E-mail do Parceiro(a) <span class="text-rose-500">*</span></span>
                 </label>
-                <input type="email" id="conviteEmailParceiro" required placeholder="Ex: ana.luisa@gmail.com"
+                <input type="email" id="conviteEmailParceiro" required placeholder="parceiro@email.com"
                        class="w-full rounded-2xl border border-border bg-background px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-emerald-600 focus:outline-none shadow-2xs">
                 <p class="text-[10px] text-muted-foreground">
-                    Se ela já tiver conta no SEIVA, o convite aparecerá automaticamente no painel dela!
+                    Se a pessoa já tiver conta no SEIVA com este e-mail, o convite aparecerá automaticamente no painel dela!
                 </p>
             </div>
 
@@ -69,18 +84,18 @@
                     <i data-lucide="home" class="size-3.5 text-muted-foreground"></i>
                     <span>Nome do Lar (opcional)</span>
                 </label>
-                <input type="text" id="conviteNomeLar" placeholder="Ex: Nosso Cantinho, Lar Doce Lar..."
+                <input type="text" id="conviteNomeLar" placeholder="Ex: Nosso Cantinho, Lar..."
                        class="w-full rounded-2xl border border-border bg-background px-4 py-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-emerald-600 focus:outline-none shadow-2xs">
             </div>
 
             <!-- Área de Exibição do Link Gerado -->
-            <div id="conviteLinkArea" class="hidden p-4 rounded-2xl bg-muted/60 border border-emerald-500/40 space-y-2.5">
+            <div id="conviteLinkArea" class="hidden p-4 rounded-2xl bg-emerald-950/20 border border-emerald-600/40 space-y-2.5">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
                         <i data-lucide="link" class="size-3.5 text-emerald-600"></i>
                         <span>Link de Convite Gerado</span>
                     </span>
-                    <span class="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full">Válido por 7 dias</span>
+                    <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full">Válido por 7 dias</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="text" id="conviteLinkGerado" readonly
@@ -92,7 +107,7 @@
                     </button>
                 </div>
                 <p class="text-[11px] text-muted-foreground leading-tight">
-                    Envie este link pelo WhatsApp ou Telegram para o seu parceiro(a). Ao clicar, ela entrará diretamente no seu Lar!
+                    Envie este link para seu parceiro(a) por WhatsApp ou e-mail. Ao abrir, a pessoa poderá entrar diretamente no Lar!
                 </p>
             </div>
 

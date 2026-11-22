@@ -655,6 +655,13 @@
         }
 
         async function validarSessaoInicial() {
+            // Checar se a URL atual contém token de convite
+            const pathSegments = window.location.pathname.split('/');
+            const idxConvite = pathSegments.indexOf('convite');
+            if (idxConvite !== -1 && pathSegments[idxConvite + 1]) {
+                window._tokenConvitePendente = pathSegments[idxConvite + 1];
+            }
+
             try {
                 const res = await fetch('/api/me');
                 if (res.ok) {
@@ -668,6 +675,26 @@
                     }
                 }
             } catch (e) {}
+
+            // Se não autenticado e veio por link de convite, prepara o cadastro diretamente
+            if (window._tokenConvitePendente) {
+                try {
+                    const convRes = await fetch(`/api/convite/${window._tokenConvitePendente}`);
+                    if (convRes.ok) {
+                        const convData = await convRes.json();
+                        if (convData.valido) {
+                            const regEmail = document.getElementById('regEmail');
+                            if (regEmail && convData.email_convidado) {
+                                regEmail.value = convData.email_convidado;
+                            }
+                            seivaNotificar(`Você foi convidado(a) por ${convData.remetente.nome} para o Lar "${convData.lar.nome}"! Conclua seu cadastro para entrar.`, 'sucesso', 'Convite do Lar');
+                            irParaOnboarding();
+                            return;
+                        }
+                    }
+                } catch (e) {}
+            }
+
             trocarTelaPrincipal('screen-login');
         }
 
@@ -1173,9 +1200,24 @@
                     if (res.ok) {
                         usuarioSessao = data.usuario;
 
-                        // Se escolheu criar o Lar
-                        if (usoLarOnboarding) {
-                            const nomeLar = document.getElementById('regNomeLar').value.trim() || 'Nosso Cantinho';
+                        // Se veio de um link de convite pendente, aceita o convite imediatamente!
+                        if (window._tokenConvitePendente) {
+                            try {
+                                const aceiteRes = await fetch('/api/lar/aceitar-convite', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ token: window._tokenConvitePendente })
+                                });
+                                if (aceiteRes.ok) {
+                                    const aceiteData = await aceiteRes.json();
+                                    larSessao = aceiteData.lar;
+                                    window._isCasalGlobal = true;
+                                    seivaNotificar(aceiteData.mensagem || 'Você entrou no Lar!', 'sucesso', 'Lar Conectado!');
+                                }
+                            } catch (e) {}
+                        } else if (usoLarOnboarding) {
+                            const nomeLar = document.getElementById('regNomeLar')?.value?.trim() || 'Nosso Cantinho';
+                            const emailParceiro = document.getElementById('regEmailParceiro')?.value?.trim();
                             const larRes = await fetch('/api/lar', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -1183,6 +1225,17 @@
                             });
                             if (larRes.ok) {
                                 larSessao = await larRes.json();
+                                window._isCasalGlobal = true;
+                                if (emailParceiro) {
+                                    try {
+                                        await fetch('/api/lar/convidar', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ email_convidado: emailParceiro, nome_lar: nomeLar })
+                                        });
+                                        seivaNotificar(`Convite gerado e enviado para ${emailParceiro}!`, 'sucesso', 'Convite do Lar');
+                                    } catch (e) {}
+                                }
                             }
                         }
 
