@@ -9,8 +9,27 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Controller: TransacaoController (Lançamentos e Extrato Financeiro)
+ * 
+ * Responsabilidade Acadêmica: Victor Hugo / Ian Marcos (RF003, RF002)
+ * Requisitos Atendidos:
+ *   - RF003 — Registro de Entradas e Saídas com Categorização
+ *   - RF002 — Proteção de Visibilidade (Lançamentos privados pertencem exclusivamente à Caixa Preta)
+ * 
+ * Por que fizemos assim:
+ * Toda movimentação financeira impacta o saldo da conta associada. Para garantir que nenhuma
+ * inconsistência aconteça (ex: queda de conexão no meio da operação), usamos `DB::transaction()`
+ * do Laravel. Quando uma transação é editada ou excluída, o sistema reverte com precisão o saldo
+ * anterior antes de aplicar o novo cálculo contábil.
+ */
 class TransacaoController extends Controller
 {
+    /**
+     * RF003/RF002: Retorna o extrato de transações públicas/pessoais do usuário.
+     * O que tentamos fazer: Listar com suporte a filtros por tipo, conta e categoria,
+     * garantindo que transações com visibilidade 'privado' NUNCA vazem para o extrato geral.
+     */
     public function index(Request $request)
     {
         $userId = Auth::id();

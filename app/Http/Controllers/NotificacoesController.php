@@ -13,10 +13,15 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 /**
- * NotificacoesController
- * Responsável por:
- *  - GET  /api/notificacoes      => Listar notificações reais (inbox do painel de boas-vindas)
- *  - POST /api/notificacoes/ler  => Marcar todas como lidas
+ * Controller: NotificacoesController
+ * 
+ * Responsabilidade Acadêmica: Ian Marcos Rocha Santos / Victor Hugo
+ * Requisitos Atendidos: RF005, RF006, RF007, RF010 (Central Unificada de Notificações)
+ * 
+ * Por que fizemos assim:
+ * Criamos uma central reativa onde os acontecimentos do sistema (propostas da Mesa de Acordos,
+ * avisos do Cobrador Diplomata, novos convites do Lar e aportes em metas) convergem em um
+ * único ponto de atenção para o usuário, permitindo marcar como lida e navegar para a ação.
  */
 class NotificacoesController extends Controller
 {

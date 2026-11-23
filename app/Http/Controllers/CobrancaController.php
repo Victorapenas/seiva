@@ -9,8 +9,26 @@ use App\Models\LarMembro;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Controller: CobrancaController (Cobrador Diplomata)
+ * 
+ * Responsabilidade Acadêmica: Victor Hugo (RF005)
+ * Requisito Atendido: RF005 — Cobrador Diplomata e Lembretes Amigáveis de Rateio
+ * 
+ * Por que fizemos assim:
+ * Cobrar dinheiro do parceiro ou colega de república é uma das maiores causas de atrito
+ * financeiro em lares compartilhados. Criamos o "Cobrador Diplomata" para despersonalizar
+ * a cobrança: o sistema assume o papel de enviar o lembrete de rateio de forma respeitosa,
+ * oferecendo tons configuráveis (Diplomático ou Descontraído) e anexando diretamente
+ * a chave PIX do pagador original para facilitar a liquidação imediata da pendência.
+ */
 class CobrancaController extends Controller
 {
+    /**
+     * RF005: Retorna o painel do Cobrador Diplomata com pendências de rateio, estatísticas e templates.
+     * O que tentamos fazer: Listar todas as cobranças vinculadas ao Lar, calcular quanto o usuário
+     * tem a receber e quanto tem a pagar, além de expor as opções de mensagem amigável.
+     */
     public function index()
     {
         $user = Auth::user();

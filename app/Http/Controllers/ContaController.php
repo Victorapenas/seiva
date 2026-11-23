@@ -6,8 +6,24 @@ use App\Models\Conta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Controller: ContaController (Contas Bancárias e Carteiras)
+ * 
+ * Responsabilidade Acadêmica: Victor Hugo / Ian Marcos (RF003)
+ * Requisito Atendido: RF003 — Gestão de Contas Bancárias, Carteiras Físicas e Cartões de Crédito
+ * 
+ * Por que fizemos assim:
+ * Para oferecer uma experiência intuitiva e adaptada ao contexto brasileiro, criamos
+ * a detecção automática de cores dos bancos nacionais mais usados (Nubank, Inter, Itaú, BB, etc.).
+ * Além disso, para preservar a integridade referencial contábil (ACID), contas que já possuem
+ * transações registradas não podem ser simplesmente deletadas via DELETE físico: o sistema
+ * arquiva a conta preservando o histórico financeiro do usuário.
+ */
 class ContaController extends Controller
 {
+    /**
+     * RF003: Lista todas as contas do usuário logado.
+     */
     public function index()
     {
         $userId = Auth::id();

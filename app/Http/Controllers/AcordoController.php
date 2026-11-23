@@ -7,8 +7,26 @@ use App\Models\Proposta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Controller: AcordoController (Mesa de Acordos)
+ * 
+ * Responsabilidade Acadêmica: Ian Marcos Rocha Santos (RF006)
+ * Requisito Atendido: RF006 — Mesa de Acordos e Negociação Bilateral Compartilhada
+ * 
+ * Por que fizemos assim:
+ * Decisões de grandes compras ou investimentos em conjunto geram conflitos quando um
+ * membro decide sozinho. A "Mesa de Acordos" funciona como uma câmara de negociação:
+ * qualquer um pode propor uma compra ou projeto, com valor total, divisão (50/50 ou proporcional)
+ * e parcelamento. O acordo só passa a ser efetivo após aprovação mútua dos parceiros do Lar,
+ * permitindo também rodadas de contraproposta com mensagens justificativas.
+ */
 class AcordoController extends Controller
 {
+    /**
+     * RF006: Retorna a visão geral da Mesa de Acordos.
+     * O que tentamos fazer: Agrupar as propostas pendentes (em negociação), os acordos
+     * ativos de objetivos conjuntos (Poupando Juntos) e as despesas parceladas (Dívidas Divididas).
+     */
     public function index()
     {
         $user = Auth::user();

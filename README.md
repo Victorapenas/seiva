@@ -43,13 +43,20 @@ O projeto foi desenvolvido do zero durante o semestre, partindo de um protótipo
 
 ---
 
+## Limitações do Projeto e Requisitos Não Cumpridos
+
+- **RNF001 — Criptografia AES-256-GCM dos dados:** O requisito de criptografia em repouso dos dados no banco de dados não foi implementado. A proteção das informações pessoais é realizada na camada de aplicação através de autenticação por sessão e controle de acesso restrito via PIN de 4 dígitos na Caixa Preta. Durante o desenvolvimento, foram consultados materiais sobre arquitetura e criptografia no Laravel ([Laravel Encryption](https://www.youtube.com/results?search_query=laravel+encryption+aes+256) e [Arquitetura POO no Laravel](https://www.youtube.com/results?search_query=laravel+service+pattern+poo)), optando-se por manter apenas a implementação compreendida e mantida pela equipe.
+- **Banco de Dados Local (SQLite):** Optou-se pela utilização do SQLite em substituição ao MySQL 8.0 previsto no planejamento inicial, visando facilitar a execução local no ambiente acadêmico e simplificar a execução dos testes automatizados sem a necessidade de um servidor de banco dedicado.
+
+---
+
 ## Como Executar o Projeto
 
 ### Requisitos
 
 - PHP 8.2 ou superior
 - Composer (gerenciador de dependências do PHP)
-- XAMPP (ou qualquer instalação local de PHP — o PHP do XAMPP pode ser usado diretamente)
+- XAMPP (ou qualquer instalação local de PHP)
 - Navegador moderno (Chrome, Firefox, Edge)
 
 > O projeto usa **SQLite** como banco de dados. Nenhuma configuração de servidor de banco de dados é necessária, o arquivo do banco é gerado automaticamente dentro da pasta `database/`.
@@ -61,7 +68,7 @@ O projeto foi desenvolvido do zero durante o semestre, partindo de um protótipo
 **1. Clone o repositório**
 
 ```bash
-git clone https://github.com/seu-usuario/seiva.git
+git clone https://github.com/Victorapenas/seiva.git
 cd seiva
 ```
 
@@ -99,29 +106,41 @@ As demais linhas de banco (`DB_HOST`, `DB_DATABASE`, etc.) podem permanecer come
 & "C:\xampp\php\php.exe" artisan key:generate
 ```
 
-**5. Crie as tabelas do banco de dados**
+**5. Crie as tabelas do banco de dados e popule os dados**
 
 ```powershell
-& "C:\xampp\php\php.exe" artisan migrate
+& "C:\xampp\php\php.exe" artisan migrate --seed
 ```
 
-Isso cria o arquivo `database/database.sqlite` automaticamente.
+Isso cria o arquivo `database/database.sqlite` e insere os dados de demonstração automaticamente.
 
-**6. (Opcional) Popule com dados de demonstração**
-
-```powershell
-& "C:\xampp\php\php.exe" artisan db:seed
-```
-
-Isso cria usuários e dados de exemplo para facilitar a avaliação do sistema.
-
-**7. Inicie o servidor**
+**6. Inicie o servidor**
 
 ```powershell
 & "C:\xampp\php\php.exe" artisan serve
 ```
 
 Acesse: [http://localhost:8000](http://localhost:8000)
+
+---
+
+### Usuários de Demonstração para Teste
+
+| Usuário | E-mail | Senha | PIN Caixa Preta | Perfil |
+|---|---|---|---|---|
+| Victor Hugo | `victor@seiva.app` | `senha123` | `1234` | Individual |
+| Maria Eduarda (Duda) | `duda@seiva.app` | `senha123` | `2026` | Casal (Lar Cantinho) |
+| Ian Marcos | `ian@seiva.app` | `senha123` | `4321` | Casal (Lar Cantinho) |
+
+---
+
+### Testes Automatizados
+
+O projeto possui 81 testes automatizados cobrindo os módulos de autenticação, contas, despesas do lar, acordos, metas e caixa preta:
+
+```powershell
+& "C:\xampp\php\php.exe" artisan test
+```
 
 ---
 
@@ -134,55 +153,55 @@ Acesse: [http://localhost:8000](http://localhost:8000)
 
 **Erros de permissão em `storage/` ou `bootstrap/cache/`:**
 
-No Windows, isso raramente acontece. Caso ocorra, verifique se a pasta `storage/` não está marcada como somente leitura nas propriedades do Windows Explorer.
+No Windows, verifique se a pasta `storage/` não está marcada como somente leitura nas propriedades do Windows Explorer.
 
 **Banco de dados não encontrado:**
 
 Se o arquivo `database/database.sqlite` não existir, crie-o manualmente:
 ```powershell
 New-Item database/database.sqlite
-& "C:\xampp\php\php.exe" artisan migrate
+& "C:\xampp\php\php.exe" artisan migrate --seed
 ```
 
 ---
 
 ## Estrutura de Pastas
 
-A estrutura segue o padrão do framework Laravel. Abaixo, uma explicação de cada pasta relevante para quem não conhece o framework:
+A estrutura segue o padrão do framework Laravel:
 
 ```
 seiva/
 ├── app/
+│   ├── Dominio/             # Classes de domínio em POO pura (Casal, CaixaPreta, etc.)
 │   ├── Http/
 │   │   └── Controllers/     # Recebem as requisições HTTP e retornam respostas
-│   └── Models/              # Representam as tabelas do banco de dados (Eloquent ORM)
+│   ├── Models/              # Representam as tabelas do banco de dados (Eloquent ORM)
+│   └── Services/            # Serviços de autenticação e regras de apoio
 │
 ├── database/
-│   ├── migrations/          # Definem a estrutura das tabelas (criadas com artisan migrate)
+│   ├── migrations/          # Estrutura das tabelas do banco de dados
 │   ├── seeders/             # Populam o banco com dados iniciais/de demonstração
-│   └── database.sqlite      # Arquivo do banco de dados (gerado automaticamente)
+│   └── database.sqlite      # Arquivo do banco de dados local
 │
 ├── resources/
-│   └── views/               # Arquivos de interface (Blade Templates — equivalente a HTML+PHP)
-│       ├── auth/            # Telas de login e cadastro (Quételi)
+│   └── views/               # Arquivos de interface (Blade Templates)
+│       ├── auth/            # Telas de login e cadastro
 │       ├── modulos/         # Painéis de cada funcionalidade (Lar, Metas, Acordos, etc.)
 │       └── componentes/     # Elementos reutilizáveis: sidebar, modais, topbar
 │
 ├── routes/
-│   └── web.php              # Define todas as rotas da aplicação (URLs e seus controllers)
+│   └── web.php              # Rotas da aplicação (URLs e seus controllers)
 │
-├── config/                  # Arquivos de configuração do Laravel (banco, sessão, e-mail, etc.)
-├── public/                  # Pasta pública: index.php (ponto de entrada), CSS, JS e imagens
-├── storage/                 # Logs, arquivos gerados e cache de sessão (não versionar conteúdo)
-├── bootstrap/               # Inicialização do framework; cache/ é gerado automaticamente
-├── vendor/                  # Dependências instaladas pelo Composer (não versionar)
+├── config/                  # Arquivos de configuração do Laravel
+├── public/                  # Pasta pública: index.php, assets, imagens
+├── storage/                 # Logs, arquivos gerados e cache
+├── bootstrap/               # Inicialização do framework
+├── tests/                   # Testes automatizados (Feature e Unit)
 │
-├── artisan                  # CLI do Laravel: execute comandos como migrate, serve, tinker
-├── composer.json            # Lista de dependências PHP e configurações do projeto
-├── composer.lock            # Versões exatas das dependências (garantia de reprodutibilidade)
-├── .env                     # Variáveis de ambiente locais (não versionar — contém senhas)
-├── .env.example             # Modelo do .env sem dados sensíveis (versionar este)
-└── package.json             # Dependências JavaScript (Vite, Tailwind — se utilizadas)
+├── artisan                  # CLI do Laravel
+├── composer.json            # Dependências PHP do projeto
+├── .env.example             # Modelo de configuração de ambiente
+└── package.json             # Dependências frontend
 ```
 
 ---
@@ -195,8 +214,8 @@ A documentação completa do Projeto Integrador está organizada na pasta `docs/
 docs/
 ├── academicos/
 │   ├── SEIVA_Documento_de_Entrega_PI.pdf   # Documento oficial simples de entrega com links de acesso
-│   ├── SEIVA_Relatorio_Tecnico_Final.pdf   # Relatório Técnico Final completo (44 págs, ABNT, sumário navegável)
-│   ├── SEIVA_Relato_de_Conducao.pdf        # Relato de Condução (Tabela Previsto vs. Realizado e melhorias)
+│   ├── SEIVA_Relatorio_Tecnico_Final.pdf   # Relatório Técnico Final completo
+│   ├── SEIVA_Relato_de_Conducao.pdf        # Relato de Condução
 │   └── especificacao_requisitos_v2.pdf     # Documento de Requisitos Funcionais e Não Funcionais
 ├── apresentacoes/
 │   ├── apresentacao_slides_pi.pdf          # Slides da apresentação acadêmica
@@ -215,7 +234,7 @@ Os documentos entregues à coordenação (Relatório Técnico Final e Relato de 
 
 | Tecnologia | Uso |
 |---|---|
-| PHP 8.2 / Laravel 11 | Backend e roteamento |
+| PHP 8.2 / Laravel 12 | Backend e roteamento |
 | SQLite | Banco de dados (arquivo local, sem servidor) |
 | Blade Templates | Sistema de templates para as views |
 | Tailwind CSS | Estilização e design responsivo |

@@ -118,10 +118,6 @@ Route::prefix('api')->group(function () {
         Route::post('/lar/notificar-pendencia', [LarController::class, 'notificarPendencia']);
         Route::post('/lar/foto-capa', [LarController::class, 'atualizarFotoCapa']);
         Route::post('/lar/ajustar-divisao', [LarController::class, 'ajustarDivisao']);
-    Route::post('/lar/convidar', [ConviteController::class, 'convidar']);
-    Route::get('/lar/convites', [ConviteController::class, 'listarConvites']);
-    Route::post('/lar/aceitar-convite', [ConviteController::class, 'aceitar']);
-    Route::post('/lar/recusar-convite', [ConviteController::class, 'recusar']);
 
         // RF006: Mesa de Acordos
         Route::get('/acordos', [AcordoController::class, 'index']);

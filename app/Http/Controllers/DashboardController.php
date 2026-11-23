@@ -16,8 +16,26 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
+/**
+ * Controller: DashboardController (Painel Consolidado do Usuário e Lar)
+ * 
+ * Responsabilidade Acadêmica: Victor Hugo / Ian Marcos (RF009)
+ * Requisito Atendido: RF009 — Painel Consolidado, Saúde Financeira e Fluxo Mensal
+ * 
+ * Por que fizemos assim:
+ * O Dashboard é o coração do SEIVA: ele unifica as contas bancárias, saldo livre vs. comprometido,
+ * faturas de cartão de crédito e calcula dinamicamente o termômetro de Saúde Financeira.
+ * Criamos uma regra condicional inteligente: se o usuário vive só, a tela mostra métricas estritamente
+ * individuais; se ele faz parte de um Lar compartilhado, o dashboard exibe abas comparativas
+ * e o resumo de custos conjuntos sem violar a privacidade de cada membro.
+ */
 class DashboardController extends Controller
 {
+    /**
+     * RF009: Consolida e retorna todos os indicadores da tela inicial.
+     * O que tentamos fazer: Apurar saldo líquido real, despesas do mês por categoria,
+     * status do rateio do casal, notificações urgentes e cálculo da pontuação de saúde financeira.
+     */
     public function index(Request $request)
     {
         $user = Auth::user();

@@ -56,6 +56,34 @@ class MesaDeAcordosCobradorPerfilTest extends TestCase
     {
         [$duda, $ian, $lar] = $this->criarCasalComLar();
 
+        // Cria uma proposta pendente e acordos para validar as estruturas populadas
+        Proposta::create([
+            'lar_id' => $lar->id_lar,
+            'autor_id' => $ian->id_usuario,
+            'tipo' => 'meta',
+            'titulo' => 'Fogão Novo',
+            'status' => 'pendente',
+            'valor_total' => 1200,
+        ]);
+
+        Acordo::create([
+            'lar_id' => $lar->id_lar,
+            'criado_por' => $duda->id_usuario,
+            'titulo' => 'Poupança Férias',
+            'tipo' => 'meta',
+            'valor_total' => 3000,
+            'status' => 'ativo',
+        ]);
+
+        Acordo::create([
+            'lar_id' => $lar->id_lar,
+            'criado_por' => $duda->id_usuario,
+            'titulo' => 'Parcelamento Sofá',
+            'tipo' => 'divida',
+            'valor_total' => 1800,
+            'status' => 'ativo',
+        ]);
+
         $res = $this->actingAs($duda)->getJson('/api/acordos');
 
         $res->assertStatus(200);

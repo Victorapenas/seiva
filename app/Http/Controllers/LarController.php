@@ -13,8 +13,27 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
+/**
+ * Controller: LarController (Gestão do Lar e Despesas Compartilhadas)
+ * 
+ * Responsabilidade Acadêmica: Jhon Abner Santos Almeida (RF004, RF010)
+ * Requisitos Atendidos: 
+ *   - RF004 — Criação do Lar e Envio de Convites por E-mail
+ *   - RF010 — Gestão de Despesas do Lar e Divisão Proporcional / 50-50
+ * 
+ * Por que fizemos assim:
+ * Centralizamos neste controller as regras do ambiente compartilhado: controle de membros,
+ * fundo de emergência conjunto, rateio de custos fixos e variáveis com opção proporcional
+ * à renda de cada um (justiça financeira) e acompanhamento do saldo do casal, respeitando
+ * o isolamento entre lares diferentes no banco de dados.
+ */
 class LarController extends Controller
 {
+    /**
+     * RF004/RF010: Retorna o estado completo do Lar do usuário logado.
+     * O que tentamos fazer: Consolidar a renda dos membros, listar despesas fixas e variáveis,
+     * apurar quanto cada um já pagou, quanto falta contribuir e a sobra financeira do lar.
+     */
     public function show()
     {
         $user = Auth::user();

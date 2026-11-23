@@ -8,10 +8,24 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use App\Mail\RecuperacaoSenhaMail;
 
+/**
+ * Controller: SenhaController
+ * 
+ * Responsabilidade Acadêmica: Quételi Tourinho / Victor Hugo
+ * Requisito Atendido: RF001 — Cadastro, Autenticação e Recuperação de Senha Segura
+ * 
+ * Por que fizemos assim:
+ * Decidimos separar a recuperação de senha do AuthController para manter
+ * o código modular e legível. Optamos por usar tokens temporários com validade de 60
+ * minutos gravados na tabela `recuperacao_senha_tokens` e envio de e-mail formatado via Blade.
+ * Para evitar ataques de enumeração de e-mails (segurança), a resposta da API é sempre
+ * idêntica, independente de o e-mail existir ou não na base de dados.
+ */
 class SenhaController extends Controller
 {
     /**
-     * Exibe o formulário "Esqueceu sua senha?"
+     * RF001: Exibe o formulário "Esqueceu sua senha?".
+     * O que tentamos fazer: Renderizar a view onde o usuário digita o e-mail para receber o link.
      */
     public function mostrarFormEsqueci()
     {
@@ -19,7 +33,13 @@ class SenhaController extends Controller
     }
 
     /**
-     * Envia o link de recuperação por e-mail
+     * RF001: Envia o link de recuperação por e-mail.
+     * O que tentamos fazer:
+     * 1. Validar o e-mail informado;
+     * 2. Limpar tokens anteriores daquele e-mail para evitar duplicidades;
+     * 3. Gerar um token pseudo-aleatório seguro de 60 caracteres via Str::random(60);
+     * 4. Enviar o e-mail com o link contendo o token;
+     * 5. Retornar resposta padronizada para proteger a existência ou não da conta (LGPD).
      */
     public function enviarLink(Request $request)
     {
@@ -46,14 +66,14 @@ class SenhaController extends Controller
             Mail::to($email)->send(new RecuperacaoSenhaMail($token, $nomeUsuario));
         }
 
-        // Mesma mensagem independentemente de o e-mail existir (segurança)
+        // Mesma mensagem independentemente de o e-mail existir (segurança contra enumeração)
         return response()->json([
             'message' => 'Se este e-mail estiver cadastrado, você receberá as instruções em breve.',
         ]);
     }
 
     /**
-     * Exibe o formulário para redefinir a senha
+     * RF001: Exibe o formulário para redefinir a senha com o token recebido.
      */
     public function mostrarFormReset(string $token)
     {
@@ -61,7 +81,12 @@ class SenhaController extends Controller
     }
 
     /**
-     * Redefine a senha do usuário
+     * RF001: Redefine a senha do usuário.
+     * O que tentamos fazer:
+     * 1. Validar token e nova senha;
+     * 2. Checar se o token existe e tem menos de 60 minutos de emissão;
+     * 3. Criptografar a nova senha com bcrypt antes de gravar na coluna senha_hash;
+     * 4. Excluir o token da tabela para garantir uso único.
      */
     public function redefinirSenha(Request $request)
     {

@@ -12,10 +12,27 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
+/**
+ * Controller: ConviteController (Convites para o Lar)
+ * 
+ * Responsabilidade Acadêmica: Jhon Abner Santos Almeida / Quételi Tourinho (RF004)
+ * Requisito Atendido: RF004 — Criar Lar e Sistema de Convites Bilaterais
+ * 
+ * Por que fizemos assim:
+ * Para permitir que usuários comecem sozinhos e depois convidem o parceiro sem burocracia,
+ * implementamos uma lógica de auto-provisionamento: se o remetente ainda não tem Lar, o sistema
+ * cria automaticamente um novo ambiente. O convite gera um token único e temporário de 7 dias,
+ * enviando notificação ao convidado e impedindo regras inválidas (como convidar o próprio e-mail).
+ */
 class ConviteController extends Controller
 {
     /**
-     * Enviar convite para formar Lar conjunto
+     * RF004: Enviar convite para formar Lar conjunto.
+     * O que tentamos fazer:
+     * 1. Validar se o e-mail não é o do próprio remetente;
+     * 2. Provisionar o Lar se o remetente for usuário individual;
+     * 3. Gerar token seguro com validade de 7 dias;
+     * 4. Notificar o usuário convidado caso já tenha conta no sistema.
      */
     public function convidar(Request $request)
     {

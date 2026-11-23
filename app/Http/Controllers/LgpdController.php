@@ -7,10 +7,25 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Controller: LgpdController (Perfil do Usuário e Conformidade LGPD)
+ * 
+ * Responsabilidade Acadêmica: Maria Eduarda Lima Silveira (RF011)
+ * Requisito Atendido: RF011 — Gestão de Perfil, Conformidade LGPD (Lei 13.709/2018)
+ * 
+ * Por que fizemos assim:
+ * A LGPD exige que o titular dos dados tenha total controle sobre suas informações.
+ * Implementamos a visualização e edição de perfil (renda, banco principal, chave PIX, avatar),
+ * a portabilidade de dados através da exportação completa em formato JSON (`exportData`)
+ * e o direito de revogação/eliminação com exclusão lógica/física e desvinculação completa
+ * de lares compartilhados (`deleteAccount`), mantendo registro em trilha de auditoria.
+ */
 class LgpdController extends Controller
 {
     /**
-     * Retorna os dados do perfil do usuário autenticado (RF011)
+     * RF011: Retorna os dados do perfil do usuário autenticado e informações do seu Lar.
+     * O que tentamos fazer: Apresentar a visão consolidada dos dados cadastrais e as regras
+     * de divisão configuradas para o casal ou morador individual.
      */
     public function show()
     {
