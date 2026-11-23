@@ -193,15 +193,18 @@ A documentação completa do Projeto Integrador está organizada na pasta `docs/
 
 ```
 docs/
+├── academicos/
+│   ├── SEIVA_Documento_de_Entrega_PI.pdf   # Documento oficial simples de entrega com links de acesso
+│   ├── SEIVA_Relatorio_Tecnico_Final.pdf   # Relatório Técnico Final completo (44 págs, ABNT, sumário navegável)
+│   ├── SEIVA_Relato_de_Conducao.pdf        # Relato de Condução (Tabela Previsto vs. Realizado e melhorias)
+│   └── especificacao_requisitos_v2.pdf     # Documento de Requisitos Funcionais e Não Funcionais
 ├── apresentacoes/
-│   ├── apresentacao_slides_pi.pdf       # Slides da apresentação acadêmica
-│   └── apresentacao_interativa.html     # Versão interativa dos slides
-├── diagramas/
-│   ├── diagrama_casos_de_uso.pdf        # Diagrama de Casos de Uso (UML)
-│   ├── diagrama_conceitual_bd.pdf       # Modelo Conceitual do Banco de Dados
-│   └── diagrama_entidade_relacionamento.pdf  # Modelo Entidade-Relacionamento
-└── academicos/
-    └── especificacao_requisitos_v2.pdf  # Documento de Requisitos Funcionais e Não Funcionais
+│   ├── apresentacao_slides_pi.pdf          # Slides da apresentação acadêmica
+│   └── apresentacao_interativa.html        # Versão interativa dos slides
+└── diagramas/
+    ├── diagrama_casos_de_uso.pdf           # Diagrama de Casos de Uso (UML)
+    ├── diagrama_conceitual_bd.pdf          # Modelo Conceitual do Banco de Dados
+    └── diagrama_entidade_relacionamento.pdf # Modelo Entidade-Relacionamento
 ```
 
 Os documentos entregues à coordenação (Relatório Técnico Final e Relato de Condução) foram submetidos separadamente no repositório da coordenação, em formato PDF, conforme as instruções do barema.
