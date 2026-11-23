@@ -52,7 +52,7 @@ O projeto foi desenvolvido do zero durante o semestre, partindo de um protótipo
 - XAMPP (ou qualquer instalação local de PHP — o PHP do XAMPP pode ser usado diretamente)
 - Navegador moderno (Chrome, Firefox, Edge)
 
-> O projeto usa **SQLite** como banco de dados. Nenhuma configuração de servidor de banco de dados é necessária — o arquivo do banco é gerado automaticamente dentro da pasta `database/`.
+> O projeto usa **SQLite** como banco de dados. Nenhuma configuração de servidor de banco de dados é necessária, o arquivo do banco é gerado automaticamente dentro da pasta `database/`.
 
 ---
 
@@ -227,3 +227,6 @@ Os documentos entregues à coordenação (Relatório Técnico Final e Relato de 
 ## Observação Acadêmica
 
 Este projeto foi desenvolvido exclusivamente como trabalho acadêmico do Projeto Integrador do curso de Análise e Desenvolvimento de Sistemas do IFBA, Campus Eunápolis. Não possui fins comerciais. Todos os dados utilizados nas demonstrações são fictícios.
+
+
+obs: Diga não a projetos robusto para PI.
