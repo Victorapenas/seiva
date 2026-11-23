@@ -15,11 +15,18 @@ use App\Http\Controllers\LgpdController;
 use App\Http\Controllers\RecebimentosController;
 use App\Http\Controllers\NotificacoesController;
 use App\Http\Controllers\ConviteController;
+use App\Http\Controllers\SenhaController;
 
 // Rota principal da aplicação SEIVA
 Route::get('/', function () {
     return view('app');
 })->name('login');
+
+// RF001: Recuperação de Senha por E-mail (Quételi)
+Route::get('/esqueci-senha', [SenhaController::class, 'mostrarFormEsqueci'])->name('senha.esqueci');
+Route::post('/esqueci-senha', [SenhaController::class, 'enviarLink'])->name('senha.enviar-link');
+Route::get('/redefinir-senha/{token}', [SenhaController::class, 'mostrarFormReset'])->name('senha.reset.form');
+Route::post('/redefinir-senha', [SenhaController::class, 'redefinirSenha'])->name('senha.redefinir');
 
 // Apresentação Interativa do Projeto SEIVA (PI - IFBA)
 Route::get('/apresentacao', function () {
@@ -44,6 +51,8 @@ Route::prefix('api')->group(function () {
     Route::post('/auth/google', [AuthController::class, 'googleLogin']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/esqueci-senha', [SenhaController::class, 'enviarLink']);
+    Route::post('/redefinir-senha', [SenhaController::class, 'redefinirSenha']);
     Route::get('/convite/{token}', [ConviteController::class, 'visualizar']);
 
     // Categorias padrão

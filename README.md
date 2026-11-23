@@ -29,7 +29,7 @@ O projeto foi desenvolvido do zero durante o semestre, partindo de um protótipo
 
 ## Funcionalidades Implementadas
 
-- **RF001 — Cadastro e Autenticação:** registro de usuário com renda declarada, banco principal, senha criptografada e controle de sessão seguro.
+- **RF001 — Cadastro, Autenticação e Recuperação de Senha:** registro de usuário com renda declarada, banco principal, senha criptografada (bcrypt), fluxo completo de recuperação de senha por e-mail com token temporário (60 min) e controle de sessão seguro.
 - **RF002 — Caixa Preta Privada:** espaço protegido por PIN de quatro dígitos para lançamentos, metas e reservas pessoais que ficam invisíveis ao parceiro.
 - **RF003 — Lançamentos e Contas Bancárias:** cadastro e edição de contas bancárias/carteiras, registro de transações de entrada e saída com categorias.
 - **RF004 — Criar Lar e Convites:** criação de ambiente compartilhado (Lar), geração de convite por e-mail com token único e aceite pelo parceiro.
