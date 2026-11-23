@@ -19,6 +19,13 @@ use Illuminate\Support\Facades\DB;
  */
 class MetaController extends Controller
 {
+    /**
+     * RF007 e RF008: Retorna a lista de metas financeiras e produtos na mira (Wishlist).
+     * O que tentamos fazer: Separar metas individuais e metas do Lar compartilhado, além de
+     * fornecer os produtos monitorados para compras planejadas pessoais e conjuntas.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index()
     {
         $user = Auth::user();
@@ -66,6 +73,14 @@ class MetaController extends Controller
         ]);
     }
 
+    /**
+     * RF007: Cadastra uma nova meta financeira (pessoal ou do Lar).
+     * O que tentamos fazer: Registrar objetivo financeiro com valor alvo, aporte mensal planejado,
+     * categoria, data limite e suporte a monitoramento de produto com link e loja.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -137,6 +152,15 @@ class MetaController extends Controller
         return response()->json($meta, 201);
     }
 
+    /**
+     * RF007: Realiza um aporte financeiro na meta com débito em conta bancária e registro no extrato.
+     * O que tentamos fazer: Em transação atômica, incrementar o valor_atual da meta, subtrair o saldo
+     * da conta selecionada e gerar a respectiva transação financeira de saída.
+     *
+     * @param Request $request
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function contribuir(Request $request, $id)
     {
         $request->validate([
@@ -197,8 +221,12 @@ class MetaController extends Controller
     }
 
     /**
-     * Endpoint para simulação de scraper de dados de link de produto (preço, loja e foto).
-     * Prepara o sistema para alertas de promoção automáticos no futuro.
+     * RF008: Consulta e extrai informações simuladas de link de produto (preço, loja e foto).
+     * O que tentamos fazer: Fornecer auto-preenchimento para a Wishlist ao colar links de lojas
+     * como Mercado Livre, Amazon e KaBuM!, preparando para futuros alertas de desconto.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function consultarLinkProduto(Request $request)
     {
@@ -245,6 +273,14 @@ class MetaController extends Controller
         ]);
     }
 
+    /**
+     * RF007: Atualiza os dados de uma meta financeira existente.
+     * O que tentamos fazer: Permitir reajustar prazos, valores alvo ou link de referência.
+     *
+     * @param Request $request
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function atualizarMeta(Request $request, $id)
     {
         $request->validate([
@@ -302,6 +338,14 @@ class MetaController extends Controller
         ]);
     }
 
+    /**
+     * RF007: Desfaz ou conclui uma meta com redistribuição do saldo acumulado.
+     * O que tentamos fazer: Permitir encerrar uma meta e redistribuir os recursos poupados.
+     *
+     * @param Request $request
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function desfazerMeta(Request $request, $id)
     {
         $request->validate([
@@ -319,6 +363,14 @@ class MetaController extends Controller
         ]);
     }
 
+    /**
+     * RF007: Exclui a meta e estorna o saldo acumulado de volta para a conta bancária do usuário.
+     * O que tentamos fazer: Garantir que se a meta tinha saldo poupado, esse dinheiro não desapareça:
+     * ele é estornado para a conta do usuário com transação de estorno e registro em auditoria.
+     *
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy($id)
     {
         $user = Auth::user();

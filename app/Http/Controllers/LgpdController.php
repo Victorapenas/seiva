@@ -95,6 +95,14 @@ class LgpdController extends Controller
         ]);
     }
 
+    /**
+     * RF011: Atualiza os dados cadastrais do titular (princípio do livre acesso e qualidade dos dados).
+     * O que tentamos fazer: Permitir alteração de nome, telefone, chave PIX, banco preferencial,
+     * rendas e PIN da Caixa Preta com validação estrita e registro em trilha de auditoria.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateProfile(Request $request)
     {
         $user = Auth::user();
@@ -142,6 +150,14 @@ class LgpdController extends Controller
         ]);
     }
 
+    /**
+     * RF010 e RF011: Atualiza a regra de divisão de despesas do Lar (igualitária, proporcional ou customizada).
+     * O que tentamos fazer: Permitir que o casal reconfigure o rateio a qualquer momento, desativando
+     * regras anteriores e recalculando percentuais individuais com registro em auditoria.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function atualizarDivisaoLar(Request $request)
     {
         $user = Auth::user();
@@ -217,6 +233,13 @@ class LgpdController extends Controller
         ]);
     }
 
+    /**
+     * RF011: Exporta todos os dados do titular em formato JSON legível (Direito à Portabilidade - Art. 18, V, LGPD).
+     * O que tentamos fazer: Consolidar contas bancárias, histórico de transações, metas, registros da caixa preta
+     * e lares em um único payload estruturado para download pelo usuário.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function exportData()
     {
         $user = Auth::user();
@@ -247,6 +270,13 @@ class LgpdController extends Controller
         ]);
     }
 
+    /**
+     * RF011: Elimina definitivamente a conta e todos os dados do titular (Direito ao Esquecimento - Art. 18, VI, LGPD).
+     * O que tentamos fazer: Em transação atômica do banco de dados, expurgar registros financeiros, contas,
+     * metas, histórico da caixa preta e vínculos com lares, encerrando a sessão do usuário com segurança.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function deleteAccount()
     {
         $user = Auth::user();

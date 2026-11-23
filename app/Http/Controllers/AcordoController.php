@@ -131,6 +131,14 @@ class AcordoController extends Controller
         ]);
     }
 
+    /**
+     * RF006: Cria um acordo diretamente no Lar.
+     * O que tentamos fazer: Registrar um novo compromisso financeiro acordado entre os membros,
+     * definindo o título, tipo (meta para poupar juntos ou dívida parcelada) e plano de divisão.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -168,6 +176,14 @@ class AcordoController extends Controller
         ], 201);
     }
 
+    /**
+     * RF006: Submete uma nova proposta de compra compartilhada para negociação na Mesa.
+     * O que tentamos fazer: Permitir que um parceiro proponha uma compra ou meta com sua sugestão
+     * de divisão de valores e prazos, disparando notificação imediata para o parceiro deliberar.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function criarProposta(Request $request)
     {
         $request->validate([
@@ -228,6 +244,17 @@ class AcordoController extends Controller
         ], 201);
     }
 
+    /**
+     * RF006: Delibera sobre uma proposta de acordo (Aceitar, Recusar ou Contraproposta).
+     * O que tentamos fazer: Implementar a negociação bilateral:
+     * - 'aceitar': efetiva a proposta, transformando-a em Acordo ativo com notificação de celebração.
+     * - 'contrapor': sugere um novo valor mensal sem romper a conversa.
+     * - 'recusar': rejeita de forma diplomática com notificação amigável ao autor.
+     *
+     * @param Request $request
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function votarProposta(Request $request, $id)
     {
         $request->validate([

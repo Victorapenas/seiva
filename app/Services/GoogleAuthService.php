@@ -10,8 +10,25 @@ use Exception;
 
 /**
  * Classe GoogleAuthService
- * Responsável pela integração com a API do Google (OAuth 2.0 / Google Identity Services),
- * validação criptográfica do ID Token e provisionamento de usuários e lares (POO: Herança e Especialização).
+ *
+ * Requisito: RF001 — Cadastro e autenticação via conta Google (OAuth 2.0)
+ *
+ * O que tentamos fazer:
+ * Implementar o login/cadastro com Google usando o fluxo OAuth 2.0.
+ * O usuário clica em "Entrar com Google", o frontend recebe um ID Token
+ * do Google Identity Services e envia para o backend validar.
+ *
+ * Por que fizemos assim (POO — Herança e Especialização):
+ * Estendemos BaseAuthService para reutilizar a lógica comum de inicializar
+ * conta padrão e iniciar sessão. GoogleAuthService só precisa se preocupar
+ * com a parte específica do Google: validar o ID Token e buscar/criar o usuário.
+ *
+ * Fluxo de autenticação:
+ * 1. Frontend recebe o credential (ID Token JWT) do Google
+ * 2. Backend valida o token na API do Google (tokeninfo)
+ * 3. Se válido, busca usuário por google_id ou email
+ * 4. Se não encontrar, cria o usuário automaticamente
+ * 5. Inicia a sessão autenticada
  */
 class GoogleAuthService extends BaseAuthService
 {
@@ -79,6 +96,15 @@ class GoogleAuthService extends BaseAuthService
         return $this->obterOuCriarUsuarioGoogle($perfilGoogle);
     }
 
+    /**
+     * Registra (ou recupera) um usuário a partir dos dados do perfil Google.
+     * Usado quando o frontend passa os dados do Google diretamente,
+     * sem um ID Token — o sistema trata da mesma forma que um login normal.
+     * Requisito: RF001 — Cadastro e autenticação via Google (OAuth 2.0)
+     *
+     * @param  array   $dados Dados do perfil Google (sub, email, name, picture)
+     * @return Usuario Usuário existente ou recém-criado
+     */
     public function registrar(array $dados): Usuario
     {
         return $this->obterOuCriarUsuarioGoogle($dados);

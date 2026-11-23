@@ -283,7 +283,12 @@ class LarController extends Controller
     }
 
     /**
-     * Ajusta a divisão percentual padrão do Lar (ex: 50/50, proporcional, 90/10, etc.)
+     * RF010: Ajusta a regra de divisão de despesas do Lar (50/50, proporcional à renda ou percentual customizado).
+     * O que tentamos fazer: Calcular a proporção ideal de custeio com base nas rendas declaradas
+     * de cada parceiro ou aplicar uma proporção negociada pelo casal, com registro em auditoria.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function ajustarDivisao(Request $request)
     {
@@ -339,6 +344,14 @@ class LarController extends Controller
         ]);
     }
 
+    /**
+     * RF004: Cria um novo Lar compartilhado no sistema.
+     * O que tentamos fazer: Em transação atômica, criar o grupo doméstico e cadastrar
+     * o criador como o primeiro membro com papel de administrador e 100% de contribuição inicial.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -368,6 +381,14 @@ class LarController extends Controller
         });
     }
 
+    /**
+     * RF004: Gera um convite seguro com token alfanumérico para inclusão de parceiro no Lar.
+     * O que tentamos fazer: Criar token único com validade de 7 dias e link de convite
+     * para que o parceiro acesse e ingresse na gestão financeira compartilhada.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function invite(Request $request)
     {
         $user = Auth::user();
@@ -395,6 +416,14 @@ class LarController extends Controller
         ]);
     }
 
+    /**
+     * RF004: Valida o código do convite e vincula o usuário ao Lar compartilhado.
+     * O que tentamos fazer: Conferir se o token é válido, evitar duplicidade e adicionar
+     * o novo membro ao lar com papel de membro e divisão 50/50 como padrão.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function join(Request $request)
     {
         $request->validate(['token' => 'required|string']);
@@ -431,6 +460,13 @@ class LarController extends Controller
         return response()->json(['message' => 'Parabéns! Você entrou no Lar com sucesso!']);
     }
 
+    /**
+     * RF010: Retorna todas as despesas compartilhadas cadastradas no Lar do usuário.
+     * O que tentamos fazer: Buscar as contas fixas e variáveis com seus respectivos rateios
+     * e status de quitação de cada membro.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function despesas()
     {
         $user = Auth::user();
@@ -448,6 +484,14 @@ class LarController extends Controller
         return response()->json($despesas);
     }
 
+    /**
+     * RF010: Cadastra uma nova despesa do Lar e gera as participações proporcionais ou igualitárias.
+     * O que tentamos fazer: Salvar a despesa comum e calcular imediatamente quanto cabe a cada morador,
+     * marcando a parcela do autor como paga caso ele tenha sido o adquirente original.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function storeDespesa(Request $request)
     {
         $request->validate([
@@ -509,6 +553,15 @@ class LarController extends Controller
         });
     }
 
+    /**
+     * RF010: Atualiza ou cria despesa do Lar e recalcula todas as participações de rateio.
+     * O que tentamos fazer: Permitir reajuste de valor ou divisão, regenerando as participações
+     * de cada parceiro com registro em histórico de auditoria.
+     *
+     * @param Request $request
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateDespesa(Request $request, $id)
     {
         $request->validate([
@@ -610,6 +663,13 @@ class LarController extends Controller
         });
     }
 
+    /**
+     * RF010: Remove uma despesa do Lar e exclui as participações pendentes vinculadas.
+     * O que tentamos fazer: Cancelar uma conta do rateio preservando o registro no histórico de auditoria.
+     *
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroyDespesa($id)
     {
         $user = Auth::user();
@@ -641,6 +701,14 @@ class LarController extends Controller
         ]);
     }
 
+    /**
+     * RF010: Quita a participação individual de um membro em uma despesa do Lar.
+     * O que tentamos fazer: Marcar a fatia do membro como paga e atualizar o status geral
+     * da despesa para 'pago' (se todos quitaram) ou 'parcial' (se ainda houver pendências).
+     *
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function quitarParticipacao($id)
     {
         $user = Auth::user();
@@ -669,6 +737,14 @@ class LarController extends Controller
         ]);
     }
 
+    /**
+     * RF010: Registra um aporte financeiro individual para reforçar o Fundo de Emergência do Lar.
+     * O que tentamos fazer: Debitar da conta bancária pessoal do usuário e lançar a transação
+     * correspondente como saída compartilhada em prol da reserva do casal.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function reforcarFundoEmergencia(Request $request)
     {
         $request->validate([
@@ -703,6 +779,14 @@ class LarController extends Controller
         ]);
     }
 
+    /**
+     * RF010: Registra o pagamento integral de uma conta do Lar com débito na conta bancária.
+     * O que tentamos fazer: Atualizar a despesa para 'pago', descontar do saldo bancário e
+     * gerar transação no extrato financeiro.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function pagarDespesa(Request $request)
     {
         $request->validate([
@@ -753,6 +837,14 @@ class LarController extends Controller
         ]);
     }
 
+    /**
+     * RF006 e RF010: Solicita um resgate emergencial do Fundo Conjunto do Lar.
+     * O que tentamos fazer: Disparar um alerta urgente na Mesa de Acordos para que o parceiro
+     * aprove a liberação de recursos da reserva financeira compartilhada.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function solicitarResgateEmergencia(Request $request)
     {
         $request->validate([
@@ -781,6 +873,13 @@ class LarController extends Controller
         ]);
     }
 
+    /**
+     * RF005 e RF010: Envia um lembrete ou pedido de comprovante sobre uma pendência do Lar.
+     * O que tentamos fazer: Facilitar a conferência mútua de contas pagas sem gerar cobrança ríspida.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function notificarPendencia(Request $request)
     {
         $request->validate([
@@ -806,6 +905,13 @@ class LarController extends Controller
         ]);
     }
 
+    /**
+     * RF004: Atualiza os dados de personalização visual do Lar (nome da casa, foto de capa).
+     * O que tentamos fazer: Permitir que o casal dê identidade visual ao seu cantinho compartilhado.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function atualizarFotoCapa(Request $request)
     {
         $request->validate([

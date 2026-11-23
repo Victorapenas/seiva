@@ -844,6 +844,14 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * RF009: Registra o pagamento de uma fatura de cartão ou despesa pendente diretamente pelo Dashboard.
+     * O que tentamos fazer: Facilitar a quitação rápida de pendências diárias, debitando da conta bancária
+     * indicada e abatendo do saldo comprometido ou participação do Lar com lançamento no extrato.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function registrarPagamento(Request $request)
     {
         $request->validate([
@@ -907,6 +915,15 @@ class DashboardController extends Controller
         });
     }
 
+    /**
+     * RF003 e RF009: Realiza conciliação ou ajuste rápido de saldo de uma conta bancária.
+     * O que tentamos fazer: Permitir acerto manual de conferência bancária gerando transação automática
+     * de correção (entrada ou saída) para manter o extrato e o saldo contábil sempre alinhados.
+     *
+     * @param Request $request
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function ajustarSaldoConta(Request $request, $id)
     {
         $userId = Auth::id();

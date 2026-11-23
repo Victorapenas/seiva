@@ -24,6 +24,14 @@ use Illuminate\Support\Facades\Hash;
  */
 class CaixaPretaController extends Controller
 {
+    /**
+     * RF002: Valida o PIN de 4 dígitos para desbloquear a Caixa Preta.
+     * O que tentamos fazer: Conferir o hash do PIN com a camada de domínio (CaixaPretaIndividual).
+     * Se correto, salvamos a flag de desbloqueio na sessão do usuário permitindo ver dados sigilosos.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function verifyPin(Request $request)
     {
         $request->validate(['pin' => 'required|string']);
@@ -44,7 +52,12 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Tranca a Caixa Preta e invalida o acesso na sessão.
+     * RF002: Tranca a Caixa Preta e invalida a permissão de acesso na sessão.
+     * O que tentamos fazer: Garantir que ao clicar em 'Trancar' ou sair da tela, o acesso
+     * seja revogado imediatamente, exigindo redigitar o PIN para visualizar patrimônio individual.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function trancar(Request $request)
     {
@@ -56,7 +69,13 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Retorna o pacote de dados completo do protótipo da Caixa Preta.
+     * RF002 e RF003: Retorna o painel completo da Área Privada Individual (Caixa Preta).
+     * O que tentamos fazer: Se a sessão estiver desbloqueada, agrega patrimônio líquido,
+     * contas bancárias, cartões, despesas individuais, metas e lista de produtos na mira.
+     * Se estiver trancada, bloqueia o retorno com HTTP 403.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function dadosCompletos(Request $request)
     {
@@ -129,7 +148,12 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Envia pedido de ajuda de custo para o parceiro no Lar.
+     * RF002 e RF005: Envia um pedido confidencial de ajuda de custo para o parceiro no Lar.
+     * O que tentamos fazer: Permitir que um parceiro em aperto financeiro solicite apoio
+     * sem expor todo o seu extrato bancário, criando uma cobrança de ajuda mútua.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function pedirAjudaCusto(Request $request)
     {
@@ -176,7 +200,14 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Responde a um pedido de ajuda (aceitar, contrapor ou recusar).
+     * RF002 e RF005: Responde ao pedido de ajuda de custo (aceitar, contrapropor ou recusar).
+     * O que tentamos fazer: Dar flexibilidade ao parceiro:
+     * - 'aceitar': debita da conta do pagador e cria transação com confirmação imediata.
+     * - 'contrapor': oferece um valor que cabe no orçamento atual do parceiro.
+     * - 'recusar': declina de forma diplomática sem romper a comunicação.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function responderAjudaCusto(Request $request)
     {
@@ -274,6 +305,13 @@ class CaixaPretaController extends Controller
         }
     }
 
+    /**
+     * RF002: Lista os registros cifrados da Caixa Preta do usuário.
+     * O que tentamos fazer: Recuperar os registros sigilosos gravados com criptografia
+     * e somar o total oculto para relatórios da área protegida.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index()
     {
         $userId = Auth::id();
@@ -291,6 +329,14 @@ class CaixaPretaController extends Controller
         ]);
     }
 
+    /**
+     * RF002: Armazena um novo registro sigiloso na Caixa Preta.
+     * O que tentamos fazer: Salvar um lançamento que não deve aparecer na área comum do Lar,
+     * marcando-o como bloqueado para acesso restrito.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -312,6 +358,13 @@ class CaixaPretaController extends Controller
         return response()->json($registro, 201);
     }
 
+    /**
+     * RF002: Exclui com segurança um registro da Caixa Preta.
+     * O que tentamos fazer: Permitir ao usuário remover transações confidenciais sem deixar rastros.
+     *
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy($id)
     {
         $registro = RegistroCaixaPreta::where('usuario_id', Auth::id())
@@ -323,7 +376,12 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Confirma o recebimento de uma ajuda financeira ou valor a receber do parceiro.
+     * RF002 e RF005: Confirma o recebimento de uma ajuda financeira ou rateio do parceiro.
+     * O que tentamos fazer: Creditar o saldo na conta bancária do recebedor, gerar transação de
+     * entrada no extrato e disparar notificação de confirmação ao parceiro.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function confirmarRecebimento(Request $request)
     {
@@ -381,7 +439,12 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Registra que o usuário NÃO recebeu o valor do parceiro (Disputa / Cobrança de comprovante).
+     * RF002 e RF005: Registra que o usuário NÃO identificou o pagamento no extrato (Disputa amigável).
+     * O que tentamos fazer: Evitar mal-entendidos notificando com carinho o parceiro para que
+     * confira se o PIX foi concluído ou envie o comprovante de pagamento.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function disputarRecebimento(Request $request)
     {
@@ -416,7 +479,12 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Salva um novo produto monitorado (Produtos de Olho / Wishlist).
+     * RF008: Cadastra um novo produto na mira de compras (Produtos de Olho / Wishlist).
+     * O que tentamos fazer: Permitir salvar links, fotos e preços-alvo de produtos desejados
+     * (tanto pessoais quanto para a casa compartilhada) para acompanhar promoções e planejar compras.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function adicionarProdutoWatchlist(Request $request)
     {
@@ -456,7 +524,11 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Remove um produto monitorado da Wishlist.
+     * RF008: Remove um produto da lista de observação de preços (Wishlist).
+     * O que tentamos fazer: Permitir ao usuário retirar da mira itens já comprados ou descartados.
+     *
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function removerProdutoWatchlist($id)
     {
@@ -476,7 +548,12 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Cadastra uma nova Despesa Fixa Individual na Caixa Preta.
+     * RF002 e RF003: Cadastra uma nova despesa fixa individual na Caixa Preta.
+     * O que tentamos fazer: Permitir o cadastro de gastos pessoais recorrentes (ex.: streaming, academia,
+     * cursos pessoais) com dia de vencimento, sem que sejam misturados com as despesas do Lar.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function criarDespesaIndividual(Request $request)
     {
@@ -518,7 +595,12 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Atualiza uma Despesa Fixa Individual existente.
+     * RF002 e RF003: Atualiza uma despesa fixa individual com registro de auditoria.
+     * O que tentamos fazer: Permitir reajuste de valores ou datas de despesas recorrentes pessoais.
+     *
+     * @param Request $request
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function atualizarDespesaIndividual(Request $request, $id)
     {
@@ -563,7 +645,11 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Remove uma Despesa Fixa Individual com registro formal de auditoria.
+     * RF002 e RF003: Remove uma despesa fixa individual da Caixa Preta.
+     * O que tentamos fazer: Excluir a despesa preservando rastreabilidade no histórico de auditoria.
+     *
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function removerDespesaIndividual($id)
     {
@@ -591,7 +677,13 @@ class CaixaPretaController extends Controller
     }
 
     /**
-     * Quita / Paga uma Despesa Fixa Individual com débito em conta e lançamento no extrato.
+     * RF002 e RF003: Quita uma despesa individual pessoal debitando em conta e gerando transação privada.
+     * O que tentamos fazer: Efetivar o pagamento na conta bancária escolhida, abater o saldo,
+     * gerar registro no extrato com visibilidade 'privado' e marcar o item como pago.
+     *
+     * @param Request $request
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function quitarDespesaIndividual(Request $request, $id)
     {

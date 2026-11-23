@@ -25,6 +25,13 @@ use Carbon\Carbon;
  */
 class NotificacoesController extends Controller
 {
+    /**
+     * RF005, RF006, RF007, RF010: Retorna a lista unificada de notificações e alertas do usuário.
+     * O que tentamos fazer: Agregar notificações diretas do banco, cobranças pendentes do parceiro,
+     * despesas do Lar prestes a vencer, faturas de cartão com saldo comprometido e metas próximas da meta.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index()
     {
         $user = Auth::user();
@@ -170,6 +177,14 @@ class NotificacoesController extends Controller
         ]);
     }
 
+    /**
+     * RF005, RF006, RF007, RF010: Marca notificações como lidas (individual ou em lote).
+     * O que tentamos fazer: Atualizar os registros de notificação no banco de dados e armazenar
+     * timestamp na sessão do usuário para silenciar alertas dinâmicos já visualizados.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function marcarTodasLidas(Request $request)
     {
         $user = Auth::user();

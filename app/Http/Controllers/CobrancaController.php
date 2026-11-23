@@ -99,6 +99,14 @@ class CobrancaController extends Controller
         ]);
     }
 
+    /**
+     * RF005: Envia um lembrete diplomático e amigável para o parceiro sobre uma pendência.
+     * O que tentamos fazer: Evitar o desgaste interpessoal ao gerar uma mensagem respeitosa
+     * com o valor da divisão e a chave PIX já incluída para facilitar o acerto imediato.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function enviarLembrete(Request $request)
     {
         $request->validate([
@@ -177,6 +185,15 @@ class CobrancaController extends Controller
         ]);
     }
 
+    /**
+     * RF005: Confirma o recebimento/quitação de uma cobrança pendente.
+     * O que tentamos fazer: Atualizar o estado da cobrança para 'confirmada', registrar
+     * a quitação na auditoria e disparar notificação amigável de agradecimento ao parceiro.
+     *
+     * @param Request $request
+     * @param int|string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function confirmarRecebimento(Request $request, $id)
     {
         $user = Auth::user();
@@ -265,6 +282,13 @@ class CobrancaController extends Controller
         ]);
     }
 
+    /**
+     * RF005: Retorna os modelos de mensagens diplomáticas predefinidas.
+     * O que tentamos fazer: Oferecer diferentes abordagens (gentil, descontraída ou direta)
+     * para que o usuário escolha o tom que melhor se adapta à relação com seu parceiro.
+     *
+     * @return array
+     */
     private function getTemplates()
     {
         return [
