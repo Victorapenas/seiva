@@ -37,52 +37,21 @@ class CobrancaController extends Controller
         $parceiro = $lar->membros()->where('usuarios.id_usuario', '!=', $user->id_usuario)->first();
         $parceiroNome = $parceiro ? $parceiro->nome : 'Parceiro';
 
-        // Busca ou inicializa pendências do Cobrador no Lar
+        // Busca pendências reais do Cobrador no Lar
         $cobrancas = Cobranca::where('lar_id', $lar->id_lar)
-            ->where('criada_por', $user->id_usuario)
+            ->where(function($q) use ($user) {
+                $q->where('criada_por', $user->id_usuario)
+                  ->orWhere('destinatario_id', $user->id_usuario);
+            })
             ->orderByDesc('id_cobranca')
             ->get();
 
-        // Se não houver cobranças no banco, inicializa com o cenário padrão realista do casal
-        if ($cobrancas->isEmpty() && $parceiro) {
-            $c1 = Cobranca::create([
-                'lar_id' => $lar->id_lar,
-                'criada_por' => $user->id_usuario,
-                'destinatario_id' => $parceiro->id_usuario,
-                'titulo' => 'Geladeira Samsung — parcela de julho',
-                'valor' => 250.00,
-                'mensagem' => "Oi {$parceiroNome}! Passando só pra lembrar com carinho da parcela da geladeira (R$ 250,00). Sem pressa!",
-                'estado' => 'pendente',
-                'quando' => 'Vence dia 15',
-            ]);
-            $c2 = Cobranca::create([
-                'lar_id' => $lar->id_lar,
-                'criada_por' => $user->id_usuario,
-                'destinatario_id' => $parceiro->id_usuario,
-                'titulo' => "Aluguel {$lar->nome} — parte de {$parceiroNome}",
-                'valor' => 300.00,
-                'mensagem' => 'Lembrete já enviado com sucesso.',
-                'estado' => 'enviada',
-                'quando' => 'Vence dia 5',
-            ]);
-            $c3 = Cobranca::create([
-                'lar_id' => $lar->id_lar,
-                'criada_por' => $user->id_usuario,
-                'destinatario_id' => $parceiro->id_usuario,
-                'titulo' => "Água + Internet — parte de {$parceiroNome}",
-                'valor' => 79.00,
-                'mensagem' => 'Lembrete agendado para 2 dias antes do vencimento.',
-                'estado' => 'agendada',
-                'quando' => 'Vence dia 18',
-            ]);
-            $cobrancas = collect([$c1, $c2, $c3]);
-        }
+        $totalReceber = (float) $cobrancas->where('criada_por', $user->id_usuario)->whereIn('estado', ['pendente', 'enviada'])->sum('valor');
+        $qtdNotificadas = $cobrancas->where('criada_por', $user->id_usuario)->where('estado', 'enviada')->count();
+        $qtdAgendadas = $cobrancas->where('criada_por', $user->id_usuario)->where('estado', 'agendada')->count();
 
-        $totalReceber = (float) $cobrancas->whereIn('estado', ['pendente', 'enviada'])->sum('valor');
-        $qtdNotificadas = $cobrancas->where('estado', 'enviada')->count();
-        $qtdAgendadas = $cobrancas->where('estado', 'agendada')->count();
-
-        $listaFormatada = $cobrancas->map(function($c) use ($parceiroNome) {
+        $listaFormatada = $cobrancas->map(function($c) use ($user, $parceiroNome) {
+            $souAutor = ($c->criada_por === $user->id_usuario);
             return [
                 'id' => $c->id_cobranca,
                 'titulo' => $c->titulo,
@@ -91,6 +60,7 @@ class CobrancaController extends Controller
                 'status' => $c->estado ?: 'pendente',
                 'mensagem_diplomatica' => $c->mensagem,
                 'parceiro_nome' => $parceiroNome,
+                'sou_autor' => $souAutor,
             ];
         });
 
@@ -104,8 +74,8 @@ class CobrancaController extends Controller
                 'agendadas' => $qtdAgendadas,
             ],
             'configuracoes' => [
-                'canal' => session('cobrador_canal', 'push'),
-                'dias_antecedencia' => session('cobrador_dias_antecedencia', 2),
+                'canal' => $lar->cobrador_canal ?? session('cobrador_canal', 'push'),
+                'dias_antecedencia' => $lar->cobrador_dias_antecedencia ?? session('cobrador_dias_antecedencia', 2),
             ],
             'templates' => $this->getTemplates(),
         ]);
@@ -243,15 +213,37 @@ class CobrancaController extends Controller
             'dias_antecedencia' => 'nullable|integer|min:1|max:30',
         ]);
 
-        // Configuração salva por sessão (futuramente em tabela própria)
+        $canal = $request->canal ?? 'push';
+        $dias = (int)($request->dias_antecedencia ?? 2);
+
         session([
-            'cobrador_canal'            => $request->canal ?? 'push',
-            'cobrador_dias_antecedencia' => $request->dias_antecedencia ?? 2,
+            'cobrador_canal'            => $canal,
+            'cobrador_dias_antecedencia' => $dias,
         ]);
+
+        $user = Auth::user();
+        if ($user) {
+            $lar = $user->lares()->first();
+            if ($lar) {
+                // Se a coluna existir no lar, atualiza
+                try {
+                    $lar->update([
+                        'cobrador_canal' => $canal,
+                        'cobrador_dias_antecedencia' => $dias,
+                    ]);
+                } catch (\Exception $e) {
+                    // Fallback transparente se coluna ainda não foi migrada
+                }
+            }
+        }
 
         return response()->json([
             'sucesso'  => true,
             'mensagem' => 'Configurações do Cobrador Diplomata salvas com sucesso!',
+            'configuracoes' => [
+                'canal' => $canal,
+                'dias_antecedencia' => $dias,
+            ]
         ]);
     }
 

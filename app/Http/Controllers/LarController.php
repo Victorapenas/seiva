@@ -28,18 +28,37 @@ class LarController extends Controller
             ->where('lar_id', $lar->id_lar)
             ->get();
 
-        $rendaTotalLar = $membros->sum('renda_declarada');
+        $rendaTotalLar = (float)$membros->sum('renda_declarada');
 
-        // Calcula proporções de renda
-        $membrosFormatados = $membros->map(function ($m) use ($rendaTotalLar, $user) {
+        // Busca despesas reais cadastradas no Lar
+        $despesasDb = DespesaLar::with(['participacoes.usuario', 'registradaPor'])
+            ->where('lar_id', $lar->id_lar)
+            ->orderBy('data_vencimento', 'asc')
+            ->get();
+
+        $totalDespesasMes = (float)$despesasDb->sum('valor_total');
+
+        // Participações reais nas despesas
+        $participacoes = ParticipacaoDespesa::whereIn('despesa_lar_id', $despesasDb->pluck('id_despesa_lar'))->get();
+        $jaContribuido = (float)$participacoes->where('pago', true)->sum('valor_parte');
+        $faltaContribuir = max(0, $totalDespesasMes - $jaContribuido);
+        $sobraCasal = max(0, $rendaTotalLar - $totalDespesasMes);
+
+        // Proporções de renda e percentual de contribuição (personalizável)
+        $membrosFormatados = $membros->map(function ($m) use ($rendaTotalLar, $totalDespesasMes, $participacoes, $user) {
             $renda = (float)$m->renda_declarada;
-            $percentual = $rendaTotalLar > 0 ? round(($renda / $rendaTotalLar) * 100, 1) : 50;
-            $primeiroNome = explode(' ', $m->usuario->nome)[0];
+            $percentual = (float)$m->percentual_contribuicao > 0
+                ? (float)$m->percentual_contribuicao
+                : ($rendaTotalLar > 0 ? round(($renda / $rendaTotalLar) * 100, 1) : 50);
+
+            $primeiroNome = explode(' ', trim($m->usuario->nome))[0];
             $ehEle = ($m->usuario_id === $user->id_usuario);
 
-            // Valores de contribuição mensais baseados no protótipo oficial
-            $metaMes = $ehEle ? 480.00 : 1187.90;
-            $jaPago = $ehEle ? 255.00 : 1187.90;
+            $partMembro = $participacoes->where('usuario_id', $m->usuario_id);
+            $metaMes = $totalDespesasMes > 0
+                ? ($partMembro->count() > 0 ? (float)$partMembro->sum('valor_parte') : round($totalDespesasMes * ($percentual / 100), 2))
+                : 0.00;
+            $jaPago = (float)$partMembro->where('pago', true)->sum('valor_parte');
             $pctPago = $metaMes > 0 ? min(100, round(($jaPago / $metaMes) * 100)) : 100;
 
             return [
@@ -48,6 +67,7 @@ class LarController extends Controller
                 'nome' => $m->usuario->nome,
                 'primeiro_nome' => $primeiroNome,
                 'iniciais' => $m->usuario->iniciais ?: strtoupper(substr($primeiroNome, 0, 2)),
+                'avatar' => $m->usuario->avatar,
                 'email' => $m->usuario->email,
                 'papel' => $m->papel,
                 'renda_declarada' => $renda,
@@ -60,144 +80,85 @@ class LarController extends Controller
         });
 
         $nomesCasal = $membrosFormatados->pluck('primeiro_nome')->join(' & ');
+        $parceiroMembro = $membrosFormatados->firstWhere('usuario_id', '!=', $user->id_usuario);
 
-        // Totais de despesas do lar no mês
-        $totalDespesasMes = 1667.90;
-        $jaContribuido = 1442.90;
-        $faltaContribuir = 225.00;
-        $sobraCasal = 2532.10;
+        // Despesas Fixas e Variáveis
+        $despesasFixas = [];
+        $despesasVariaveis = [];
+        $proximosVencimentos = [];
 
-        return response()->json([
-            'lar' => [
-                'id_lar' => $lar->id_lar,
-                'nome' => $lar->nome,
-                'emoji' => $lar->emoji ?: 'home',
-                'criado_por' => $lar->criado_por,
-                'desde' => 'abril de 2026',
-                'nomes_membros' => $nomesCasal ?: $lar->nome,
-            ],
-            'membros' => $membrosFormatados,
-            'saude_financeira' => [
-                'percentual' => 72,
-                'status' => 'Saudável',
-                'renda_casal' => $rendaTotalLar ?: 4200.00,
-                'custo_fixo' => $totalDespesasMes,
-                'custo_fixo_pct' => 40,
-                'falta_contribuir' => $faltaContribuir,
-                'falta_nome' => 'Duda',
-            ],
-            'resumo' => [
-                'custo_lar' => $totalDespesasMes,
-                'ja_contribuido' => $jaContribuido,
-                'falta_contribuir' => $faltaContribuir,
-                'sobra_casal' => $sobraCasal,
-            ],
-            'fundo_emergencia' => [
-                'titulo' => 'Fundo de emergência do Lar',
-                'conta' => 'Poupança Caixa (conjunta)',
-                'valor_atual' => 5000.00,
-                'valor_alvo' => 10000.00,
-                'percentual' => 50,
-                'ultimo_reforco' => 'Reforço de R$ 250 · 02/06',
-            ],
-            'proximos_vencimentos' => [
-                [
-                    'id' => 1,
-                    'titulo' => 'Fatura Nubank Duda',
-                    'data_fmt' => '12/06 · hoje',
-                    'valor' => 890.00,
-                    'cor' => '#ef4444',
-                    'acao' => 'pagar',
-                    'status_texto' => 'Vence hoje',
-                ],
-                [
-                    'id' => 2,
-                    'titulo' => 'Geladeira — parcela',
-                    'data_fmt' => '15/07',
-                    'valor' => 500.00,
-                    'cor' => '#f59e0b',
+        foreach ($despesasDb as $desp) {
+            $itemFormatado = [
+                'id' => $desp->id_despesa_lar,
+                'titulo' => $desp->titulo,
+                'valor_total' => (float)$desp->valor_total,
+                'divisao' => $desp->divisao ?: '50 / 50',
+                'vencimento' => $desp->data_vencimento ? 'Vence dia ' . \Carbon\Carbon::parse($desp->data_vencimento)->format('d') : 'Sem vencimento',
+                'comprovante' => false,
+                'pago' => ($desp->status === 'pago'),
+                'icone' => $desp->emoji ?: 'home',
+            ];
+
+            if ($desp->tipo === 'fixa' || $desp->recorrente) {
+                $despesasFixas[] = $itemFormatado;
+            } else {
+                $despesasVariaveis[] = [
+                    'id' => $desp->id_despesa_lar,
+                    'titulo' => $desp->titulo,
+                    'valor_total' => (float)$desp->valor_total,
+                    'detalhe' => "Cadastrado por " . ($desp->registradaPor ? explode(' ', $desp->registradaPor->nome)[0] : 'Membro'),
+                    'icone' => $desp->emoji ?: 'shopping-cart',
+                ];
+            }
+
+            if ($desp->status !== 'pago' && $desp->data_vencimento) {
+                $dtVenc = \Carbon\Carbon::parse($desp->data_vencimento);
+                $diasDiff = now()->startOfDay()->diffInDays($dtVenc->startOfDay(), false);
+                $statusTxt = $diasDiff < 0 ? 'Vencida' : ($diasDiff === 0 ? 'Vence hoje' : "Vence em {$diasDiff} dias");
+                $cor = $diasDiff <= 0 ? '#ef4444' : ($diasDiff <= 3 ? '#f59e0b' : '#10b981');
+
+                $proximosVencimentos[] = [
+                    'id' => $desp->id_despesa_lar,
+                    'titulo' => $desp->titulo,
+                    'data_fmt' => $dtVenc->format('d/m') . ($diasDiff === 0 ? ' · hoje' : ''),
+                    'valor' => (float)$desp->valor_total,
+                    'cor' => $cor,
                     'acao' => 'registrar',
-                    'status_texto' => 'Agendado',
-                ],
-                [
-                    'id' => 3,
-                    'titulo' => 'Aluguel',
-                    'data_fmt' => '05/07',
-                    'valor' => 900.00,
-                    'cor' => '#10b981',
-                    'acao' => 'registrar',
-                    'status_texto' => 'Em dia',
-                ],
-                [
-                    'id' => 4,
-                    'titulo' => 'Luz + Internet + Água',
-                    'data_fmt' => '18/06',
-                    'valor' => 267.90,
-                    'cor' => '#10b981',
-                    'acao' => 'registrar',
-                    'status_texto' => 'Em dia',
-                ],
-            ],
-            'despesas_fixas' => [
-                [
-                    'id' => 1,
-                    'titulo' => 'Aluguel',
-                    'valor_total' => 900.00,
-                    'divisao' => '60 / 40',
-                    'vencimento' => 'Vence dia 5',
-                    'comprovante' => true,
-                    'pago' => true,
-                    'icone' => 'home',
-                ],
-                [
-                    'id' => 2,
-                    'titulo' => 'Conta de Luz',
-                    'valor_total' => 110.00,
-                    'divisao' => '50 / 50',
-                    'vencimento' => 'Vence dia 18',
-                    'comprovante' => false,
-                    'pago' => false,
-                    'icone' => 'zap',
-                ],
-                [
-                    'id' => 3,
-                    'titulo' => 'Internet Vivo',
-                    'valor_total' => 99.90,
-                    'divisao' => '50 / 50',
-                    'vencimento' => 'Vence dia 18',
-                    'comprovante' => false,
-                    'pago' => false,
-                    'icone' => 'wifi',
-                ],
-                [
-                    'id' => 4,
-                    'titulo' => 'Conta de Água',
-                    'valor_total' => 58.00,
-                    'divisao' => '50 / 50',
-                    'vencimento' => 'Vence dia 10',
-                    'comprovante' => true,
-                    'pago' => true,
-                    'icone' => 'droplet',
-                ],
-            ],
-            'despesas_variaveis' => [
-                [
-                    'id' => 101,
-                    'titulo' => 'Mercado Dia a Dia',
-                    'valor_total' => 312.80,
-                    'detalhe' => 'pago por Duda · Ian deve R$ 156,40',
-                    'icone' => 'shopping-cart',
-                ],
-                [
-                    'id' => 102,
-                    'titulo' => 'iFood sexta',
-                    'valor_total' => 52.00,
-                    'detalhe' => 'pago por Duda · Ian deve R$ 26,00',
-                    'icone' => 'utensils',
-                ],
-            ],
-            'metas' => [
-                [
+                    'status_texto' => $statusTxt,
+                ];
+            }
+        }
+
+        // Verifica se é o Lar protótipo acadêmico (Duda & Ian) sem despesas registradas ainda
+        $ehPrototipoDudaIan = ($lar->codigo_acesso === 'CANTINHO123' || ($lar->id_lar === 1 && $membros->pluck('usuario.email')->contains('duda@seiva.app')));
+
+        if ($despesasDb->isEmpty() && $ehPrototipoDudaIan) {
+            $totalDespesasMes = 1667.90;
+            $jaContribuido = 1442.90;
+            $faltaContribuir = 225.00;
+            $sobraCasal = 2532.10;
+
+            $proximosVencimentos = [
+                ['id' => 1, 'titulo' => 'Fatura Nubank Duda', 'data_fmt' => '12/06 · hoje', 'valor' => 890.00, 'cor' => '#ef4444', 'acao' => 'pagar', 'status_texto' => 'Vence hoje'],
+                ['id' => 2, 'titulo' => 'Geladeira — parcela', 'data_fmt' => '15/07', 'valor' => 500.00, 'cor' => '#f59e0b', 'acao' => 'registrar', 'status_texto' => 'Agendado'],
+                ['id' => 3, 'titulo' => 'Aluguel', 'data_fmt' => '05/07', 'valor' => 900.00, 'cor' => '#10b981', 'acao' => 'registrar', 'status_texto' => 'Em dia'],
+                ['id' => 4, 'titulo' => 'Luz + Internet + Água', 'data_fmt' => '18/06', 'valor' => 267.90, 'cor' => '#10b981', 'acao' => 'registrar', 'status_texto' => 'Em dia'],
+            ];
+
+            $despesasFixas = [
+                ['id' => 1, 'titulo' => 'Aluguel', 'valor_total' => 900.00, 'divisao' => '60 / 40', 'vencimento' => 'Vence dia 5', 'comprovante' => true, 'pago' => true, 'icone' => 'home'],
+                ['id' => 2, 'titulo' => 'Conta de Luz', 'valor_total' => 110.00, 'divisao' => '50 / 50', 'vencimento' => 'Vence dia 18', 'comprovante' => false, 'pago' => false, 'icone' => 'zap'],
+                ['id' => 3, 'titulo' => 'Internet Vivo', 'valor_total' => 99.90, 'divisao' => '50 / 50', 'vencimento' => 'Vence dia 18', 'comprovante' => false, 'pago' => false, 'icone' => 'wifi'],
+                ['id' => 4, 'titulo' => 'Conta de Água', 'valor_total' => 58.00, 'divisao' => '50 / 50', 'vencimento' => 'Vence dia 10', 'comprovante' => true, 'pago' => true, 'icone' => 'droplet'],
+            ];
+
+            $despesasVariaveis = [
+                ['id' => 101, 'titulo' => 'Mercado Dia a Dia', 'valor_total' => 312.80, 'detalhe' => 'pago por Duda · Ian deve R$ 156,40', 'icone' => 'shopping-cart'],
+                ['id' => 102, 'titulo' => 'iFood sexta', 'valor_total' => 52.00, 'detalhe' => 'pago por Duda · Ian deve R$ 26,00', 'icone' => 'utensils'],
+            ];
+
+            $metasFormatadas = collect([
+                (object)[
                     'id_meta' => 201,
                     'titulo' => 'Geladeira Samsung Frost Free 460L',
                     'subtitulo' => 'Guardo R$ 500,00/mês juntos',
@@ -213,101 +174,149 @@ class LarController extends Controller
                     'responsavel' => 'Maria Eduarda',
                     'conta_destino' => 'Conta conjunta do Lar',
                     'pix' => '(71) 99812-3456',
-                    'divisao_casal' => [
-                        'voce' => 250.00,
-                        'parceiro' => 250.00,
-                        'parceiro_nome' => 'Ian',
-                    ],
                 ],
-                [
-                    'id_meta' => 202,
-                    'titulo' => 'Viagem Praia do Forte',
-                    'subtitulo' => 'Proposta: R$ 100,00/mês cada até o Verão',
-                    'acordo_texto' => 'Em negociação na Mesa de Acordos · aguardando seu voto',
-                    'progresso' => 18,
-                    'valor_atual' => 540.00,
-                    'valor_alvo' => 3000.00,
-                    'falta_guardar' => 2460.00,
-                    'previsao_dias' => 64,
-                    'imagem' => '/produtos/praia-forte.png',
-                    'icone' => 'waves',
-                    'em_negociacao' => true,
-                    'responsavel' => 'Conta conjunta',
-                    'conta_destino' => 'Poupança Caixa (conjunta)',
-                    'pix' => 'conjunta@seiva.app',
-                    'divisao_casal' => [
-                        'voce' => 100.00,
-                        'parceiro' => 100.00,
-                        'parceiro_nome' => 'Ian',
-                    ],
-                ],
-                [
-                    'id_meta' => 203,
-                    'titulo' => 'Reforma da Cozinha & Planejados',
-                    'subtitulo' => 'Guardo R$ 800,00/mês juntos',
-                    'acordo_texto' => 'Acordo ativo · 50% / 50% · contribuição mensal',
-                    'progresso' => 45,
-                    'valor_atual' => 4500.00,
-                    'valor_alvo' => 10000.00,
-                    'falta_guardar' => 5500.00,
-                    'previsao_dias' => 210,
-                    'imagem' => '/produtos/fogao-brastemp.png',
-                    'icone' => 'home',
-                    'em_negociacao' => false,
-                    'responsavel' => 'Maria Eduarda',
-                    'conta_destino' => 'Nubank Maria Eduarda',
-                    'pix' => '(71) 99812-3456',
-                    'divisao_casal' => [
-                        'voce' => 400.00,
-                        'parceiro' => 400.00,
-                        'parceiro_nome' => 'Ian',
-                    ],
-                ],
-                [
-                    'id_meta' => 204,
-                    'titulo' => 'Fundo de emergência do Lar',
-                    'subtitulo' => 'Colchão de segurança para 6 meses',
-                    'acordo_texto' => 'Acordo ativo · R$ 500/mês juntos',
-                    'progresso' => 50,
-                    'valor_atual' => 5000.00,
-                    'valor_alvo' => 10000.00,
-                    'falta_guardar' => 5000.00,
+            ]);
+        }
+
+        // Metas Reais do Lar (quando não for protótipo ou quando já tiver metas no banco)
+        if (!isset($metasFormatadas)) {
+            $metasDb = \App\Models\Meta::where('lar_id', $lar->id_lar)->where('status', 'ativa')->get();
+            $metasFormatadas = $metasDb->map(function($m) {
+                return [
+                    'id_meta' => $m->id_meta,
+                    'titulo' => $m->titulo,
+                    'subtitulo' => 'Guardo R$ ' . number_format($m->contribuicao_mensal ?: ($m->valor_alvo / 4), 2, ',', '.') . '/mês juntos',
+                    'acordo_texto' => 'Meta compartilhada do Lar',
+                    'progresso' => $m->progresso,
+                    'valor_atual' => (float)$m->valor_atual,
+                    'valor_alvo' => (float)$m->valor_alvo,
+                    'falta_guardar' => max(0, (float)$m->valor_alvo - (float)$m->valor_atual),
                     'previsao_dias' => 90,
-                    'imagem' => '/casal-hero.png',
-                    'icone' => 'shield-check',
+                    'imagem' => $m->imagem,
+                    'icone' => $m->icone ?: 'target',
                     'em_negociacao' => false,
-                    'responsavel' => 'Conta conjunta',
-                    'conta_destino' => 'Poupança Caixa (conjunta)',
-                    'pix' => 'conjunta@seiva.app',
-                    'divisao_casal' => [
-                        'voce' => 250.00,
-                        'parceiro' => 250.00,
-                        'parceiro_nome' => 'Ian',
-                    ],
-                ],
+                    'responsavel' => 'Conta do Lar',
+                    'conta_destino' => $m->onde_guardado ?: 'Reserva do Lar',
+                    'pix' => '',
+                ];
+            });
+        }
+
+        // Acordos Reais do Lar
+        $acordosDb = \App\Models\Acordo::where('lar_id', $lar->id_lar)->where('status', 'ativo')->get();
+        $acordosFormatados = $acordosDb->map(function($a) {
+            return [
+                'id' => $a->id_acordo,
+                'titulo' => $a->titulo,
+                'progresso_txt' => 'R$ ' . number_format($a->valor_arrecadado, 2, ',', '.') . ' de R$ ' . number_format($a->valor_total, 2, ',', '.') . ' · ' . ($a->divisao ?: '50/50'),
+                'tipo' => $a->tipo === 'meta' ? 'Meta' : 'Dívida',
+                'icone' => $a->tipo === 'meta' ? 'target' : 'wallet',
+            ];
+        });
+
+        $desdeFormatado = $lar->created_at ? $lar->created_at->locale('pt_BR')->translatedFormat('F \d\e Y') : 'recente';
+
+        return response()->json([
+            'lar' => [
+                'id_lar' => $lar->id_lar,
+                'nome' => $lar->nome,
+                'emoji' => $lar->emoji ?: 'home',
+                'criado_por' => $lar->criado_por,
+                'desde' => $desdeFormatado,
+                'nomes_membros' => $nomesCasal ?: $lar->nome,
             ],
+            'membros' => $membrosFormatados,
+            'saude_financeira' => [
+                'percentual' => !empty($ehPrototipoDudaIan) ? 72 : ($rendaTotalLar > 0 ? min(100, round((1 - ($totalDespesasMes / max(1, $rendaTotalLar))) * 100)) : 100),
+                'status' => 'Saudável',
+                'renda_casal' => $rendaTotalLar ?: 4200.00,
+                'custo_fixo' => $totalDespesasMes,
+                'custo_fixo_pct' => $rendaTotalLar > 0 ? min(100, round(($totalDespesasMes / $rendaTotalLar) * 100)) : 0,
+                'falta_contribuir' => $faltaContribuir,
+                'falta_nome' => $parceiroMembro ? $parceiroMembro['primeiro_nome'] : '',
+            ],
+            'resumo' => [
+                'custo_lar' => $totalDespesasMes,
+                'ja_contribuido' => $jaContribuido,
+                'falta_contribuir' => $faltaContribuir,
+                'sobra_casal' => $sobraCasal,
+            ],
+            'fundo_emergencia' => [
+                'titulo' => 'Fundo de emergência do Lar',
+                'conta' => 'Reserva Conjunta',
+                'valor_atual' => 0.00,
+                'valor_alvo' => max(5000.00, $totalDespesasMes * 3),
+                'percentual' => 0,
+                'ultimo_reforco' => 'Nenhum aporte ainda',
+            ],
+            'proximos_vencimentos' => $proximosVencimentos,
+            'despesas_fixas' => $despesasFixas,
+            'despesas_variaveis' => $despesasVariaveis,
+            'metas' => $metasFormatadas,
             'acordos' => [
-                'total_ativos' => 2,
-                'total_em_negociacao' => 2,
-                'itens' => [
-                    [
-                        'id' => 1,
-                        'titulo' => 'Geladeira Samsung Frost Free 460L',
-                        'progresso_txt' => 'R$ 1.000,00 de R$ 3.200,00 · 50% / 50%',
-                        'tipo' => 'Dívida',
-                        'icone' => 'wallet',
-                    ],
-                    [
-                        'id' => 2,
-                        'titulo' => 'Viagem Praia do Forte',
-                        'progresso_txt' => 'R$ 540,00 de R$ 3.000,00 · 50% / 50%',
-                        'tipo' => 'Meta',
-                        'icone' => 'calendar',
-                    ],
-                ],
+                'total_ativos' => $acordosFormatados->count(),
+                'total_em_negociacao' => 0,
+                'itens' => $acordosFormatados,
             ],
-            'renda_total_lar' => (float)($rendaTotalLar ?: 4200.00),
-            'total_despesas_mes' => (float)$totalDespesasMes,
+            'renda_total_lar' => $rendaTotalLar,
+            'total_despesas_mes' => $totalDespesasMes,
+        ]);
+    }
+
+    /**
+     * Ajusta a divisão percentual padrão do Lar (ex: 50/50, proporcional, 90/10, etc.)
+     */
+    public function ajustarDivisao(Request $request)
+    {
+        $request->validate([
+            'divisao' => 'required|string',
+            'pct_voce' => 'nullable|numeric|min:0|max:100',
+            'pct_parceiro' => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $user = Auth::user();
+        $lar = $user->lares()->firstOrFail();
+        $membros = LarMembro::where('lar_id', $lar->id_lar)->get();
+
+        if ($request->divisao === 'proporcional') {
+            $totalRendas = $membros->sum('renda_declarada');
+            foreach ($membros as $m) {
+                $pct = $totalRendas > 0 ? round(($m->renda_declarada / $totalRendas) * 100, 1) : 50;
+                $m->update(['percentual_contribuicao' => $pct]);
+            }
+        } elseif ($request->divisao === '50/50') {
+            foreach ($membros as $m) {
+                $m->update(['percentual_contribuicao' => 50]);
+            }
+        } elseif (preg_match('/^(\d+)\s*\/\s*(\d+)$/', $request->divisao, $matches)) {
+            $pct1 = (float)$matches[1];
+            $pct2 = (float)$matches[2];
+            $membroVoce = $membros->firstWhere('usuario_id', $user->id_usuario);
+            $membroParceiro = $membros->firstWhere('usuario_id', '!=', $user->id_usuario);
+            if ($membroVoce) $membroVoce->update(['percentual_contribuicao' => $pct1]);
+            if ($membroParceiro) $membroParceiro->update(['percentual_contribuicao' => $pct2]);
+        } elseif ($request->pct_voce !== null && $request->pct_parceiro !== null) {
+            $membroVoce = $membros->firstWhere('usuario_id', $user->id_usuario);
+            $membroParceiro = $membros->firstWhere('usuario_id', '!=', $user->id_usuario);
+            if ($membroVoce) $membroVoce->update(['percentual_contribuicao' => (float)$request->pct_voce]);
+            if ($membroParceiro) $membroParceiro->update(['percentual_contribuicao' => (float)$request->pct_parceiro]);
+        }
+
+        \App\Models\HistoricoAuditoria::registrar(
+            $user->id_usuario,
+            'lar',
+            $lar->id_lar,
+            'divisao_ajustada',
+            "Divisão de contribuição do Lar reajustada para {$request->divisao}.",
+            null,
+            ['divisao' => $request->divisao],
+            $lar->id_lar
+        );
+
+        return response()->json([
+            'sucesso' => true,
+            'mensagem' => "Divisão do Lar atualizada com sucesso ({$request->divisao})!",
+            'membros' => LarMembro::where('lar_id', $lar->id_lar)->get(),
         ]);
     }
 
@@ -426,7 +435,7 @@ class LarController extends Controller
             'titulo' => 'required|string|max:255',
             'valor_total' => 'required|numeric|min:0.01',
             'tipo' => 'required|in:fixa,variavel,emergencia',
-            'divisao' => 'required|in:50/50,proporcional',
+            'divisao' => 'nullable|string',
             'data_vencimento' => 'nullable|date',
             'emoji' => 'nullable|string',
         ]);
@@ -435,6 +444,8 @@ class LarController extends Controller
             $user = Auth::user();
             $lar = $user->lares()->firstOrFail();
 
+            $divisaoFinal = $request->divisao ?: '50/50';
+
             $despesa = DespesaLar::create([
                 'lar_id' => $lar->id_lar,
                 'registrada_por' => $user->id_usuario,
@@ -442,7 +453,7 @@ class LarController extends Controller
                 'emoji' => $request->emoji ?? 'receipt',
                 'valor_total' => $request->valor_total,
                 'tipo' => $request->tipo,
-                'divisao' => $request->divisao,
+                'divisao' => $divisaoFinal,
                 'data_vencimento' => $request->data_vencimento ?? now()->format('Y-m-d'),
                 'status' => 'pendente',
             ]);
@@ -452,13 +463,19 @@ class LarController extends Controller
             $numMembros = count($membros);
 
             foreach ($membros as $m) {
-                if ($request->divisao === 'proporcional' && $totalRendas > 0) {
+                if ($divisaoFinal === 'proporcional' && $totalRendas > 0) {
                     $valorParte = round(($m->renda_declarada / $totalRendas) * $request->valor_total, 2);
+                } elseif (preg_match('/^(\d+)\s*[\/\-]\s*(\d+)$/', $divisaoFinal, $matches)) {
+                    $pct1 = (float)$matches[1];
+                    $pct2 = (float)$matches[2];
+                    $ehCriador = ($m->usuario_id === $user->id_usuario);
+                    $pct = $ehCriador ? $pct1 : $pct2;
+                    $valorParte = round(($pct / 100) * $request->valor_total, 2);
                 } else {
-                    $valorParte = round($request->valor_total / max(1, $numMembros), 2);
+                    $pctMembro = (float)$m->percentual_contribuicao > 0 ? (float)$m->percentual_contribuicao : (100 / max(1, $numMembros));
+                    $valorParte = round(($pctMembro / 100) * $request->valor_total, 2);
                 }
 
-                // Se quem cadastrou já pagou sua parte
                 $pago = ($m->usuario_id === $user->id_usuario);
 
                 ParticipacaoDespesa::create([
@@ -479,13 +496,15 @@ class LarController extends Controller
             'titulo' => 'required|string|max:255',
             'valor_total' => 'required|numeric|min:0.01',
             'tipo' => 'required|in:fixa,variavel,emergencia',
-            'divisao' => 'required|in:50/50,proporcional',
+            'divisao' => 'nullable|string',
             'data_vencimento' => 'nullable|date',
         ]);
 
         return DB::transaction(function () use ($request, $id) {
             $user = Auth::user();
             $lar = $user->lares()->firstOrFail();
+
+            $divisaoFinal = $request->divisao ?: '50/50';
 
             $despesa = DespesaLar::where('lar_id', $lar->id_lar)->find($id);
             $valorAntigo = $despesa ? $despesa->valor_total : null;
@@ -497,7 +516,7 @@ class LarController extends Controller
                     'emoji' => 'receipt',
                     'valor_total' => $request->valor_total,
                     'tipo' => $request->tipo,
-                    'divisao' => $request->divisao,
+                    'divisao' => $divisaoFinal,
                     'data_vencimento' => $request->data_vencimento ?? now()->format('Y-m-d'),
                     'status' => 'pendente',
                 ]);
@@ -518,7 +537,7 @@ class LarController extends Controller
                     'titulo' => $request->titulo,
                     'valor_total' => $request->valor_total,
                     'tipo' => $request->tipo,
-                    'divisao' => $request->divisao,
+                    'divisao' => $divisaoFinal,
                     'data_vencimento' => $request->data_vencimento ?? $despesa->data_vencimento,
                 ]);
 
@@ -541,10 +560,17 @@ class LarController extends Controller
             ParticipacaoDespesa::where('despesa_lar_id', $despesa->id_despesa_lar)->delete();
 
             foreach ($membros as $m) {
-                if ($request->divisao === 'proporcional' && $totalRendas > 0) {
+                if ($divisaoFinal === 'proporcional' && $totalRendas > 0) {
                     $valorParte = round(($m->renda_declarada / $totalRendas) * $request->valor_total, 2);
+                } elseif (preg_match('/^(\d+)\s*[\/\-]\s*(\d+)$/', $divisaoFinal, $matches)) {
+                    $pct1 = (float)$matches[1];
+                    $pct2 = (float)$matches[2];
+                    $ehCriador = ($m->usuario_id === $user->id_usuario);
+                    $pct = $ehCriador ? $pct1 : $pct2;
+                    $valorParte = round(($pct / 100) * $request->valor_total, 2);
                 } else {
-                    $valorParte = round($request->valor_total / max(1, $numMembros), 2);
+                    $pctMembro = (float)$m->percentual_contribuicao > 0 ? (float)$m->percentual_contribuicao : (100 / max(1, $numMembros));
+                    $valorParte = round(($pctMembro / 100) * $request->valor_total, 2);
                 }
 
                 $pago = ($m->usuario_id === $user->id_usuario);

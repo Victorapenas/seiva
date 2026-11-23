@@ -109,9 +109,8 @@
                             60 / 100 · Parcial
                         </span>
                     </div>
-                    <p class="text-xs leading-relaxed" style="color: #1e293b !important; font-weight: 500 !important;">
-                        Ian já quitou <strong style="color: #064e3b !important;">100%</strong> de sua cota do mês (R$ 1.187,90). Maria Eduarda contribuiu com <strong style="color: #78350f !important;">53%</strong> (R$ 255,00 de R$ 480,00). 
-                        Faltam <strong style="color: #78350f !important;">R$ 225,00</strong> para fechar as contas do cantinho com 100% de equilíbrio.
+                    <p class="text-xs leading-relaxed" style="color: #1e293b !important; font-weight: 500 !important;" id="modalSaudeLarPilar3Texto">
+                        Acompanhamento das cotas mensais de cada membro do Lar de acordo com a divisão pactuada. As contribuições registradas mantêm as contas do cantinho com equilíbrio mútuo e sem atrito.
                     </p>
                 </div>
 

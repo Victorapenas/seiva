@@ -14,13 +14,13 @@
             <div id="perfilAvatarCircle"
                  class="size-20 rounded-full bg-primary-foreground/20 text-primary-foreground font-black text-xl flex items-center justify-center ring-4 ring-primary-foreground/20 shrink-0 select-none overflow-hidden">
                 <img id="perfilAvatarImg" src="" alt="Foto de perfil" class="hidden size-full object-cover">
-                <span id="perfilAvatarIniciais">ME</span>
+                <span id="perfilAvatarIniciais">--</span>
             </div>
             <div class="flex-1 min-w-0 space-y-1">
-                <p id="perfilNomeTxt" class="text-lg font-black text-primary-foreground truncate">Maria Eduarda</p>
-                <p id="perfilEmailTxt" class="text-sm text-primary-foreground/70 truncate">duda@seiva.app</p>
-                <p id="perfilApelido" class="text-xs text-primary-foreground/60 italic">Apelido: Duda</p>
-                <p id="perfilMembroDesde" class="text-[11px] text-primary-foreground/50">Membro desde abril de 2026</p>
+                <p id="perfilNomeTxt" class="text-lg font-black text-primary-foreground truncate">Carregando...</p>
+                <p id="perfilEmailTxt" class="text-sm text-primary-foreground/70 truncate">...</p>
+                <p id="perfilApelido" class="text-xs text-primary-foreground/60 italic hidden"></p>
+                <p id="perfilMembroDesde" class="text-[11px] text-primary-foreground/50">Membro SEIVA</p>
             </div>
         </div>
         <div class="mt-5 flex gap-2">
@@ -32,31 +32,31 @@
     </div>
 
     <!-- 2A. NOSSO CANTINHO (EXIBIDO APENAS SE FOR CASAL) -->
-    <div id="perfilCardNossoCantinho" class="rounded-3xl border border-border bg-card shadow-card p-5 space-y-4">
+    <div id="perfilCardNossoCantinho" class="rounded-3xl border border-border bg-card shadow-card p-5 space-y-4 hidden">
         <div class="flex items-center gap-2.5">
             <div class="size-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center">
                 <i data-lucide="home" class="size-4"></i>
             </div>
             <div>
-                <p id="perfilLarNome" class="text-sm font-black text-foreground">Nosso Cantinho</p>
-                <p id="perfilLarDesde" class="text-[10px] text-muted-foreground">Desde abril de 2026</p>
+                <p id="perfilLarNome" class="text-sm font-black text-foreground">Lar Compartilhado</p>
+                <p id="perfilLarDesde" class="text-[10px] text-muted-foreground">Recente</p>
             </div>
         </div>
         <!-- Membros do lar -->
         <div class="space-y-2">
             <div class="flex items-center gap-3 p-3 rounded-2xl bg-muted/40">
-                <div id="perfilLarMeuIniciaisCircle" class="size-9 rounded-full bg-pink-100 text-pink-700 font-black text-xs flex items-center justify-center shrink-0">ME</div>
+                <div id="perfilLarMeuIniciaisCircle" class="size-9 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center shrink-0">--</div>
                 <div class="flex-1 min-w-0">
-                    <p id="perfilLarMeuNome" class="text-xs font-black text-foreground">Maria Eduarda</p>
-                    <p id="perfilLarMeuEmail" class="text-[10px] text-muted-foreground">duda@seiva.app</p>
+                    <p id="perfilLarMeuNome" class="text-xs font-black text-foreground">Você</p>
+                    <p id="perfilLarMeuEmail" class="text-[10px] text-muted-foreground">...</p>
                 </div>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">Você</span>
             </div>
             <div id="perfilLarLinhaParceiro" class="flex items-center gap-3 p-3 rounded-2xl bg-muted/40">
-                <div id="perfilLarParceiroIniciaisCircle" class="size-9 rounded-full bg-emerald-100 text-emerald-700 font-black text-xs flex items-center justify-center shrink-0">IM</div>
+                <div id="perfilLarParceiroIniciaisCircle" class="size-9 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center shrink-0">--</div>
                 <div class="flex-1 min-w-0">
-                    <p id="perfilLarParceiroNome" class="text-xs font-black text-foreground">Ian Marcos</p>
-                    <p id="perfilLarParceiroEmail" class="text-[10px] text-muted-foreground">ian@seiva.app</p>
+                    <p id="perfilLarParceiroNome" class="text-xs font-black text-foreground">Parceiro(a)</p>
+                    <p id="perfilLarParceiroEmail" class="text-[10px] text-muted-foreground">...</p>
                 </div>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground">Parceiro</span>
             </div>
@@ -327,7 +327,7 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-xs font-black text-foreground">Parceiro no Lar</p>
-                    <p id="perfilParceiroInfo" class="text-[10px] text-muted-foreground">Ian Marcos · ian@seiva.app</p>
+                    <p id="perfilParceiroInfo" class="text-[10px] text-muted-foreground">Carregando parceiro...</p>
                 </div>
             </div>
             <!-- Exportar dados LGPD -->

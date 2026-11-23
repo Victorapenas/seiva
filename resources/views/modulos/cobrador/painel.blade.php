@@ -53,15 +53,15 @@
         <div class="grid grid-cols-3 gap-2.5">
             <div class="rounded-2xl bg-emerald-800/50 p-3 text-center">
                 <p class="text-[10px] text-emerald-300 font-semibold mb-1">A receber</p>
-                <p id="cobradorStatReceber" class="text-base font-black text-white">R$ 629,00</p>
+                <p id="cobradorStatReceber" class="text-base font-black text-white">R$ 0,00</p>
             </div>
             <div class="rounded-2xl bg-emerald-800/50 p-3 text-center">
                 <p class="text-[10px] text-emerald-300 font-semibold mb-1">Notificadas</p>
-                <p id="cobradorStatNotificadas" class="text-base font-black text-white">1</p>
+                <p id="cobradorStatNotificadas" class="text-base font-black text-white">0</p>
             </div>
             <div class="rounded-2xl bg-emerald-800/50 p-3 text-center">
                 <p class="text-[10px] text-emerald-300 font-semibold mb-1">Agendadas</p>
-                <p id="cobradorStatAgendadas" class="text-base font-black text-white">1</p>
+                <p id="cobradorStatAgendadas" class="text-base font-black text-white">0</p>
             </div>
         </div>
     </div>
@@ -91,7 +91,7 @@
             </div>
             <div>
                 <p class="text-xs font-black text-foreground">Configurações do Cobrador</p>
-                <p class="text-[10px] text-muted-foreground">Como e quando o Ian vai ser lembrado</p>
+                <p id="cobradorSubtituloConfig" class="text-[10px] text-muted-foreground">Como e quando o parceiro(a) vai ser lembrado(a)</p>
             </div>
         </div>
 

@@ -2995,7 +2995,18 @@
                 if (topoBadge) topoBadge.innerText = data.lar.nome || 'Nosso Cantinho';
 
                 const casalSub = document.getElementById('larCasalSubtitulo');
-                if (casalSub) casalSub.innerText = `${data.lar.nomes_membros || 'Maria Eduarda & Ian Marcos'} · desde ${data.lar.desde || 'abril de 2026'}`;
+                if (casalSub) casalSub.innerText = `${data.lar.nomes_membros || data.lar.nome || 'Membros do Lar'} · desde ${data.lar.desde || 'recente'}`;
+
+                const boxAvatares = document.getElementById('larAvataresMembrosBox');
+                if (boxAvatares && data.membros && data.membros.length) {
+                    boxAvatares.innerHTML = data.membros.map((m, idx) => {
+                        const bgCor = idx === 0 ? 'bg-emerald-700' : 'bg-emerald-800';
+                        if (m.avatar) {
+                            return `<img src="${m.avatar}" alt="${m.nome}" class="size-6 rounded-full object-cover ring-2 ring-white/40">`;
+                        }
+                        return `<span class="size-6 rounded-full ${bgCor} text-white font-extrabold text-[10px] flex items-center justify-center ring-2 ring-white/40">${m.iniciais || '--'}</span>`;
+                    }).join('');
+                }
 
                 // 2. Saúde Financeira do Lar
                 if (data.saude_financeira) {
@@ -3009,7 +3020,11 @@
                     const custoEl = document.getElementById('larTxtCustoFixo');
                     if (custoEl) custoEl.innerText = `${BRL(sf.custo_fixo)} (${sf.custo_fixo_pct}% da renda)`;
                     const faltaEl = document.getElementById('larTxtFaltaMembro');
-                    if (faltaEl) faltaEl.innerHTML = `Falta a ${sf.falta_nome || 'Duda'} contribuir: <strong>${BRL(sf.falta_contribuir)} neste mês</strong>`;
+                    if (faltaEl) {
+                        faltaEl.innerHTML = sf.falta_contribuir > 0
+                            ? `Falta ${sf.falta_nome ? 'a ' + sf.falta_nome : 'ao parceiro(a)'} contribuir: <strong>${BRL(sf.falta_contribuir)} neste mês</strong>`
+                            : `Contribuições do Lar 100% quitadas neste mês!`;
+                    }
                 }
 
                 // Barras de Contribuição dos Membros
@@ -3686,7 +3701,7 @@
                     const nomeBadge = document.getElementById('larTopoNomeBadge');
                     if (nomeBadge) nomeBadge.innerText = nome;
                     const casalSub = document.getElementById('larCasalSubtitulo');
-                    if (casalSub) casalSub.innerText = `Maria Eduarda & Ian Marcos · desde ${desde}`;
+                    if (casalSub) casalSub.innerText = `${larDadosCache?.lar?.nomes_membros || nome} · desde ${desde}`;
 
                     fecharModalId('modalEditarLar');
                     seivaNotificar('Nosso Cantinho atualizado com carinho!', 'sucesso', 'Lar Personalizado');
@@ -4104,10 +4119,10 @@
             if (barra) barra.style.width = `${meta.progresso}%`;
 
             const nomeResp = document.getElementById('guardarMetaLarPixNomeResp');
-            if (nomeResp) nomeResp.innerText = meta.responsavel || 'Maria Eduarda';
+            if (nomeResp) nomeResp.innerText = meta.responsavel || (larDadosCache?.lar?.nomes_membros || 'Parceiro(a)');
 
             const bancoResp = document.getElementById('guardarMetaLarPixBancoResp');
-            if (bancoResp) bancoResp.innerText = meta.conta_destino || 'Nubank Maria Eduarda';
+            if (bancoResp) bancoResp.innerText = meta.conta_destino || 'Conta do Lar';
 
             const chavePix = document.getElementById('guardarMetaLarPixChaveValor');
             if (chavePix) chavePix.innerText = meta.pix || '(71) 99812-3456';
@@ -5971,17 +5986,17 @@
                                     <div class="mx-4 mb-3 space-y-2">
                                         <div class="flex items-center justify-between py-2 border-b border-border/60">
                                             <div class="flex items-center gap-2">
-                                                <span class="size-6 rounded-full bg-pink-100 text-pink-700 text-[10px] font-black flex items-center justify-center">ME</span>
-                                                <span class="text-xs font-semibold text-foreground">Maria Eduarda</span>
+                                                <span class="size-6 rounded-full bg-emerald-700 text-white text-[10px] font-black flex items-center justify-center">${(larDadosCache?.membros?.[0]?.iniciais) || 'VC'}</span>
+                                                <span class="text-xs font-semibold text-foreground">${(larDadosCache?.membros?.[0]?.nome) || 'Você'}</span>
                                             </div>
-                                            <span class="text-xs font-black text-foreground">${BRL(a.maria_mes)}/mês</span>
+                                            <span class="text-xs font-black text-foreground">${BRL(a.maria_mes || (a.valor_mensal_juntos / 2))}/mês</span>
                                         </div>
                                         <div class="flex items-center justify-between py-2">
                                             <div class="flex items-center gap-2">
-                                                <span class="size-6 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black flex items-center justify-center">IM</span>
-                                                <span class="text-xs font-semibold text-foreground">Ian Marcos</span>
+                                                <span class="size-6 rounded-full bg-emerald-800 text-white text-[10px] font-black flex items-center justify-center">${(larDadosCache?.membros?.[1]?.iniciais) || 'PR'}</span>
+                                                <span class="text-xs font-semibold text-foreground">${(larDadosCache?.membros?.[1]?.nome) || 'Parceiro(a)'}</span>
                                             </div>
-                                            <span class="text-xs font-black text-foreground">${BRL(a.ian_mes)}/mês</span>
+                                            <span class="text-xs font-black text-foreground">${BRL(a.ian_mes || (a.valor_mensal_juntos / 2))}/mês</span>
                                         </div>
                                     </div>
                                     <div class="mx-4 mb-3 grid grid-cols-2 gap-2">
@@ -7263,9 +7278,9 @@
                 perfilDadosCache = data;
 
                 const user = data.usuario || {};
-                const nomeCompleto = user.nome || 'Maria Eduarda';
+                const nomeCompleto = user.nome || 'Usuário';
                 const partes = nomeCompleto.trim().split(' ').filter(Boolean);
-                let iniciais = 'ME';
+                let iniciais = '--';
                 if (partes.length >= 2) {
                     iniciais = (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
                 } else if (partes.length === 1) {
@@ -7279,7 +7294,13 @@
 
                 set('perfilNomeTxt', nomeCompleto);
                 set('perfilEmailTxt', user.email || '');
-                set('perfilApelido', `Apelido: ${user.apelido || (partes[0] === 'Maria' ? 'Duda' : partes[0])}`);
+                if (user.apelido || partes[0]) {
+                    const elApelido = document.getElementById('perfilApelido');
+                    if (elApelido) {
+                        elApelido.textContent = `Apelido: ${user.apelido || partes[0]}`;
+                        elApelido.classList.remove('hidden');
+                    }
+                }
                 set('perfilChavePix', user.chave_pix || user.email || '');
                 if (user.created_at) {
                     const dt = new Date(user.created_at);
@@ -7301,8 +7322,8 @@
                     if (badgeLar) badgeLar.classList.add('hidden');
 
                     const lar = data.lar;
-                    set('perfilLarNome', lar.nome || 'Nosso Cantinho');
-                    set('perfilLarDesde', `Desde ${lar.criado_em || 'abril de 2026'}`);
+                    set('perfilLarNome', lar.nome || 'Lar Compartilhado');
+                    set('perfilLarDesde', `Desde ${lar.criado_em || 'recente'}`);
                     set('perfilLarMeuNome', nomeCompleto);
                     set('perfilLarMeuEmail', user.email || '');
                     set('perfilLarMeuIniciaisCircle', iniciais);
@@ -7319,11 +7340,15 @@
                             }
                         }
                         set('perfilParceiroInfo', `${lar.parceiro.nome} · ${lar.parceiro.email}`);
+                    } else {
+                        set('perfilLarParceiroNome', 'Aguardando Parceiro(a)');
+                        set('perfilLarParceiroEmail', 'Convite gerado');
+                        set('perfilParceiroInfo', 'Convite enviado · aguardando parceiro(a) aceitar');
                     }
 
                     set('perfilDivisaoValorTxt', lar.divisao_txt || '50% / 50%');
                 } else {
-                    // Usuário Individual / Solteiro (Victor Hugo)
+                    // Usuário Individual / Solteiro
                     if (cardLar) cardLar.classList.add('hidden');
                     if (cardSolo) cardSolo.classList.remove('hidden');
                     if (linhaParceiro) linhaParceiro.classList.add('hidden');
@@ -7369,9 +7394,23 @@
             if (inputEmail) inputEmail.value = user.email || '';
             if (inputTel) inputTel.value = user.telefone || '';
             if (inputPix) inputPix.value = user.chave_pix || user.email || '';
-            if (selectBanco && user.banco_principal) selectBanco.value = user.banco_principal;
+            if (selectBanco && user.banco_principal) {
+                const bNorm = user.banco_principal.trim().toLowerCase();
+                let match = Array.from(selectBanco.options).find(opt => 
+                    opt.value.trim().toLowerCase() === bNorm || 
+                    opt.text.trim().toLowerCase() === bNorm ||
+                    (bNorm === 'c6' && opt.value.toLowerCase().includes('c6'))
+                );
+                if (match) {
+                    selectBanco.value = match.value;
+                } else {
+                    const optCustom = new Option(user.banco_principal, user.banco_principal, true, true);
+                    selectBanco.add(optCustom, selectBanco.options.length - 1);
+                    selectBanco.value = user.banco_principal;
+                }
+            }
             if (inputAvatar) inputAvatar.value = user.avatar || '';
-            if (previewIniciais) previewIniciais.textContent = user.iniciais || 'ME';
+            if (previewIniciais) previewIniciais.textContent = user.iniciais || (user.nome ? user.nome.substring(0, 2).toUpperCase() : '--');
 
             selecionarAvatarPerfil(user.avatar || '');
 
@@ -7391,7 +7430,8 @@
                     boxPreview.innerHTML = `<img src="${url}" class="size-full object-cover">`;
                 } else {
                     const user = perfilDadosCache?.usuario || {};
-                    boxPreview.innerHTML = `<span id="previewAvatarIniciais">${user.iniciais || 'ME'}</span>`;
+                    const ini = user.iniciais || (user.nome ? user.nome.substring(0, 2).toUpperCase() : '--');
+                    boxPreview.innerHTML = `<span id="previewAvatarIniciais">${ini}</span>`;
                 }
             }
         }

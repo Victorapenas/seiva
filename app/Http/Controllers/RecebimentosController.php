@@ -43,12 +43,17 @@ class RecebimentosController extends Controller
         $mesLabel = ucfirst($dataCarbon->locale('pt_BR')->translatedFormat('F \d\e Y'));
         $mesCurto = ucfirst($dataCarbon->locale('pt_BR')->isoFormat('MMM/YY'));
 
-        // Histórico: 4 meses anteriores + mês ativo para o gráfico de evolução
+        $user = Auth::user();
+        $mesCriacao = $user && $user->created_at ? $user->created_at->copy()->startOfMonth() : now()->startOfMonth();
+
+        // Histórico de evolução: apenas a partir do mês em que o usuário ingressou
         $historico = [];
-        for ($i = 4; $i >= 0; $i--) {
-            $mCarbon = $dataCarbon->copy()->subMonths($i);
-            $m = $mCarbon->format('Y-m');
-            $mLabel = ucfirst($mCarbon->locale('pt_BR')->isoFormat('MMM/YY'));
+        $mesIter = $mesCriacao->copy();
+        $fimMes = $dataCarbon->copy()->endOfMonth();
+
+        while ($mesIter->lte($fimMes)) {
+            $m = $mesIter->format('Y-m');
+            $mLabel = ucfirst($mesIter->locale('pt_BR')->isoFormat('MMM/YY'));
             $e = (float) Transacao::where('usuario_id', $userId)
                 ->where('tipo', 'entrada')
                 ->whereRaw("strftime('%Y-%m', data) = ?", [$m])
@@ -58,6 +63,11 @@ class RecebimentosController extends Controller
                 ->whereRaw("strftime('%Y-%m', data) = ?", [$m])
                 ->sum('valor');
             $historico[] = ['mes' => $mLabel, 'entradas' => $e, 'saidas' => $s, 'chave' => $m];
+            $mesIter->addMonth();
+        }
+
+        if (empty($historico)) {
+            $historico[] = ['mes' => $mesCurto, 'entradas' => 0, 'saidas' => 0, 'chave' => $mes];
         }
 
         // Dados do mês solicitado
@@ -94,15 +104,24 @@ class RecebimentosController extends Controller
             ->sortByDesc('valor')
             ->values();
 
-        // Meses disponíveis para os chips (últimos 6 meses até o mês atual + 1 futuro)
+        // Meses disponíveis para os chips: estritamente a partir do mês em que o usuário ingressou
         $mesesDisponiveis = [];
-        $baseMeses = now()->startOfMonth()->addMonth(); // inclui próximo mês
-        for ($i = 6; $i >= 0; $i--) {
-            $d = $baseMeses->copy()->subMonths($i);
+        $iterChips = $mesCriacao->copy();
+        $limiteChips = now()->startOfMonth()->addMonth(); // inclui próximo mês para planejamento
+        while ($iterChips->lte($limiteChips)) {
             $mesesDisponiveis[] = [
-                'valor'  => $d->format('Y-m'),
-                'label'  => ucfirst($d->locale('pt_BR')->isoFormat('MMM/YY')),
-                'ativo'  => $d->format('Y-m') === $mes,
+                'valor'  => $iterChips->format('Y-m'),
+                'label'  => ucfirst($iterChips->locale('pt_BR')->isoFormat('MMM/YY')),
+                'ativo'  => $iterChips->format('Y-m') === $mes,
+            ];
+            $iterChips->addMonth();
+        }
+
+        if (empty($mesesDisponiveis)) {
+            $mesesDisponiveis[] = [
+                'valor' => $mes,
+                'label' => $mesCurto,
+                'ativo' => true,
             ];
         }
 

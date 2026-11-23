@@ -141,13 +141,13 @@
                         </span>
                         <div>
                             <strong class="text-xs font-extrabold text-foreground block">Só minha</strong>
-                            <span class="text-[11px] text-muted-foreground">Objetivo pessoal, eu banco sozinha</span>
+                            <span class="text-[11px] text-muted-foreground">Objetivo pessoal, custo individual</span>
                         </div>
                     </div>
                     <i data-lucide="check" class="size-4 text-emerald-600"></i>
                 </button>
 
-                <!-- Opção 2: Do Lar, pago sozinha -->
+                <!-- Opção 2: Do Lar, pago individualmente -->
                 <button type="button" id="opcaoPosseLar" onclick="selecionarPosseMeta(this, 'lar')" 
                         class="chip-posse-meta w-full flex items-center justify-between p-3.5 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/20">
                     <div class="flex items-center gap-3">
@@ -155,8 +155,8 @@
                             <i data-lucide="home" class="size-4"></i>
                         </span>
                         <div>
-                            <strong class="text-xs font-extrabold text-foreground block">Do Lar, pago sozinha</strong>
-                            <span class="text-[11px] text-muted-foreground">É para a casa, mas eu assumo o valor</span>
+                            <strong class="text-xs font-extrabold text-foreground block">Do Lar, assumo o valor</strong>
+                            <span class="text-[11px] text-muted-foreground">É para a casa, mas assumo integralmente</span>
                         </div>
                     </div>
                 </button>
@@ -169,8 +169,8 @@
                             <i data-lucide="users" class="size-4"></i>
                         </span>
                         <div>
-                            <strong class="text-xs font-extrabold text-foreground block">Compartilhada</strong>
-                            <span class="text-[11px] text-muted-foreground" id="subtextoMetaCompartilhada">Para o Lar e preciso de ajuda do parceiro</span>
+                            <strong class="text-xs font-extrabold text-foreground block">Compartilhada no Lar</strong>
+                            <span class="text-[11px] text-muted-foreground" id="subtextoMetaCompartilhada">Para atingir juntos com o parceiro(a)</span>
                         </div>
                     </div>
                 </button>

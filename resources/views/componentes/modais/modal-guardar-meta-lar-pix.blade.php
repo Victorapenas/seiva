@@ -114,11 +114,11 @@
                 <div class="space-y-1">
                     <div class="flex items-center gap-2 text-foreground font-semibold">
                         <i data-lucide="user" class="size-3.5 text-emerald-600"></i>
-                        <span>Conta de <strong id="guardarMetaLarPixNomeResp">Maria Eduarda</strong></span>
+                        <span>Conta de <strong id="guardarMetaLarPixNomeResp">Parceiro(a)</strong></span>
                     </div>
                     <div class="flex items-center gap-2 text-muted-foreground">
                         <i data-lucide="wallet" class="size-3.5 text-emerald-600"></i>
-                        <span id="guardarMetaLarPixBancoResp">Nubank Maria Eduarda</span>
+                        <span id="guardarMetaLarPixBancoResp">Conta do Lar</span>
                     </div>
                 </div>
 

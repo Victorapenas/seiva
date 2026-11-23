@@ -37,8 +37,8 @@
                     <strong class="text-sm font-black text-amber-950 dark:text-amber-100">R$ 225,00</strong>
                 </div>
                 <p class="text-xs text-amber-900/80 dark:text-amber-300/80 leading-relaxed">
-                    A cota mensal de <strong>Maria Eduarda</strong> é de R$ 480,00 e já foram registrados R$ 255,00 (53%). 
-                    Abaixo você pode escolher a melhor forma de conciliar esse valor com carinho.
+                    A cota mensal do seu parceiro(a) possui um valor pendente neste mês. 
+                    Abaixo você pode escolher a melhor forma de conciliar esse valor com carinho e transparência.
                 </p>
             </div>
 
@@ -84,7 +84,7 @@
                     <span>3. Abater com outra despesa que ela pagou</span>
                 </div>
                 <p class="text-xs text-muted-foreground leading-relaxed">
-                    Se Maria Eduarda pagou compras do mercado ou farmácia diretamente do bolso dela, esse valor pode ser abatido automaticamente na Mesa de Acordos.
+                    Se seu parceiro(a) pagou compras do mercado, contas ou farmácia diretamente do bolso dele(a), esse valor pode ser abatido automaticamente na Mesa de Acordos.
                 </p>
                 <button type="button" onclick="trocarAbaApp('acordos'); fecharModalId('modalContestarEnvioLar')" 
                         class="w-full py-2.5 rounded-xl border border-border bg-muted/30 hover:bg-muted text-foreground font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-2xs">

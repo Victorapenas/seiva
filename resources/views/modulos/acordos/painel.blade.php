@@ -38,40 +38,46 @@
         <p class="text-xs sm:text-sm text-muted-foreground font-medium">Combinados claros, relacionamento tranquilo.</p>
     </header>
 
-    <!-- 2 CARDS INFORMATIVOS DE TOPO: POUPAR JUNTOS & DÍVIDA DIVIDIDA (IMAGEM 1) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <!-- 2 CARDS INFORMATIVOS DE TOPO: POUPAR JUNTOS & DÍVIDA DIVIDIDA (HARMONIZADOS) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <!-- Card Poupar juntos -->
-        <div class="p-4 rounded-3xl border border-emerald-300/60 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-2 shadow-2xs">
+        <div class="p-4 rounded-3xl border border-border bg-card shadow-2xs space-y-2 hover:border-emerald-600/40 transition">
             <div class="flex items-center gap-2.5">
-                <span class="size-8 rounded-xl bg-emerald-800 text-white flex items-center justify-center shrink-0">
+                <span class="size-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-500/20">
                     <i data-lucide="piggy-bank" class="size-4"></i>
                 </span>
-                <strong class="text-xs font-black text-foreground">Poupar juntos</strong>
+                <div>
+                    <strong class="text-xs font-black text-foreground block">Poupar Juntos</strong>
+                    <span class="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-wider">Objetivos Futuros</span>
+                </div>
             </div>
-            <p class="text-[11px] text-muted-foreground leading-relaxed">
-                Ainda não compraram. Juntam dinheiro todo mês até dar. Contribuição flexível.
+            <p class="text-xs text-muted-foreground leading-relaxed">
+                Ainda não compraram. Guardam dinheiro todo mês até atingir a meta. Contribuição flexível e sem atrito.
             </p>
         </div>
 
         <!-- Card Dívida dividida -->
-        <div class="p-4 rounded-3xl border border-border bg-card space-y-2 shadow-2xs">
+        <div class="p-4 rounded-3xl border border-border bg-card shadow-2xs space-y-2 hover:border-emerald-600/40 transition">
             <div class="flex items-center gap-2.5">
-                <span class="size-8 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                <span class="size-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 flex items-center justify-center shrink-0 border border-blue-500/20">
                     <i data-lucide="credit-card" class="size-4"></i>
                 </span>
-                <strong class="text-xs font-black text-foreground">Dívida dividida</strong>
+                <div>
+                    <strong class="text-xs font-black text-foreground block">Dívida Dividida</strong>
+                    <span class="text-[10px] text-blue-700 dark:text-blue-400 font-bold uppercase tracking-wider">Compras Realizadas</span>
+                </div>
             </div>
-            <p class="text-[11px] text-muted-foreground leading-relaxed">
-                Já foi comprado. Cada um paga sua parte todo mês. Obrigatório até quitar.
+            <p class="text-xs text-muted-foreground leading-relaxed">
+                Já foi comprado por um dos dois. Cada um paga sua parcela mensal acordada até quitar o valor.
             </p>
         </div>
     </div>
 
-    <!-- 2. SEÇÃO: NEGOCIAÇÕES EM ABERTO (IMAGENS 1, 2 E 3) -->
+    <!-- 2. SEÇÃO: NEGOCIAÇÕES EM ABERTO -->
     <div class="space-y-3.5">
         <div class="flex items-center gap-2">
             <h3 class="text-sm font-black text-foreground">Negociações em aberto</h3>
-            <span id="acordosBadgeContadorNegociacoes" class="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black">2</span>
+            <span id="acordosBadgeContadorNegociacoes" class="px-2 py-0.5 rounded-full bg-emerald-800 text-white text-[10px] font-black">0</span>
         </div>
 
         <div id="acordosListaNegociacoesAbertas" class="space-y-4">

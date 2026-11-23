@@ -58,12 +58,12 @@
                 </div>
                 <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white drop-shadow-xs">Painel do Lar</h1>
                 <div class="flex items-center gap-2 pt-0.5 text-xs text-white/90">
-                    <div class="flex items-center -space-x-1.5 shrink-0">
-                        <span id="larAvatarMembro1" class="size-6 rounded-full bg-pink-500 text-white font-extrabold text-[10px] flex items-center justify-center ring-2 ring-white/40">ME</span>
-                        <span id="larAvatarMembro2" class="size-6 rounded-full bg-emerald-600 text-white font-extrabold text-[10px] flex items-center justify-center ring-2 ring-white/40">IM</span>
+                    <div class="flex items-center -space-x-1.5 shrink-0" id="larAvataresMembrosBox">
+                        <span id="larAvatarMembro1" class="size-6 rounded-full bg-emerald-700 text-white font-extrabold text-[10px] flex items-center justify-center ring-2 ring-white/40">--</span>
+                        <span id="larAvatarMembro2" class="size-6 rounded-full bg-emerald-800 text-white font-extrabold text-[10px] flex items-center justify-center ring-2 ring-white/40">--</span>
                     </div>
                     <p id="larCasalSubtitulo" class="font-medium drop-shadow-xs">
-                        Maria Eduarda & Ian Marcos · desde abril de 2026 (7 meses de parceria)
+                        Carregando membros do Lar...
                     </p>
                 </div>
             </div>

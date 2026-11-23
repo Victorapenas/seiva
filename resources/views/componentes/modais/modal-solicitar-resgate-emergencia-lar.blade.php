@@ -116,18 +116,18 @@
             <div class="space-y-1.5">
                 <label class="text-xs font-bold text-foreground">Onde o dinheiro deve ser creditado?</label>
                 <div class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="selecionarContaCreditoResgate(this, 'nubank_duda')" 
+                    <button type="button" onclick="selecionarContaCreditoResgate(this, 'minha_conta')" 
                             class="chip-conta-resgate active p-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20 text-left transition">
-                        <strong class="text-xs font-extrabold text-foreground block">Nubank Maria Eduarda</strong>
+                        <strong class="text-xs font-extrabold text-foreground block">Sua Conta Principal</strong>
                         <span class="text-[10px] text-muted-foreground">Conta pessoal de quem paga</span>
                     </button>
-                    <button type="button" onclick="selecionarContaCreditoResgate(this, 'nubank_ian')" 
+                    <button type="button" onclick="selecionarContaCreditoResgate(this, 'conta_parceiro')" 
                             class="chip-conta-resgate p-3 rounded-2xl border border-border bg-card text-left transition hover:bg-muted/30">
-                        <strong class="text-xs font-extrabold text-foreground block">Nubank Ian Marcos</strong>
+                        <strong class="text-xs font-extrabold text-foreground block">Conta do Parceiro(a)</strong>
                         <span class="text-[10px] text-muted-foreground">Conta pessoal do parceiro</span>
                     </button>
                 </div>
-                <input type="hidden" id="resgateEmergenciaContaDestino" value="nubank_duda">
+                <input type="hidden" id="resgateEmergenciaContaDestino" value="minha_conta">
             </div>
 
             <!-- Botão de Envio para Mesa de Acordos -->
