@@ -21,7 +21,7 @@ Semestre: 2026.2
 
 ## Sobre o Projeto
 
-O SEIVA é uma plataforma web que resolve um problema recorrente em lares e relacionamentos: a dificuldade de organizar finanças compartilhadas sem abrir mão da privacidade individual. O sistema permite que dois ou mais moradores de um mesmo lar acompanhem despesas conjuntas, definam regras de rateio e estabeleçam metas em comum — enquanto cada um mantém sua vida financeira pessoal protegida em um espaço chamado **Caixa Preta**, acessível apenas mediante PIN.
+O SEIVA é uma plataforma web que resolve um problema recorrente em lares e relacionamentos: a dificuldade de organizar finanças compartilhadas sem abrir mão da privacidade individual. O sistema permite que dois ou mais moradores de um mesmo lar acompanhem despesas conjuntas, definam regras de rateio e estabeleçam metas em comum, enquanto cada um mantém sua vida financeira pessoal protegida em um espaço chamado **Caixa Preta**, acessível apenas mediante PIN.
 
 O projeto foi desenvolvido do zero durante o semestre, partindo de um protótipo no Figma e evoluindo para uma aplicação web funcional com banco de dados real.
 
